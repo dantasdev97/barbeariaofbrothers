@@ -63,11 +63,38 @@
 :root {
   --radius: 1rem;
 
-  /* Brand */
-  --brand: #22c55e;
-  --brand-hover: #16a34a;
+  /* Brand Colors */
+  --brand: #F39200;
+  --brand-hover: #d97e00;
+  --brand-orange: #F39200;
+  --brand-dark: #1a1410;
+  --brand-light: #f6f0e6;
   --bg: #1d252b;
   --bg-surface: #111827;
+  
+  /* Typography Scale */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+  --text-4xl: 2.25rem;
+  
+  /* Spacing Scale */
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+  --space-2xl: 3rem;
+  --space-3xl: 4rem;
+  
+  /* Transitions */
+  --transition-fast: 150ms ease-in-out;
+  --transition-base: 300ms ease-in-out;
+  --transition-slow: 500ms ease-in-out;
 
   /* Mapped to shadcn tokens */
   --background: #1d252b;
@@ -76,32 +103,32 @@
   --card-foreground: #ffffff;
   --popover: #111827;
   --popover-foreground: #ffffff;
-  --primary: #22c55e;
+  --primary: #F39200;
   --primary-foreground: #0a0f0c;
   --secondary: #1f2937;
   --secondary-foreground: #ffffff;
   --muted: #1f2937;
   --muted-foreground: #9ca3af;
-  --accent: #16a34a;
+  --accent: #d97e00;
   --accent-foreground: #ffffff;
   --destructive: #ef4444;
   --border: rgba(255, 255, 255, 0.08);
   --input: rgba(255, 255, 255, 0.08);
-  --ring: #22c55e;
-  --chart-1: #22c55e;
-  --chart-2: #16a34a;
-  --chart-3: #4ade80;
-  --chart-4: #86efac;
-  --chart-5: #bbf7d0;
+  --ring: #F39200;
+  --chart-1: #F39200;
+  --chart-2: #d97e00;
+  --chart-3: #f5a623;
+  --chart-4: #f8b84e;
+  --chart-5: #fcc876;
 
   --sidebar: #0b1115;
   --sidebar-foreground: #ffffff;
-  --sidebar-primary: #22c55e;
+  --sidebar-primary: #F39200;
   --sidebar-primary-foreground: #0a0f0c;
   --sidebar-accent: #111827;
   --sidebar-accent-foreground: #ffffff;
   --sidebar-border: rgba(255, 255, 255, 0.08);
-  --sidebar-ring: #22c55e;
+  --sidebar-ring: #F39200;
 }
 
 .dark {
@@ -111,18 +138,18 @@
   --card-foreground: #ffffff;
   --popover: #111827;
   --popover-foreground: #ffffff;
-  --primary: #22c55e;
+  --primary: #F39200;
   --primary-foreground: #0a0f0c;
   --secondary: #1f2937;
   --secondary-foreground: #ffffff;
   --muted: #1f2937;
   --muted-foreground: #9ca3af;
-  --accent: #16a34a;
+  --accent: #d97e00;
   --accent-foreground: #ffffff;
   --destructive: #ef4444;
   --border: rgba(255, 255, 255, 0.08);
   --input: rgba(255, 255, 255, 0.08);
-  --ring: #22c55e;
+  --ring: #F39200;
 }
 
 @layer base {
@@ -151,7 +178,7 @@
     @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
   }
   .text-gradient-brand {
-    background: linear-gradient(135deg, #4ade80 0%, #22c55e 50%, #16a34a 100%);
+    background: linear-gradient(135deg, #f5a623 0%, #F39200 50%, #d97e00 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;

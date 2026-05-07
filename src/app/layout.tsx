@@ -31,8 +31,12 @@ export const metadata: Metadata = {
   applicationName: "Barbearia Of Brothers",
   authors: [{ name: "Barbearia Of Brothers" }],
   icons: {
-    icon: "/favicon.ico",
-    apple: "/logo.png",
+    icon: [
+      { rel: "icon", url: "/favicon.ico" },
+      { rel: "icon", url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { rel: "icon", url: "/favicon-192x192.png", sizes: "192x192", type: "image/png" },
+    ],
+    apple: "/favicon-192x192.png",
   },
   openGraph: {
     type: "website",
@@ -44,8 +48,11 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#1D252B",
+  themeColor: "#F39200",
   colorScheme: "dark",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
 };
 
 export default function RootLayout({
