@@ -128,7 +128,7 @@ export function Footer({ unit }: Props) {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Instagram"
-                className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/5 text-white/70 transition hover:bg-brand hover:text-primary-foreground"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white/70 transition hover:bg-brand hover:text-[#1a1410]"
               >
                 <InstagramIcon className="h-4 w-4" />
               </a>
@@ -139,7 +139,7 @@ export function Footer({ unit }: Props) {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Facebook"
-                className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/5 text-white/70 transition hover:bg-brand hover:text-primary-foreground"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white/70 transition hover:bg-brand hover:text-[#1a1410]"
               >
                 <FacebookIcon className="h-4 w-4" />
               </a>
@@ -150,7 +150,7 @@ export function Footer({ unit }: Props) {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="TikTok"
-                className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/5 text-white/70 transition hover:bg-brand hover:text-primary-foreground"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white/70 transition hover:bg-brand hover:text-[#1a1410]"
               >
                 <TikTokIcon className="h-4 w-4" />
               </a>

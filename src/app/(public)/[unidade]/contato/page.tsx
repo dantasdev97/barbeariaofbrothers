@@ -53,7 +53,7 @@ export default async function ContatoPage({
       <TrackPageView unitId={unit.id} />
 
       {/* ── Page header ── */}
-      <section className="border-b border-white/8 px-4 py-20 sm:px-6 lg:px-8">
+      <section className="border-b border-border px-4 py-20 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-brand">
             Contacto
@@ -74,7 +74,7 @@ export default async function ContatoPage({
         <div className="mx-auto grid max-w-7xl gap-6 lg:grid-cols-3">
 
           {/* ── Info card ── */}
-          <div className="col-span-1 space-y-6 rounded-2xl border border-white/10 bg-card p-8 lg:col-span-2">
+          <div className="col-span-1 space-y-6 rounded-2xl border border-border bg-card p-8 lg:col-span-2">
             <div className="grid gap-6 sm:grid-cols-2">
 
               {/* Address */}
@@ -155,7 +155,7 @@ export default async function ContatoPage({
                         target="_blank"
                         rel="noopener noreferrer"
                         aria-label="Instagram"
-                        className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/5 text-white/60 transition hover:bg-brand hover:text-primary-foreground"
+                        className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-bg-surface text-muted-foreground transition hover:bg-brand hover:text-[#1a1410]"
                       >
                         <InstagramIcon className="h-4 w-4" />
                       </a>
@@ -166,7 +166,7 @@ export default async function ContatoPage({
                         target="_blank"
                         rel="noopener noreferrer"
                         aria-label="Facebook"
-                        className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/5 text-white/60 transition hover:bg-brand hover:text-primary-foreground"
+                        className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-bg-surface text-muted-foreground transition hover:bg-brand hover:text-[#1a1410]"
                       >
                         <FacebookIcon className="h-4 w-4" />
                       </a>
@@ -177,7 +177,7 @@ export default async function ContatoPage({
                         target="_blank"
                         rel="noopener noreferrer"
                         aria-label="TikTok"
-                        className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/5 text-white/60 transition hover:bg-brand hover:text-primary-foreground"
+                        className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-bg-surface text-muted-foreground transition hover:bg-brand hover:text-[#1a1410]"
                       >
                         <TikTokIcon className="h-4 w-4" />
                       </a>
@@ -188,7 +188,7 @@ export default async function ContatoPage({
             </div>
 
             {/* CTA */}
-            <div className="border-t border-white/8 pt-6">
+            <div className="border-t border-border pt-6">
               <BookingButton
                 unit={unit}
                 className="rounded-full px-8 py-3.5 text-[15px] font-semibold"
@@ -197,7 +197,7 @@ export default async function ContatoPage({
           </div>
 
           {/* ── Hours card ── */}
-          <div className="rounded-2xl border border-white/10 bg-card p-8">
+          <div className="rounded-2xl border border-border bg-bg-surface p-8">
             <div className="mb-6 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-brand">
               <Clock className="h-3.5 w-3.5" />
               Horário
@@ -216,7 +216,7 @@ export default async function ContatoPage({
                       className={
                         isOpen
                           ? "text-sm text-muted-foreground"
-                          : "text-sm text-white/30"
+                          : "text-sm text-muted-foreground/40"
                       }
                     >
                       {isOpen ? `${slot.open} – ${slot.close}` : "Fechado"}

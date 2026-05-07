@@ -58,7 +58,7 @@ export default async function ProdutosPage({
       <TrackPageView unitId={unit.id} />
 
       {/* ── Page header ── */}
-      <section className="border-b border-white/8 px-4 py-20 sm:px-6 lg:px-8">
+      <section className="border-b border-border px-4 py-20 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-brand">
             Loja
@@ -77,8 +77,8 @@ export default async function ProdutosPage({
       <section className="px-4 py-20 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
           {products.length === 0 ? (
-            <div className="rounded-2xl border border-white/10 bg-card p-16 text-center">
-              <ShoppingBag className="mx-auto mb-4 h-10 w-10 text-muted-foreground" />
+            <div className="rounded-2xl border border-border bg-bg-surface p-16 text-center">
+              <ShoppingBag className="mx-auto mb-4 h-10 w-10 text-muted-foreground/40" />
               <p className="text-lg text-muted-foreground">
                 Em breve novos produtos disponíveis.
               </p>
@@ -93,7 +93,7 @@ export default async function ProdutosPage({
                         <h2 className="font-heading text-2xl font-semibold">
                           {category.name}
                         </h2>
-                        <div className="flex-1 border-t border-white/8" />
+                        <div className="flex-1 border-t border-border" />
                       </div>
                     )}
                     <ProductGrid unitSlug={unit.slug} items={items} />
@@ -104,7 +104,7 @@ export default async function ProdutosPage({
                 <div>
                   <div className="mb-8 flex items-center gap-4">
                     <h2 className="font-heading text-2xl font-semibold">Outros</h2>
-                    <div className="flex-1 border-t border-white/8" />
+                    <div className="flex-1 border-t border-border" />
                   </div>
                   <ProductGrid unitSlug={unit.slug} items={orphans} />
                 </div>
@@ -125,26 +125,26 @@ function ProductGrid({
   items: Awaited<ReturnType<typeof getProductsByUnit>>;
 }) {
   return (
-    <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
       {items.map((p) => (
         <Link
           key={p.id}
           href={`/${unitSlug}/produtos/${p.slug}`}
-          className="group flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-card transition-all duration-200 hover:-translate-y-1 hover:border-brand/20 hover:shadow-[0_24px_50px_-24px_rgba(0,0,0,0.5)]"
+          className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card transition-all duration-200 hover:-translate-y-1 hover:border-brand/40 hover:shadow-[0_24px_50px_-24px_rgba(26,20,16,0.2)]"
         >
           {/* Image */}
-          <div className="relative aspect-square overflow-hidden bg-[#1f2937]">
+          <div className="relative aspect-square overflow-hidden bg-bg-surface">
             {p.image_url ? (
               <Image
                 src={p.image_url}
                 alt={p.name}
                 fill
-                sizes="(min-width: 1024px) 25vw, 50vw"
-                className="object-contain p-6 transition duration-300 group-hover:scale-105 drop-shadow-[0_12px_24px_rgba(0,0,0,0.4)]"
+                sizes="(min-width: 1024px) 33vw, 50vw"
+                className="object-contain p-8 transition duration-300 group-hover:scale-105 drop-shadow-[0_12px_24px_rgba(0,0,0,0.15)]"
               />
             ) : (
               <div className="flex h-full items-center justify-center">
-                <ShoppingBag className="h-12 w-12 text-white/10" />
+                <ShoppingBag className="h-12 w-12 text-muted-foreground/30" />
               </div>
             )}
           </div>
@@ -166,7 +166,7 @@ function ProductGrid({
               <span className="font-heading text-[26px] font-semibold tracking-tight">
                 {formatPrice(p.price_cents)}
               </span>
-              <span className="inline-flex items-center gap-1 rounded-full bg-brand px-4 py-1.5 text-sm font-medium text-primary-foreground transition group-hover:bg-brand-hover">
+              <span className="inline-flex items-center gap-1 rounded-full bg-foreground px-4 py-1.5 text-sm font-medium text-background transition group-hover:bg-brand group-hover:text-[#1a1410]">
                 Ver →
               </span>
             </div>

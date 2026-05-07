@@ -49,7 +49,7 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: "#F39200",
-  colorScheme: "dark",
+  colorScheme: "light",
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
@@ -63,13 +63,13 @@ export default function RootLayout({
   return (
     <html
       lang="pt-PT"
-      className={`${poppins.variable} ${spaceGrotesk.variable} dark h-full`}
+      className={`${poppins.variable} ${spaceGrotesk.variable} h-full`}
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col bg-background text-foreground" suppressHydrationWarning>
         {children}
         <Toaster
-          theme="dark"
+          theme="light"
           position="bottom-right"
           richColors
           closeButton

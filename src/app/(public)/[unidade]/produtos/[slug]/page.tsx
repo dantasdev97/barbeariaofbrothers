@@ -60,7 +60,7 @@ export default async function ProductDetail({
 
         <article className="grid gap-12 lg:grid-cols-2 lg:items-start">
           {/* Image */}
-          <div className="relative aspect-square overflow-hidden rounded-2xl border border-white/10 bg-[#1f2937]">
+          <div className="relative aspect-square overflow-hidden rounded-2xl border border-border bg-bg-surface">
             {p.image_url ? (
               <Image
                 src={p.image_url}
@@ -107,7 +107,7 @@ export default async function ProductDetail({
               className="mt-8"
             />
 
-            <div className="mt-6 rounded-xl border border-white/8 bg-card p-4">
+            <div className="mt-6 rounded-xl border border-border bg-bg-surface p-4">
               <p className="text-sm text-muted-foreground">
                 ✂ Encomendas confirmadas via WhatsApp. Levantamento na barbearia
                 ou envio para casa.
@@ -130,9 +130,9 @@ export default async function ProductDetail({
                 <Link
                   key={rp.id}
                   href={`/${unit.slug}/produtos/${rp.slug}`}
-                  className="group flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-card transition-all duration-200 hover:-translate-y-1 hover:border-brand/20"
+                  className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card transition-all duration-200 hover:-translate-y-1 hover:border-brand/40 hover:shadow-[0_24px_50px_-24px_rgba(26,20,16,0.2)]"
                 >
-                  <div className="relative aspect-square overflow-hidden bg-[#1f2937]">
+                  <div className="relative aspect-square overflow-hidden bg-bg-surface">
                     {rp.image_url ? (
                       <Image
                         src={rp.image_url}

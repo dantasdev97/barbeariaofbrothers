@@ -55,65 +55,40 @@
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
 
-  --shadow-premium: 0 10px 40px rgba(0, 0, 0, 0.25);
-  --shadow-premium-lg: 0 20px 60px rgba(0, 0, 0, 0.35);
+  --shadow-premium: 0 10px 40px rgba(0, 0, 0, 0.12);
+  --shadow-premium-lg: 0 20px 60px rgba(0, 0, 0, 0.18);
 }
 
-/* Force dark theme — Barbearia Of Brothers identity */
+/* ── Light / cream theme (public site) ── */
 :root {
   --radius: 1rem;
 
-  /* Brand Colors */
+  /* Brand */
   --brand: #F39200;
   --brand-hover: #d97e00;
-  --brand-orange: #F39200;
-  --brand-dark: #1a1410;
-  --brand-light: #f6f0e6;
-  --bg: #1d252b;
-  --bg-surface: #111827;
-  
-  /* Typography Scale */
-  --text-xs: 0.75rem;
-  --text-sm: 0.875rem;
-  --text-base: 1rem;
-  --text-lg: 1.125rem;
-  --text-xl: 1.25rem;
-  --text-2xl: 1.5rem;
-  --text-3xl: 1.875rem;
-  --text-4xl: 2.25rem;
-  
-  /* Spacing Scale */
-  --space-xs: 0.25rem;
-  --space-sm: 0.5rem;
-  --space-md: 1rem;
-  --space-lg: 1.5rem;
-  --space-xl: 2rem;
-  --space-2xl: 3rem;
-  --space-3xl: 4rem;
-  
-  /* Transitions */
-  --transition-fast: 150ms ease-in-out;
-  --transition-base: 300ms ease-in-out;
-  --transition-slow: 500ms ease-in-out;
 
-  /* Mapped to shadcn tokens */
-  --background: #1d252b;
-  --foreground: #ffffff;
-  --card: #111827;
-  --card-foreground: #ffffff;
-  --popover: #111827;
-  --popover-foreground: #ffffff;
+  /* Site palette */
+  --bg: #faf6f0;
+  --bg-surface: #f3ede4;
+
+  /* shadcn semantic tokens */
+  --background: #faf6f0;
+  --foreground: #1a1410;
+  --card: #ffffff;
+  --card-foreground: #1a1410;
+  --popover: #ffffff;
+  --popover-foreground: #1a1410;
   --primary: #F39200;
-  --primary-foreground: #0a0f0c;
-  --secondary: #1f2937;
-  --secondary-foreground: #ffffff;
-  --muted: #1f2937;
-  --muted-foreground: #9ca3af;
-  --accent: #d97e00;
-  --accent-foreground: #ffffff;
-  --destructive: #ef4444;
-  --border: rgba(255, 255, 255, 0.08);
-  --input: rgba(255, 255, 255, 0.08);
+  --primary-foreground: #1a1410;
+  --secondary: #f3ede4;
+  --secondary-foreground: #1a1410;
+  --muted: #f3ede4;
+  --muted-foreground: #847a72;
+  --accent: #F39200;
+  --accent-foreground: #1a1410;
+  --destructive: #dc2626;
+  --border: #e8e2db;
+  --input: #e8e2db;
   --ring: #F39200;
   --chart-1: #F39200;
   --chart-2: #d97e00;
@@ -121,6 +96,7 @@
   --chart-4: #f8b84e;
   --chart-5: #fcc876;
 
+  /* Admin sidebar stays dark */
   --sidebar: #0b1115;
   --sidebar-foreground: #ffffff;
   --sidebar-primary: #F39200;
@@ -131,7 +107,10 @@
   --sidebar-ring: #F39200;
 }
 
+/* ── Dark theme (admin area, uses .dark class on wrapper) ── */
 .dark {
+  --bg: #1d252b;
+  --bg-surface: #111827;
   --background: #1d252b;
   --foreground: #ffffff;
   --card: #111827;
@@ -158,7 +137,6 @@
   }
   html {
     @apply font-sans antialiased;
-    color-scheme: dark;
   }
   body {
     @apply bg-background text-foreground min-h-screen;
@@ -169,7 +147,7 @@
   }
   ::selection {
     background: var(--brand);
-    color: #0a0f0c;
+    color: #1a1410;
   }
 }
 
@@ -190,8 +168,8 @@
   }
   .bg-grid {
     background-image:
-      linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+      linear-gradient(rgba(26, 20, 16, 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(26, 20, 16, 0.04) 1px, transparent 1px);
     background-size: 48px 48px;
   }
   .shadow-premium {

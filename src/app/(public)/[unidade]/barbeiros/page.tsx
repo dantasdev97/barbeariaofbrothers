@@ -14,12 +14,12 @@ import {
 type Params = { unidade: string };
 
 const BARBER_GRADIENTS = [
-  "linear-gradient(135deg, #1a1410, #2d2218)",
-  "linear-gradient(135deg, #2d1a0a, #4a2e15)",
+  "linear-gradient(135deg, #1a1410, #3a302a)",
+  "linear-gradient(135deg, #3a302a, #5a4a3e)",
+  "linear-gradient(135deg, #2a221c, #4a3d34)",
+  "linear-gradient(135deg, #F39200, #d97e00)",
   "linear-gradient(135deg, #0a1f2d, #1a3d4f)",
   "linear-gradient(135deg, #1a2d0a, #2e4a15)",
-  "linear-gradient(135deg, #0a142d, #15254a)",
-  "linear-gradient(135deg, #2d0a1a, #4a1530)",
 ];
 
 function getInitials(name: string): string {
@@ -58,7 +58,7 @@ export default async function BarbeirosPage({
       <TrackPageView unitId={unit.id} />
 
       {/* ── Page header ── */}
-      <section className="border-b border-white/8 px-4 py-20 sm:px-6 lg:px-8">
+      <section className="border-b border-border px-4 py-20 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-brand">
             A equipa
@@ -85,7 +85,7 @@ export default async function BarbeirosPage({
       <section className="px-4 py-20 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
           {barbers.length === 0 ? (
-            <div className="rounded-2xl border border-white/10 bg-card p-16 text-center">
+            <div className="rounded-2xl border border-border bg-bg-surface p-16 text-center">
               <p className="text-lg text-muted-foreground">
                 Em breve a nossa equipa estará disponível aqui.
               </p>
@@ -100,7 +100,7 @@ export default async function BarbeirosPage({
                 return (
                   <article
                     key={b.id}
-                    className="group overflow-hidden rounded-2xl border border-white/10 bg-card transition-all duration-300 hover:-translate-y-1 hover:border-brand/20 hover:shadow-[0_24px_50px_-24px_rgba(0,0,0,0.6)]"
+                    className="group overflow-hidden rounded-2xl border border-border bg-card transition-all duration-300 hover:-translate-y-1 hover:border-brand/40 hover:shadow-[0_24px_50px_-24px_rgba(26,20,16,0.2)]"
                   >
                     {/* Photo / initials */}
                     <Link
@@ -112,7 +112,7 @@ export default async function BarbeirosPage({
                         className="absolute inset-0"
                         style={{
                           backgroundImage:
-                            "repeating-linear-gradient(45deg, transparent 0 12px, rgba(255,255,255,0.05) 12px 13px)",
+                            "repeating-linear-gradient(45deg, transparent 0 12px, rgba(255,255,255,0.06) 12px 13px)",
                         }}
                       />
                       {b.photo_url ? (
@@ -159,7 +159,7 @@ export default async function BarbeirosPage({
                               target="_blank"
                               rel="noopener noreferrer"
                               aria-label="Instagram"
-                              className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/5 text-white/60 transition hover:bg-brand hover:text-primary-foreground"
+                              className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-bg-surface text-muted-foreground transition hover:bg-brand hover:text-[#1a1410]"
                             >
                               <InstagramIcon className="h-3.5 w-3.5" />
                             </a>
@@ -170,7 +170,7 @@ export default async function BarbeirosPage({
                               target="_blank"
                               rel="noopener noreferrer"
                               aria-label="Facebook"
-                              className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/5 text-white/60 transition hover:bg-brand hover:text-primary-foreground"
+                              className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-bg-surface text-muted-foreground transition hover:bg-brand hover:text-[#1a1410]"
                             >
                               <FacebookIcon className="h-3.5 w-3.5" />
                             </a>

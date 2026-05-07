@@ -8,7 +8,6 @@ import type { UnitRow } from "@/types/database.types";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/hooks/useCart";
 import { trackEvent } from "@/lib/analytics";
-import { buildSingleProductMessage, whatsappLink } from "@/lib/whatsapp";
 import { cn } from "@/lib/utils";
 
 type ProductLite = {
@@ -58,18 +57,13 @@ export function ProductActions({ unit, product, className }: Props) {
   }
 
   function buyNow() {
-    if (!unit.whatsapp) {
-      toast.error("WhatsApp não configurado para esta unidade.");
-      return;
-    }
-    const msg = buildSingleProductMessage(product, unit);
     trackEvent({
-      type: "whatsapp_checkout",
+      type: "booking_click",
       unit_id: unit.id,
       ref_id: product.id,
       meta: { mode: "single", qty },
     });
-    window.open(whatsappLink(unit.whatsapp, msg), "_blank", "noopener");
+    router.push(`/${unit.slug}/agendar`);
   }
 
   return (
@@ -112,7 +106,7 @@ export function ProductActions({ unit, product, className }: Props) {
         onClick={buyNow}
         className="bg-brand text-primary-foreground shadow-premium hover:bg-brand-hover"
       >
-        Comprar via WhatsApp
+        Agendar agora
       </Button>
     </div>
   );

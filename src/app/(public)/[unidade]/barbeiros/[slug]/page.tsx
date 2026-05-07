@@ -59,7 +59,7 @@ export default async function BarberDetail({
 
         <article className="grid gap-12 lg:grid-cols-[1fr_1.2fr] lg:items-start">
           {/* Photo */}
-          <div className="relative aspect-[3/4] overflow-hidden rounded-2xl border border-white/10 bg-card">
+          <div className="relative aspect-[3/4] overflow-hidden rounded-2xl border border-border bg-card">
             {b.photo_url ? (
               <Image
                 src={b.photo_url}
@@ -111,7 +111,7 @@ export default async function BarberDetail({
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label="Instagram"
-                    className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-white/5 text-white/70 transition hover:bg-brand hover:text-primary-foreground"
+                    className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-bg-surface text-muted-foreground transition hover:bg-brand hover:text-[#1a1410]"
                   >
                     <InstagramIcon className="h-4 w-4" />
                   </a>
@@ -122,7 +122,7 @@ export default async function BarberDetail({
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label="Facebook"
-                    className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-white/5 text-white/70 transition hover:bg-brand hover:text-primary-foreground"
+                    className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-bg-surface text-muted-foreground transition hover:bg-brand hover:text-[#1a1410]"
                   >
                     <FacebookIcon className="h-4 w-4" />
                   </a>
@@ -133,7 +133,7 @@ export default async function BarberDetail({
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label="TikTok"
-                    className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-white/5 text-white/70 transition hover:bg-brand hover:text-primary-foreground"
+                    className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-bg-surface text-muted-foreground transition hover:bg-brand hover:text-[#1a1410]"
                   >
                     <TikTokIcon className="h-4 w-4" />
                   </a>
@@ -142,7 +142,7 @@ export default async function BarberDetail({
             )}
 
             {/* Booking CTA */}
-            <div className="mt-10 rounded-2xl border border-white/10 bg-card p-6">
+            <div className="mt-10 rounded-2xl border border-border bg-bg-surface p-6">
               <p className="mb-4 text-sm text-muted-foreground">
                 Agenda diretamente com {b.name.split(" ")[0]} e escolhe o dia e
                 hora que preferes.

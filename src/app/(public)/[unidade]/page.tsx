@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import { MapPin, ShoppingBag } from "lucide-react";
+import { ShoppingBag } from "lucide-react";
 import {
   getBarbersByUnit,
   getProductsByUnit,
@@ -28,14 +28,13 @@ const MARQUEE_ITEMS = [
   "PIGMENTAÇÃO",
 ];
 
-// Barber card gradient backgrounds, assigned by index
 const BARBER_GRADIENTS = [
-  "linear-gradient(135deg, #1a1410, #2d2218)",
-  "linear-gradient(135deg, #2d1a0a, #4a2e15)",
+  "linear-gradient(135deg, #1a1410, #3a302a)",
+  "linear-gradient(135deg, #3a302a, #5a4a3e)",
+  "linear-gradient(135deg, #2a221c, #4a3d34)",
+  "linear-gradient(135deg, #F39200, #d97e00)",
   "linear-gradient(135deg, #0a1f2d, #1a3d4f)",
   "linear-gradient(135deg, #1a2d0a, #2e4a15)",
-  "linear-gradient(135deg, #0a142d, #15254a)",
-  "linear-gradient(135deg, #2d0a1a, #4a1530)",
 ];
 
 function getInitials(name: string): string {
@@ -70,7 +69,7 @@ export default async function UnitHome({
   ]);
 
   const featuredBarbers = barbers.slice(0, 3);
-  const featuredProducts = products.slice(0, 4);
+  const featuredProducts = products.slice(0, 3);
 
   return (
     <>
@@ -82,13 +81,13 @@ export default async function UnitHome({
           {/* Left column */}
           <div>
             {/* Eyebrow badge */}
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-white/5 px-4 py-2 text-xs font-medium">
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-bg-surface px-4 py-2 text-xs font-medium text-foreground/70">
               <span className="h-1.5 w-1.5 rounded-full bg-green-500 shadow-[0_0_0_3px_rgba(34,197,94,0.2)]" />
               Aberto hoje · 09:30 — 19:30
             </div>
 
-            {/* Hero title */}
-            <h1 className="font-heading text-5xl font-semibold leading-[0.98] tracking-tight sm:text-6xl lg:text-7xl xl:text-[84px]">
+            {/* Hero title — 84px like the model */}
+            <h1 className="font-heading text-[56px] font-semibold leading-[0.98] tracking-tight sm:text-[68px] lg:text-[84px]">
               Cortes que ficam.
               <br />
               <em className="font-normal not-italic text-brand" style={{ fontStyle: "italic" }}>
@@ -99,12 +98,7 @@ export default async function UnitHome({
             {/* Subtext */}
             <p className="mt-6 max-w-[480px] text-[17px] leading-relaxed text-muted-foreground">
               Unidade <strong className="text-foreground">{unit.name}</strong>
-              {unit.address && (
-                <>
-                  {" "}
-                  · {unit.address}.
-                </>
-              )}{" "}
+              {unit.address && <> · {unit.address}.</>}{" "}
               {yearsOpen}+ anos de experiência, equipa premiada e produtos
               profissionais.
             </p>
@@ -117,7 +111,7 @@ export default async function UnitHome({
               />
               <Link
                 href={`/${unit.slug}/produtos`}
-                className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-7 py-3.5 text-[15px] font-medium text-foreground transition hover:bg-white/10"
+                className="inline-flex items-center gap-2 rounded-full border border-border bg-transparent px-7 py-3.5 text-[15px] font-medium text-foreground transition hover:bg-foreground hover:text-background"
               >
                 <ShoppingBag className="h-4 w-4" />
                 Ver produtos
@@ -125,7 +119,7 @@ export default async function UnitHome({
             </div>
 
             {/* Stats row */}
-            <div className="mt-10 grid w-max grid-cols-3 gap-12 border-t border-white/10 pt-8">
+            <div className="mt-10 grid w-max grid-cols-3 gap-12 border-t border-border pt-8">
               {[
                 { num: `${yearsOpen}+`, label: "anos abertos" },
                 { num: "350", label: "cortes / mês" },
@@ -149,12 +143,11 @@ export default async function UnitHome({
             <div
               className="row-span-2 flex items-center justify-center overflow-hidden rounded-2xl"
               style={{
-                background: "linear-gradient(135deg, #2a221c, #4a3d34)",
                 backgroundImage:
-                  "repeating-linear-gradient(45deg, rgba(255,255,255,0.04) 0 14px, rgba(255,255,255,0.07) 14px 15px), linear-gradient(135deg, #2a221c, #4a3d34)",
+                  "repeating-linear-gradient(45deg, rgba(255,255,255,.04) 0 14px, rgba(255,255,255,.08) 14px 15px), linear-gradient(135deg, #2a221c, #4a3d34)",
               }}
             >
-              <span className="rounded bg-white/10 px-2 py-1 font-mono text-[11px] uppercase tracking-widest text-white/60">
+              <span className="rounded bg-white/90 px-2 py-1 font-mono text-[11px] uppercase tracking-widest text-[#847a72]">
                 FOTO · interior
               </span>
             </div>
@@ -163,11 +156,10 @@ export default async function UnitHome({
               className="flex items-center justify-center overflow-hidden rounded-2xl"
               style={{
                 backgroundImage:
-                  "repeating-linear-gradient(45deg, rgba(255,255,255,0.02) 0 14px, rgba(255,255,255,0.05) 14px 15px)",
-                background: "#1f2937",
+                  "repeating-linear-gradient(45deg, #f3ede4 0 14px, #ece4d7 14px 15px)",
               }}
             >
-              <span className="rounded bg-white/5 px-2 py-1 font-mono text-[10px] uppercase tracking-widest text-white/40">
+              <span className="rounded bg-white/80 px-2 py-1 font-mono text-[10px] uppercase tracking-widest text-[#847a72]">
                 FOTO · corte
               </span>
             </div>
@@ -175,18 +167,17 @@ export default async function UnitHome({
             <div
               className="flex items-center justify-center overflow-hidden rounded-2xl"
               style={{
-                background: "#1a2530",
                 backgroundImage:
-                  "repeating-linear-gradient(45deg, rgba(255,255,255,0.02) 0 14px, rgba(255,255,255,0.04) 14px 15px)",
+                  "repeating-linear-gradient(45deg, #faf6f0 0 14px, #efe7d8 14px 15px)",
               }}
             >
-              <span className="rounded bg-white/5 px-2 py-1 font-mono text-[10px] uppercase tracking-widest text-white/40">
+              <span className="rounded bg-white/80 px-2 py-1 font-mono text-[10px] uppercase tracking-widest text-[#847a72]">
                 FOTO · barba
               </span>
             </div>
             {/* "Desde 2012" badge */}
             <div
-              className="absolute -right-4 -top-4 grid h-24 w-24 place-items-center rounded-full bg-brand text-center font-heading text-[12px] leading-tight text-primary-foreground"
+              className="absolute -right-4 -top-4 grid h-24 w-24 place-items-center rounded-full bg-brand text-center font-heading text-[12px] leading-tight text-[#1a1410]"
               style={{ transform: "rotate(-12deg)" }}
             >
               Desde
@@ -197,14 +188,14 @@ export default async function UnitHome({
         </div>
 
         {/* ── Services marquee strip ── */}
-        <div className="relative mt-20 overflow-hidden bg-[#0b1115] py-4 -mx-4 sm:-mx-6 lg:-mx-12">
+        <div className="relative mt-20 overflow-hidden bg-foreground py-5 -mx-4 sm:-mx-6 lg:-mx-12">
           <div
             className="flex w-max gap-12"
             style={{ animation: "marquee 30s linear infinite" }}
           >
             {[...MARQUEE_ITEMS, ...MARQUEE_ITEMS].map((item, i) => (
               <div key={i} className="flex items-center gap-12">
-                <span className="font-heading text-[22px] font-medium tracking-wide text-white">
+                <span className="font-heading text-[22px] font-medium tracking-wide text-background">
                   {item}
                 </span>
                 <span className="text-brand">●</span>
@@ -228,7 +219,7 @@ export default async function UnitHome({
           {SERVICES.map((s, i) => (
             <div
               key={i}
-              className="group grid grid-cols-[auto_1fr_auto_auto_auto] items-center gap-4 sm:gap-6 border-b border-white/8 py-6 text-lg transition-all hover:pl-3"
+              className="group grid grid-cols-[auto_1fr_auto_auto_auto] items-center gap-4 sm:gap-6 border-b border-border py-6 text-lg transition-all hover:pl-3"
             >
               <span className="font-heading text-[13px] font-medium tracking-widest text-muted-foreground">
                 {s.num}
@@ -236,7 +227,7 @@ export default async function UnitHome({
               <span className="font-heading font-medium tracking-tight group-hover:text-brand transition-colors">
                 {s.name}
               </span>
-              <div className="hidden h-px flex-1 border-b-2 border-dashed border-white/10 sm:block" />
+              <div className="h-px flex-1 border-b-2 border-dotted border-border" />
               <span className="text-sm text-muted-foreground">{s.time}</span>
               <span className="font-heading text-2xl font-semibold tracking-tight">
                 {s.price}
@@ -272,7 +263,7 @@ export default async function UnitHome({
                 return (
                   <article
                     key={b.id}
-                    className="group overflow-hidden rounded-2xl border border-white/10 bg-background transition-all duration-300 hover:-translate-y-1 hover:border-brand/20 hover:shadow-[0_24px_50px_-24px_rgba(0,0,0,0.5)]"
+                    className="group overflow-hidden rounded-2xl border border-border bg-card transition-all duration-300 hover:-translate-y-1 hover:border-brand/40 hover:shadow-[0_24px_50px_-24px_rgba(26,20,16,0.2)]"
                   >
                     {/* Photo placeholder with initials */}
                     <div
@@ -300,7 +291,7 @@ export default async function UnitHome({
                         </span>
                       )}
                       {/* Years badge */}
-                      <div className="absolute right-4 top-4 rounded-full bg-background/90 px-3 py-1.5 text-[12px] font-medium tracking-wide">
+                      <div className="absolute right-4 top-4 rounded-full bg-card px-3 py-1.5 text-[12px] font-medium tracking-wide text-foreground">
                         {i < 3 ? [12, 8, 5][i] : 4} anos
                       </div>
                     </div>
@@ -376,32 +367,33 @@ export default async function UnitHome({
               </p>
             </div>
 
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {/* 3-col grid matching the model */}
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {featuredProducts.map((p, i) => {
                 const tag = getProductTag(i, p.name);
                 return (
                   <Link
                     key={p.id}
                     href={`/${unit.slug}/produtos/${p.slug}`}
-                    className="group flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-bg-surface transition-all duration-200 hover:-translate-y-1 hover:border-brand/20 hover:shadow-[0_24px_50px_-24px_rgba(0,0,0,0.5)]"
+                    className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card transition-all duration-200 hover:-translate-y-1 hover:border-brand/40 hover:shadow-[0_24px_50px_-24px_rgba(26,20,16,0.2)]"
                   >
-                    {/* Product image / placeholder */}
-                    <div className="relative aspect-square overflow-hidden bg-[#1f2937]">
+                    {/* Product image */}
+                    <div className="relative aspect-square overflow-hidden bg-bg-surface">
                       {p.image_url ? (
                         <Image
                           src={p.image_url}
                           alt={p.name}
                           fill
-                          sizes="(min-width: 1024px) 25vw, 50vw"
-                          className="object-contain p-6 transition duration-300 group-hover:scale-105 drop-shadow-[0_12px_24px_rgba(0,0,0,0.4)]"
+                          sizes="(min-width: 1024px) 33vw, 50vw"
+                          className="object-contain p-8 transition duration-300 group-hover:scale-105 drop-shadow-[0_12px_24px_rgba(0,0,0,0.15)]"
                         />
                       ) : (
                         <div className="flex h-full items-center justify-center">
-                          <ShoppingBag className="h-12 w-12 text-white/10" />
+                          <ShoppingBag className="h-12 w-12 text-muted-foreground/30" />
                         </div>
                       )}
                       {tag && (
-                        <div className="absolute left-4 top-4 rounded-full bg-background px-3 py-1.5 text-[11px] font-semibold uppercase tracking-widest text-foreground">
+                        <div className="absolute left-4 top-4 rounded-full bg-foreground px-3 py-1.5 text-[11px] font-semibold uppercase tracking-widest text-background">
                           {tag}
                         </div>
                       )}
@@ -419,7 +411,7 @@ export default async function UnitHome({
                         <span className="font-heading text-[28px] font-semibold tracking-tight">
                           {formatPrice(p.price_cents)}
                         </span>
-                        <span className="inline-flex items-center gap-1 rounded-full bg-brand px-4 py-1.5 text-sm font-medium text-primary-foreground transition group-hover:bg-brand-hover">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-foreground px-4 py-1.5 text-sm font-medium text-background transition group-hover:bg-brand group-hover:text-[#1a1410]">
                           Comprar →
                         </span>
                       </div>
@@ -429,7 +421,7 @@ export default async function UnitHome({
               })}
             </div>
 
-            {products.length > 4 && (
+            {products.length > 3 && (
               <div className="mt-10 text-center">
                 <Link
                   href={`/${unit.slug}/produtos`}
@@ -487,11 +479,10 @@ export default async function UnitHome({
               className="row-span-2 flex items-center justify-center rounded-2xl"
               style={{
                 backgroundImage:
-                  "repeating-linear-gradient(45deg, rgba(255,255,255,0.02) 0 14px, rgba(255,255,255,0.04) 14px 15px)",
-                background: "#1f2937",
+                  "repeating-linear-gradient(45deg, #f3ede4 0 14px, #ece4d7 14px 15px)",
               }}
             >
-              <span className="rounded bg-white/5 px-2 py-1 font-mono text-[10px] uppercase tracking-widest text-white/30">
+              <span className="rounded bg-white/70 px-2 py-1 font-mono text-[10px] uppercase tracking-widest text-[#847a72]">
                 FOTO · vitrine
               </span>
             </div>
@@ -499,11 +490,10 @@ export default async function UnitHome({
               className="flex items-center justify-center rounded-2xl"
               style={{
                 backgroundImage:
-                  "repeating-linear-gradient(45deg, rgba(255,255,255,0.02) 0 14px, rgba(255,255,255,0.04) 14px 15px)",
-                background: "#1a2530",
+                  "repeating-linear-gradient(45deg, #faf6f0 0 14px, #efe7d8 14px 15px)",
               }}
             >
-              <span className="rounded bg-white/5 px-2 py-1 font-mono text-[10px] uppercase tracking-widest text-white/30">
+              <span className="rounded bg-white/70 px-2 py-1 font-mono text-[10px] uppercase tracking-widest text-[#847a72]">
                 FOTO · cadeira
               </span>
             </div>
