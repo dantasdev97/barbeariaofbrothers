@@ -7,7 +7,6 @@ import { useRouter, usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   LogOut,
-  MapPin,
   Menu,
   Package,
   Scissors,
@@ -21,7 +20,6 @@ import { cn } from "@/lib/utils";
 
 const NAV = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
-  { href: "/admin/unidades", label: "Unidades", icon: MapPin },
   { href: "/admin/barbeiros", label: "Barbeiros", icon: Scissors },
   { href: "/admin/produtos", label: "Produtos", icon: Package },
   { href: "/admin/categorias", label: "Categorias", icon: Tag },
