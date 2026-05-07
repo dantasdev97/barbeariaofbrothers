@@ -39,37 +39,40 @@ export function LoginForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-4">
-      <div className="space-y-1.5">
-        <Label htmlFor="email">Email</Label>
+    <form onSubmit={onSubmit} className="space-y-6">
+      <div className="space-y-2">
+        <Label htmlFor="email" className="text-sm font-medium">Email</Label>
         <Input
           id="email"
           type="email"
           autoComplete="email"
+          placeholder="seu@email.com"
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          className="h-11 bg-white/5 border-white/10"
         />
       </div>
-      <div className="space-y-1.5">
-        <Label htmlFor="password">Palavra-passe</Label>
+      <div className="space-y-2">
+        <Label htmlFor="password" className="text-sm font-medium">Palavra-passe</Label>
         <Input
           id="password"
           type="password"
           autoComplete="current-password"
+          placeholder="••••••••"
           required
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          className="h-11 bg-white/5 border-white/10"
         />
       </div>
       <Button
         type="submit"
         disabled={pending}
         size="lg"
-        className="w-full bg-brand text-primary-foreground hover:bg-brand-hover"
+        className="w-full mt-8 h-12 bg-brand text-primary-foreground hover:bg-brand-hover font-semibold text-base"
       >
-        <LogIn className="mr-2 h-4 w-4" />
-        {pending ? "A entrar…" : "Entrar"}
+        {pending ? "A entrar…" : "Entrar →"}
       </Button>
     </form>
   );

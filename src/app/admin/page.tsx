@@ -53,14 +53,14 @@ export default async function AdminDashboard() {
 
   return (
     <div>
-      <header className="mb-8">
-        <h1 className="font-heading text-3xl font-semibold">Dashboard</h1>
-        <p className="text-sm text-muted-foreground">
+      <header className="mb-10">
+        <h1 className="font-heading text-4xl font-bold">Dashboard</h1>
+        <p className="mt-2 text-base text-muted-foreground">
           Visão geral das suas barbearias.
         </p>
       </header>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-10">
         <MetricCard
           icon={MapPin}
           label="Unidades activas"
@@ -84,28 +84,28 @@ export default async function AdminDashboard() {
         />
       </div>
 
-      <div className="mt-10 grid gap-6 lg:grid-cols-2">
-        <div className="rounded-2xl border border-white/10 bg-bg-surface p-6">
-          <h2 className="mb-4 font-heading text-lg font-semibold">
+      <div className="grid gap-6 lg:grid-cols-2">
+        <div className="rounded-xl border border-white/10 bg-bg-surface p-8">
+          <h2 className="font-heading text-xl font-bold mb-6">
             Páginas vistas hoje
           </h2>
-          <p className="text-4xl font-bold text-brand">
+          <p className="text-5xl font-bold text-brand">
             {pageViewsToday?.length ?? 0}
           </p>
-          <p className="mt-2 text-xs text-muted-foreground">
-            Eventos do tipo <code>page_view</code> nas últimas 24h.
+          <p className="mt-3 text-sm text-muted-foreground">
+            Eventos do tipo <code className="px-2 py-1 bg-white/5 rounded text-brand">page_view</code> nas últimas 24h.
           </p>
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-bg-surface p-6">
-          <h2 className="mb-4 font-heading text-lg font-semibold">
+        <div className="rounded-xl border border-white/10 bg-bg-surface p-8">
+          <h2 className="font-heading text-xl font-bold mb-6">
             Top produtos (30d)
           </h2>
           <ListTop entries={topProductMap} empty="Sem visualizações ainda." />
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-bg-surface p-6">
-          <h2 className="mb-4 font-heading text-lg font-semibold">
+        <div className="rounded-xl border border-white/10 bg-bg-surface p-8">
+          <h2 className="font-heading text-xl font-bold mb-6">
             Top barbeiros (30d)
           </h2>
           <ListTop entries={topBarberMap} empty="Sem visualizações ainda." />
@@ -146,16 +146,19 @@ function ListTop({
   if (entries.length === 0)
     return <p className="text-sm text-muted-foreground">{empty}</p>;
   return (
-    <ul className="space-y-2">
-      {entries.map(([id, count]) => (
+    <ul className="space-y-3">
+      {entries.map(([id, count], idx) => (
         <li
           key={id}
-          className="flex items-center justify-between rounded-xl bg-white/[0.02] px-3 py-2 text-sm"
+          className="flex items-center justify-between rounded-lg bg-white/[0.03] border border-white/5 px-4 py-3 text-sm hover:bg-white/5 transition"
         >
-          <span className="font-mono text-xs text-muted-foreground">
-            {id.slice(0, 8)}…
-          </span>
-          <span className="font-semibold text-brand">{count}</span>
+          <div className="flex items-center gap-3">
+            <span className="text-lg font-bold text-brand/60">#{idx + 1}</span>
+            <span className="font-mono text-xs text-muted-foreground">
+              {id.slice(0, 12)}…
+            </span>
+          </div>
+          <span className="font-semibold text-brand text-base">{count}</span>
         </li>
       ))}
     </ul>
