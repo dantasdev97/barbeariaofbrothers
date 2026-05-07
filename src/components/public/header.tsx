@@ -6,7 +6,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, ShoppingBag, X } from "lucide-react";
 import type { UnitRow } from "@/types/database.types";
-import { Button } from "@/components/ui/button";
 import { useCart } from "@/hooks/useCart";
 import { cn } from "@/lib/utils";
 import { trackEvent } from "@/lib/analytics";
@@ -20,16 +19,20 @@ export function Header({ unit }: Props) {
 
   const base = `/${unit.slug}`;
   const links = [
-    { href: base, label: "Início" },
     { href: `${base}/barbeiros`, label: "Barbeiros" },
     { href: `${base}/produtos`, label: "Produtos" },
+    { href: `${base}#sobre`, label: "Sobre" },
     { href: `${base}/contato`, label: "Contacto" },
   ];
 
+  // Derive short unit indicator ("1", "2", etc.) from name
+  const unitNum = unit.name.replace(/\D/g, "") || unit.slug.replace(/\D/g, "") || "1";
+
   return (
-    <header className="sticky top-0 z-40 border-b border-white/10 bg-background/80 backdrop-blur-xl">
-      <div className="container-page flex h-16 items-center justify-between">
-        <Link href={base} className="flex items-center gap-2">
+    <header className="sticky top-0 z-40 border-b border-white/8 bg-background/90 backdrop-blur-xl">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+        {/* Brand */}
+        <Link href={base} className="flex items-center gap-3">
           <Image
             src="/logo.png"
             alt="Barbearia Of Brothers"
@@ -38,24 +41,31 @@ export function Header({ unit }: Props) {
             className="h-9 w-auto"
             priority
           />
-          <span className="hidden font-heading text-sm font-semibold sm:block">
-            Of Brothers
-          </span>
+          <div className="hidden sm:block">
+            <div className="font-heading text-[13px] font-bold uppercase tracking-[0.04em] leading-none">
+              Barbearia Brothers
+            </div>
+            <div className="mt-0.5 text-[11px] leading-none text-muted-foreground">
+              Unidade {unitNum}
+            </div>
+          </div>
         </Link>
 
+        {/* Desktop nav */}
         <nav className="hidden items-center gap-1 md:flex">
           {links.map((l) => {
-            const active =
-              l.href === base ? pathname === base : pathname?.startsWith(l.href);
+            const active = l.href === base
+              ? pathname === base
+              : pathname?.startsWith(l.href.split("#")[0]);
             return (
               <Link
                 key={l.href}
                 href={l.href}
                 className={cn(
-                  "rounded-full px-4 py-2 text-sm transition",
+                  "rounded-full px-4 py-2 text-[14px] font-medium transition-colors",
                   active
-                    ? "bg-brand/10 text-brand"
-                    : "text-muted-foreground hover:bg-white/5 hover:text-foreground",
+                    ? "text-foreground"
+                    : "text-muted-foreground hover:text-foreground",
                 )}
               >
                 {l.label}
@@ -64,29 +74,38 @@ export function Header({ unit }: Props) {
           })}
         </nav>
 
+        {/* Actions */}
         <div className="flex items-center gap-2">
+          {/* Unit switcher pill */}
+          <Link
+            href="/"
+            className="hidden items-center gap-2 rounded-full border border-white/10 px-3.5 py-2 text-[13px] font-medium transition hover:border-white/20 sm:flex"
+          >
+            <span className="h-2 w-2 rounded-full bg-brand shadow-[0_0_0_3px_rgba(243,146,0,0.2)]" />
+            Unidade {unitNum}
+            <span className="text-[10px] text-muted-foreground">▾</span>
+          </Link>
+
+          {/* Book now */}
           {unit.buk_url && (
-            <Button
-              asChild
-              size="sm"
-              className="hidden bg-brand text-primary-foreground hover:bg-brand-hover sm:inline-flex"
+            <a
+              href={unit.buk_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() =>
+                trackEvent({
+                  type: "booking_click",
+                  unit_id: unit.id,
+                  meta: { source: "header" },
+                })
+              }
+              className="hidden rounded-full bg-brand px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:bg-brand-hover sm:inline-flex"
             >
-              <a
-                href={unit.buk_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() =>
-                  trackEvent({
-                    type: "booking_click",
-                    unit_id: unit.id,
-                    meta: { source: "header" },
-                  })
-                }
-              >
-                Agendar agora
-              </a>
-            </Button>
+              Agendar agora
+            </a>
           )}
+
+          {/* Cart */}
           <Link
             href={`${base}/carrinho`}
             className="relative inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/5 text-foreground transition hover:bg-white/10"
@@ -94,11 +113,13 @@ export function Header({ unit }: Props) {
           >
             <ShoppingBag className="h-4 w-4" />
             {totalItems > 0 && (
-              <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-brand px-1 text-[10px] font-bold text-primary-foreground">
+              <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-brand px-1 text-[10px] font-bold text-primary-foreground">
                 {totalItems}
               </span>
             )}
           </Link>
+
+          {/* Mobile menu toggle */}
           <button
             type="button"
             onClick={() => setOpen((v) => !v)}
@@ -110,9 +131,10 @@ export function Header({ unit }: Props) {
         </div>
       </div>
 
+      {/* Mobile drawer */}
       {open && (
-        <div className="border-t border-white/10 bg-background/95 md:hidden">
-          <nav className="container-page flex flex-col gap-1 py-4">
+        <div className="border-t border-white/8 bg-background/95 md:hidden">
+          <nav className="mx-auto flex max-w-7xl flex-col gap-1 px-4 py-4">
             {links.map((l) => (
               <Link
                 key={l.href}
@@ -146,7 +168,7 @@ export function Header({ unit }: Props) {
               onClick={() => setOpen(false)}
               className="mt-1 rounded-xl px-3 py-2 text-xs text-muted-foreground hover:bg-white/5"
             >
-              Trocar de unidade
+              Mudar de unidade
             </Link>
           </nav>
         </div>

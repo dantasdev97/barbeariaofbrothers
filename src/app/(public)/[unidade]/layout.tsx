@@ -4,6 +4,7 @@ import { getUnitBySlug } from "@/lib/data";
 import { buildLocalBusinessJsonLd, buildUnitMetadata } from "@/lib/seo";
 import { Header } from "@/components/public/header";
 import { Footer } from "@/components/public/footer";
+import { FloatingCTA } from "@/components/public/floating-cta";
 
 type Params = { unidade: string };
 
@@ -38,6 +39,7 @@ export default async function UnitLayout({
       <Header unit={unit} />
       <main className="flex-1">{children}</main>
       <Footer unit={unit} />
+      <FloatingCTA unit={unit} />
     </>
   );
 }

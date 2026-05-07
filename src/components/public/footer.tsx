@@ -13,39 +13,51 @@ type Props = { unit: UnitRow };
 
 export function Footer({ unit }: Props) {
   const base = `/${unit.slug}`;
+  const unitNum =
+    unit.name.replace(/\D/g, "") || unit.slug.replace(/\D/g, "") || "1";
+
   return (
-    <footer className="mt-24 border-t border-white/10 bg-bg-surface">
-      <div className="container-page grid gap-8 py-12 md:grid-cols-4">
+    <footer className="mt-0 bg-[#0b1115]">
+      {/* ── Big CTA strip ── */}
+      <div className="border-b border-white/10 px-4 py-16 text-center sm:px-6">
+        <h2 className="font-heading text-4xl font-semibold leading-tight tracking-tight text-white sm:text-5xl">
+          Pronto para o próximo corte?
+        </h2>
+        {unit.buk_url && (
+          <a
+            href={unit.buk_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-8 inline-flex items-center gap-3 rounded-full bg-brand px-8 py-4 text-[17px] font-semibold text-primary-foreground transition hover:bg-brand-hover"
+          >
+            Agendar agora
+            <span>→</span>
+          </a>
+        )}
+      </div>
+
+      {/* ── 4-col grid ── */}
+      <div className="mx-auto grid max-w-7xl gap-10 px-4 py-16 sm:px-6 md:grid-cols-4">
+        {/* Brand */}
         <div>
           <Image
             src="/logo.png"
             alt="Barbearia Of Brothers"
             width={56}
             height={56}
-            className="h-14 w-auto"
+            className="h-14 w-auto brightness-0 invert"
           />
-          <p className="mt-4 text-sm text-muted-foreground">
-            Corte, barba e estilo desde 2012.
+          <p className="mt-4 text-[13px] text-white/60">
+            Barbearia Brothers · Desde 2012
           </p>
         </div>
 
+        {/* Unit info */}
         <div>
-          <h4 className="mb-3 font-heading text-sm uppercase tracking-wider text-foreground">
-            Navegação
+          <h4 className="mb-3 font-heading text-[14px] font-semibold uppercase tracking-wider text-white">
+            Unidade {unitNum}
           </h4>
-          <ul className="space-y-2 text-sm text-muted-foreground">
-            <li><Link className="hover:text-brand" href={base}>Início</Link></li>
-            <li><Link className="hover:text-brand" href={`${base}/barbeiros`}>Barbeiros</Link></li>
-            <li><Link className="hover:text-brand" href={`${base}/produtos`}>Produtos</Link></li>
-            <li><Link className="hover:text-brand" href={`${base}/contato`}>Contacto</Link></li>
-          </ul>
-        </div>
-
-        <div>
-          <h4 className="mb-3 font-heading text-sm uppercase tracking-wider text-foreground">
-            Contacto
-          </h4>
-          <ul className="space-y-2 text-sm text-muted-foreground">
+          <ul className="space-y-2 text-sm text-white/70">
             {unit.address && (
               <li className="flex items-start gap-2">
                 <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-brand" />
@@ -53,32 +65,61 @@ export function Footer({ unit }: Props) {
               </li>
             )}
             {unit.phone && (
-              <li className="flex items-center gap-2">
-                <Phone className="h-4 w-4 text-brand" />
-                <a href={`tel:${unit.phone}`} className="hover:text-brand">
+              <li>
+                <a
+                  href={`tel:${unit.phone}`}
+                  className="flex items-center gap-2 transition hover:text-brand"
+                >
+                  <Phone className="h-4 w-4 text-brand" />
                   {formatPhonePT(unit.phone)}
                 </a>
               </li>
             )}
             {unit.whatsapp && (
-              <li className="flex items-center gap-2">
-                <MessageCircle className="h-4 w-4 text-brand" />
+              <li>
                 <a
                   href={`https://wa.me/${unit.whatsapp.replace(/\D/g, "")}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="hover:text-brand"
+                  className="flex items-center gap-2 transition hover:text-brand"
                 >
-                  WhatsApp
+                  <MessageCircle className="h-4 w-4 text-brand" />
+                  WhatsApp · {unit.whatsapp}
                 </a>
               </li>
             )}
+            <li className="pt-1 text-white/50">Seg — Sáb · 09:30 — 19:30</li>
           </ul>
         </div>
 
+        {/* Navigation */}
         <div>
-          <h4 className="mb-3 font-heading text-sm uppercase tracking-wider text-foreground">
-            Redes sociais
+          <h4 className="mb-3 font-heading text-[14px] font-semibold uppercase tracking-wider text-white">
+            Navegar
+          </h4>
+          <ul className="space-y-2 text-sm text-white/70">
+            {[
+              { href: base, label: "Início" },
+              { href: `${base}/barbeiros`, label: "Barbeiros" },
+              { href: `${base}/produtos`, label: "Produtos" },
+              { href: `${base}/contato`, label: "Contacto" },
+            ].map((l) => (
+              <li key={l.href}>
+                <Link
+                  href={l.href}
+                  className="transition hover:text-brand"
+                >
+                  {l.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Social */}
+        <div>
+          <h4 className="mb-3 font-heading text-[14px] font-semibold uppercase tracking-wider text-white">
+            Social
           </h4>
           <div className="flex gap-2">
             {unit.socials?.instagram && (
@@ -87,7 +128,7 @@ export function Footer({ unit }: Props) {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Instagram"
-                className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/5 text-foreground transition hover:bg-brand hover:text-primary-foreground"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/5 text-white/70 transition hover:bg-brand hover:text-primary-foreground"
               >
                 <InstagramIcon className="h-4 w-4" />
               </a>
@@ -98,7 +139,7 @@ export function Footer({ unit }: Props) {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Facebook"
-                className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/5 text-foreground transition hover:bg-brand hover:text-primary-foreground"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/5 text-white/70 transition hover:bg-brand hover:text-primary-foreground"
               >
                 <FacebookIcon className="h-4 w-4" />
               </a>
@@ -109,7 +150,7 @@ export function Footer({ unit }: Props) {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="TikTok"
-                className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/5 text-foreground transition hover:bg-brand hover:text-primary-foreground"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/5 text-white/70 transition hover:bg-brand hover:text-primary-foreground"
               >
                 <TikTokIcon className="h-4 w-4" />
               </a>
@@ -118,12 +159,11 @@ export function Footer({ unit }: Props) {
         </div>
       </div>
 
-      <div className="border-t border-white/5">
-        <div className="container-page flex flex-col items-center justify-between gap-2 py-6 text-xs text-muted-foreground sm:flex-row">
-          <span>© {new Date().getFullYear()} Barbearia Of Brothers. Todos os direitos reservados.</span>
-          <Link href="/" className="hover:text-brand">
-            Trocar de unidade
-          </Link>
+      {/* ── Bottom bar ── */}
+      <div className="border-t border-white/8">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-4 py-6 text-[13px] text-white/40 sm:flex-row sm:px-6">
+          <span>© {new Date().getFullYear()} Barbearia Brothers. Todos os direitos reservados.</span>
+          <span>Feito com ✂ em Leiria</span>
         </div>
       </div>
     </footer>
