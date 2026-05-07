@@ -66,7 +66,7 @@ export default function RootLayout({
       className={`${poppins.variable} ${spaceGrotesk.variable} dark h-full`}
       suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col bg-background text-foreground">
+      <body className="min-h-full flex flex-col bg-background text-foreground" suppressHydrationWarning>
         {children}
         <Toaster
           theme="dark"

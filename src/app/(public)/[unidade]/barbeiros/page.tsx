@@ -2,17 +2,31 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Scissors } from "lucide-react";
-import {
-  FacebookIcon,
-  InstagramIcon,
-} from "@/components/public/social-icons";
 import { getBarbersByUnit, getUnitBySlug } from "@/lib/data";
 import { buildUnitMetadata } from "@/lib/seo";
 import { BookingButton } from "@/components/public/booking-button";
 import { TrackPageView } from "@/components/public/track-page-view";
+import {
+  FacebookIcon,
+  InstagramIcon,
+} from "@/components/public/social-icons";
 
 type Params = { unidade: string };
+
+const BARBER_GRADIENTS = [
+  "linear-gradient(135deg, #1a1410, #2d2218)",
+  "linear-gradient(135deg, #2d1a0a, #4a2e15)",
+  "linear-gradient(135deg, #0a1f2d, #1a3d4f)",
+  "linear-gradient(135deg, #1a2d0a, #2e4a15)",
+  "linear-gradient(135deg, #0a142d, #15254a)",
+  "linear-gradient(135deg, #2d0a1a, #4a1530)",
+];
+
+function getInitials(name: string): string {
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
 
 export async function generateMetadata({
   params,
@@ -24,7 +38,7 @@ export async function generateMetadata({
   if (!unit) return {};
   return buildUnitMetadata(unit, {
     title: `Barbeiros — ${unit.name}`,
-    description: `Conheça a equipa de ${unit.name}.`,
+    description: `Conheça a equipa de ${unit.name}. Profissionais certificados, prontos para o atender.`,
     path: `/${unit.slug}/barbeiros`,
   });
 }
@@ -42,93 +56,134 @@ export default async function BarbeirosPage({
   return (
     <>
       <TrackPageView unitId={unit.id} />
-      <section className="container-page py-12 sm:py-16">
-        <div className="mb-10 max-w-2xl">
-          <span className="text-xs uppercase tracking-[0.2em] text-brand">
-            A nossa equipa
-          </span>
-          <h1 className="mt-2 font-heading text-4xl font-semibold sm:text-5xl">
-            Barbeiros
-          </h1>
-          <p className="mt-3 text-muted-foreground">
-            Profissionais com anos de experiência, prontos para o atender.
+
+      {/* ── Page header ── */}
+      <section className="border-b border-white/8 px-4 py-20 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl">
+          <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-brand">
+            A equipa
           </p>
+          <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h1 className="font-heading text-5xl font-semibold leading-tight tracking-tight sm:text-6xl">
+                Os nossos barbeiros.
+              </h1>
+              <p className="mt-4 max-w-xl text-[17px] text-muted-foreground">
+                Profissionais certificados com anos de experiência. Escolhe um e
+                agenda diretamente online.
+              </p>
+            </div>
+            <BookingButton
+              unit={unit}
+              className="shrink-0 rounded-full px-7 py-3.5 text-[15px]"
+            />
+          </div>
         </div>
+      </section>
 
-        {barbers.length === 0 ? (
-          <div className="rounded-2xl border border-white/10 bg-bg-surface p-10 text-center text-muted-foreground">
-            Em breve a nossa equipa estará disponível aqui.
-          </div>
-        ) : (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {barbers.map((b) => (
-              <article
-                key={b.id}
-                className="group flex flex-col overflow-hidden rounded-3xl border border-white/10 bg-bg-surface transition hover:-translate-y-1 hover:border-brand/40 hover:shadow-premium-lg"
-              >
-                <Link
-                  href={`/${unit.slug}/barbeiros/${b.slug}`}
-                  className="relative aspect-[4/5] overflow-hidden"
-                >
-                  {b.photo_url ? (
-                    <Image
-                      src={b.photo_url}
-                      alt={b.name}
-                      fill
-                      sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-                      className="object-cover transition duration-500 group-hover:scale-105"
-                    />
-                  ) : (
-                    <div className="flex h-full items-center justify-center bg-gradient-to-br from-bg-surface to-background">
-                      <Scissors className="h-12 w-12 text-brand" />
-                    </div>
-                  )}
-                </Link>
-                <div className="flex flex-1 flex-col gap-3 p-5">
-                  <div>
-                    <h3 className="font-heading text-xl font-semibold">{b.name}</h3>
-                    {b.speciality && (
-                      <p className="mt-1 text-sm text-muted-foreground">
-                        {b.speciality}
-                      </p>
-                    )}
-                  </div>
+      {/* ── Barbers grid ── */}
+      <section className="px-4 py-20 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl">
+          {barbers.length === 0 ? (
+            <div className="rounded-2xl border border-white/10 bg-card p-16 text-center">
+              <p className="text-lg text-muted-foreground">
+                Em breve a nossa equipa estará disponível aqui.
+              </p>
+            </div>
+          ) : (
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {barbers.map((b, i) => {
+                const gradient = BARBER_GRADIENTS[i % BARBER_GRADIENTS.length];
+                const initials = getInitials(b.name);
+                const firstName = b.name.split(" ")[0];
 
-                  {(b.socials?.instagram || b.socials?.facebook) && (
-                    <div className="flex gap-2">
-                      {b.socials?.instagram && (
-                        <a
-                          href={b.socials.instagram}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          aria-label="Instagram"
-                          className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/5 transition hover:bg-brand hover:text-primary-foreground"
-                        >
-                          <InstagramIcon className="h-3.5 w-3.5" />
-                        </a>
+                return (
+                  <article
+                    key={b.id}
+                    className="group overflow-hidden rounded-2xl border border-white/10 bg-card transition-all duration-300 hover:-translate-y-1 hover:border-brand/20 hover:shadow-[0_24px_50px_-24px_rgba(0,0,0,0.6)]"
+                  >
+                    {/* Photo / initials */}
+                    <Link
+                      href={`/${unit.slug}/barbeiros/${b.slug}`}
+                      className="relative flex aspect-[4/5] items-center justify-center overflow-hidden"
+                      style={{ background: gradient }}
+                    >
+                      <div
+                        className="absolute inset-0"
+                        style={{
+                          backgroundImage:
+                            "repeating-linear-gradient(45deg, transparent 0 12px, rgba(255,255,255,0.05) 12px 13px)",
+                        }}
+                      />
+                      {b.photo_url ? (
+                        <Image
+                          src={b.photo_url}
+                          alt={b.name}
+                          fill
+                          sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                          className="object-cover transition duration-500 group-hover:scale-105"
+                        />
+                      ) : (
+                        <span className="relative font-heading text-[96px] font-bold tracking-tighter text-white/90">
+                          {initials}
+                        </span>
                       )}
-                      {b.socials?.facebook && (
-                        <a
-                          href={b.socials.facebook}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          aria-label="Facebook"
-                          className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/5 transition hover:bg-brand hover:text-primary-foreground"
-                        >
-                          <FacebookIcon className="h-3.5 w-3.5" />
-                        </a>
-                      )}
-                    </div>
-                  )}
+                    </Link>
 
-                  <div className="mt-auto pt-2">
-                    <BookingButton unit={unit} barber={b} className="w-full" />
-                  </div>
-                </div>
-              </article>
-            ))}
-          </div>
-        )}
+                    {/* Card body */}
+                    <div className="p-6">
+                      {b.speciality && (
+                        <span className="mb-3 inline-flex items-center rounded-full bg-brand/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-brand">
+                          {b.speciality}
+                        </span>
+                      )}
+                      <h3 className="font-heading text-[26px] font-semibold tracking-tight">
+                        {b.name}
+                      </h3>
+                      {b.description && (
+                        <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">
+                          {b.description}
+                        </p>
+                      )}
+                      <div className="mt-5 flex items-center justify-between gap-3">
+                        <BookingButton
+                          unit={unit}
+                          barber={b}
+                          label={`Agendar com ${firstName}`}
+                          className="rounded-full px-4 py-2 text-sm"
+                        />
+                        <div className="flex gap-2">
+                          {b.socials?.instagram && (
+                            <a
+                              href={b.socials.instagram}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              aria-label="Instagram"
+                              className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/5 text-white/60 transition hover:bg-brand hover:text-primary-foreground"
+                            >
+                              <InstagramIcon className="h-3.5 w-3.5" />
+                            </a>
+                          )}
+                          {b.socials?.facebook && (
+                            <a
+                              href={b.socials.facebook}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              aria-label="Facebook"
+                              className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/5 text-white/60 transition hover:bg-brand hover:text-primary-foreground"
+                            >
+                              <FacebookIcon className="h-3.5 w-3.5" />
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </section>
     </>
   );

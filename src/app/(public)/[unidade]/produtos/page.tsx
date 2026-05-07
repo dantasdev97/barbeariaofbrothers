@@ -24,7 +24,7 @@ export async function generateMetadata({
   if (!unit) return {};
   return buildUnitMetadata(unit, {
     title: `Produtos — ${unit.name}`,
-    description: `Os produtos que usamos e recomendamos em ${unit.name}.`,
+    description: `Os produtos que usamos e recomendamos em ${unit.name}. Encomenda via WhatsApp.`,
     path: `/${unit.slug}/produtos`,
   });
 }
@@ -56,45 +56,62 @@ export default async function ProdutosPage({
   return (
     <>
       <TrackPageView unitId={unit.id} />
-      <section className="container-page py-12 sm:py-16">
-        <div className="mb-10 max-w-2xl">
-          <span className="text-xs uppercase tracking-[0.2em] text-brand">
+
+      {/* ── Page header ── */}
+      <section className="border-b border-white/8 px-4 py-20 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl">
+          <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-brand">
             Loja
-          </span>
-          <h1 className="mt-2 font-heading text-4xl font-semibold sm:text-5xl">
-            Produtos
+          </p>
+          <h1 className="font-heading text-5xl font-semibold leading-tight tracking-tight sm:text-6xl">
+            Produtos profissionais.
           </h1>
-          <p className="mt-3 text-muted-foreground">
-            Encomende via WhatsApp e levante na barbearia.
+          <p className="mt-4 max-w-xl text-[17px] text-muted-foreground">
+            Os mesmos produtos que usamos no salão. Encomenda via WhatsApp e
+            levanta na unidade ou recebe em casa.
           </p>
         </div>
+      </section>
 
-        {products.length === 0 ? (
-          <div className="rounded-2xl border border-white/10 bg-bg-surface p-10 text-center text-muted-foreground">
-            Em breve novos produtos.
-          </div>
-        ) : (
-          <div className="space-y-12">
-            {grouped.map(({ category, items }) =>
-              items.length === 0 ? null : (
-                <div key={category?.id ?? "all"}>
-                  {category && (
-                    <h2 className="mb-5 font-heading text-2xl font-semibold">
-                      {category.name}
-                    </h2>
-                  )}
-                  <ProductGrid unitSlug={unit.slug} items={items} />
+      {/* ── Products ── */}
+      <section className="px-4 py-20 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl">
+          {products.length === 0 ? (
+            <div className="rounded-2xl border border-white/10 bg-card p-16 text-center">
+              <ShoppingBag className="mx-auto mb-4 h-10 w-10 text-muted-foreground" />
+              <p className="text-lg text-muted-foreground">
+                Em breve novos produtos disponíveis.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-16">
+              {grouped.map(({ category, items }) =>
+                items.length === 0 ? null : (
+                  <div key={category?.id ?? "all"}>
+                    {category && (
+                      <div className="mb-8 flex items-center gap-4">
+                        <h2 className="font-heading text-2xl font-semibold">
+                          {category.name}
+                        </h2>
+                        <div className="flex-1 border-t border-white/8" />
+                      </div>
+                    )}
+                    <ProductGrid unitSlug={unit.slug} items={items} />
+                  </div>
+                ),
+              )}
+              {orphans.length > 0 && (
+                <div>
+                  <div className="mb-8 flex items-center gap-4">
+                    <h2 className="font-heading text-2xl font-semibold">Outros</h2>
+                    <div className="flex-1 border-t border-white/8" />
+                  </div>
+                  <ProductGrid unitSlug={unit.slug} items={orphans} />
                 </div>
-              ),
-            )}
-            {orphans.length > 0 && (
-              <div>
-                <h2 className="mb-5 font-heading text-2xl font-semibold">Outros</h2>
-                <ProductGrid unitSlug={unit.slug} items={orphans} />
-              </div>
-            )}
-          </div>
-        )}
+              )}
+            </div>
+          )}
+        </div>
       </section>
     </>
   );
@@ -113,33 +130,46 @@ function ProductGrid({
         <Link
           key={p.id}
           href={`/${unitSlug}/produtos/${p.slug}`}
-          className="group flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-bg-surface transition hover:-translate-y-1 hover:border-brand/40 hover:shadow-premium"
+          className="group flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-card transition-all duration-200 hover:-translate-y-1 hover:border-brand/20 hover:shadow-[0_24px_50px_-24px_rgba(0,0,0,0.5)]"
         >
-          <div className="relative aspect-square bg-gradient-to-br from-bg-surface to-background">
+          {/* Image */}
+          <div className="relative aspect-square overflow-hidden bg-[#1f2937]">
             {p.image_url ? (
               <Image
                 src={p.image_url}
                 alt={p.name}
                 fill
                 sizes="(min-width: 1024px) 25vw, 50vw"
-                className="object-cover transition duration-500 group-hover:scale-105"
+                className="object-contain p-6 transition duration-300 group-hover:scale-105 drop-shadow-[0_12px_24px_rgba(0,0,0,0.4)]"
               />
             ) : (
               <div className="flex h-full items-center justify-center">
-                <ShoppingBag className="h-10 w-10 text-brand" />
+                <ShoppingBag className="h-12 w-12 text-white/10" />
               </div>
             )}
           </div>
-          <div className="flex flex-1 flex-col gap-1 p-4">
-            <h3 className="font-heading text-base font-semibold">{p.name}</h3>
+
+          {/* Body */}
+          <div className="flex flex-1 flex-col p-5">
+            <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+              {p.name.split(" ")[0].toUpperCase()}
+            </p>
+            <h3 className="font-heading text-[18px] font-medium leading-tight tracking-tight">
+              {p.name}
+            </h3>
             {p.description && (
-              <p className="line-clamp-2 text-sm text-muted-foreground">
+              <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">
                 {p.description}
               </p>
             )}
-            <span className="mt-auto pt-2 text-lg font-bold text-brand">
-              {formatPrice(p.price_cents)}
-            </span>
+            <div className="mt-auto flex items-center justify-between pt-4">
+              <span className="font-heading text-[26px] font-semibold tracking-tight">
+                {formatPrice(p.price_cents)}
+              </span>
+              <span className="inline-flex items-center gap-1 rounded-full bg-brand px-4 py-1.5 text-sm font-medium text-primary-foreground transition group-hover:bg-brand-hover">
+                Ver →
+              </span>
+            </div>
           </div>
         </Link>
       ))}
