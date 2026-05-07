@@ -1,36 +1,137 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Barbearia Of Brothers
 
-## Getting Started
+Plataforma web premium para a **Barbearia Of Brothers** — multi-unidade, agendamentos via Buk.pt, loja com checkout via WhatsApp, e painel administrativo completo.
 
-First, run the development server:
+> **Identidade**: dark, premium, masculina · verde `#22c55e` sobre fundo `#1D252B` · *Since 2012*.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Stack
+
+- **Next.js 16** (App Router · Turbopack · TypeScript)
+- **TailwindCSS v4** + **shadcn/ui** + **Framer Motion**
+- **Supabase** (Auth + Postgres + Storage + RLS)
+- **Vercel Analytics** + tabela `events` (analytics próprio)
+- Forms: `react-hook-form` + `zod`
+- Estado: `zustand` (carrinho persistente, unidade ativa)
+
+## Estrutura
+
+```
+src/
+├── app/
+│   ├── (public)/[unidade]/        # site público multi-unidade
+│   ├── admin/                     # painel admin (auth-gated)
+│   ├── login/
+│   ├── api/{analytics, og/[unit]} # eventos + OG dinâmica
+│   ├── sitemap.ts, robots.ts
+│   └── page.tsx                   # landing → escolha de unidade
+├── components/
+│   ├── ui/                        # shadcn primitives
+│   ├── public/                    # Header, Footer, UnitPicker, Cards, ...
+│   └── admin/                     # Sidebar, MetricCard
+├── lib/
+│   ├── supabase/{client,server,admin,public}.ts
+│   ├── data.ts, admin-actions.ts
+│   ├── analytics.ts, whatsapp.ts, seo.ts, utils.ts
+├── hooks/{useCart,useUnidade}.ts
+├── proxy.ts                       # Next.js 16 proxy (auth + cookies)
+└── types/database.types.ts
+supabase/
+├── migrations/0001_init.sql       # schema + RLS + buckets
+└── seed.sql                       # 2 unidades + sample data
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Setup local
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 1. Variáveis de ambiente
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+cp .env.example .env.local
+```
 
-## Learn More
+Preencha:
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
+NEXT_PUBLIC_SUPABASE_URL=https://YOUR.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+SUPABASE_SERVICE_ROLE_KEY=...
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 2. Provisionar Supabase via Vercel Marketplace (recomendado)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npm i -g vercel
+vercel login
+vercel link --project barbearia-brothers
+vercel integration add supabase
+vercel env pull .env.local --yes
+```
 
-## Deploy on Vercel
+Ou crie o projeto manualmente em [supabase.com](https://supabase.com) e copie as keys.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### 3. Aplicar a migração
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+No SQL editor do Supabase Dashboard, cole o conteúdo de `supabase/migrations/0001_init.sql` e execute.
+Em seguida, opcionalmente o `supabase/seed.sql` para criar 2 unidades de exemplo.
+
+### 4. Criar o admin
+
+No Supabase Dashboard → **Authentication → Users → Add user** com email/password.
+Depois, no SQL editor:
+
+```sql
+insert into public.profiles (id, role)
+values ('<auth_user_id>', 'super_admin');
+```
+
+### 5. Correr
+
+```bash
+npm install
+npm run dev
+```
+
+Abre http://localhost:3000.
+
+## Comandos
+
+| Comando | O que faz |
+|---|---|
+| `npm run dev` | Servidor de desenvolvimento (Turbopack) |
+| `npm run build` | Build de produção |
+| `npm run start` | Servidor de produção local |
+| `npm run lint` | ESLint |
+
+## Deploy (Vercel)
+
+1. `vercel link`
+2. Adicionar as env vars na dashboard ou via Marketplace (Supabase).
+3. `vercel deploy --prod` (ou push para `main`).
+
+A configuração `next.config.ts` já cobre `images.remotePatterns` para Supabase Storage e `optimizePackageImports` para `lucide-react` e `framer-motion`.
+
+## Funcionalidades
+
+- ✅ Multi-unidade (cookie `unit_slug` + escolha persistida)
+- ✅ Header/Footer dinâmicos por unidade
+- ✅ Catálogo de barbeiros (lista + detalhe + agendamento direto)
+- ✅ Catálogo de produtos (lista + detalhe + carrinho)
+- ✅ Checkout via WhatsApp (mensagem pré-formatada)
+- ✅ JSON-LD `HairSalon` por unidade
+- ✅ OG images dinâmicas por unidade (`/api/og/[unit]`)
+- ✅ Sitemap + robots
+- ✅ Painel admin: Dashboard, Unidades, Barbeiros, Produtos, Categorias, SEO/Configurações
+- ✅ Analytics customizado (page_view, booking_click, product_view, barber_view, whatsapp_checkout, add_to_cart)
+- ✅ Auth via Supabase + middleware proxy guard
+- ✅ Identidade dark forçada (Space Grotesk + Poppins)
+
+## Próximos passos sugeridos
+
+- Activar **Cache Components** (`cacheComponents: true` em `next.config.ts`) e wrappar fetches dinâmicos em `<Suspense>` para PPR.
+- Adicionar upload de imagens diretamente nos forms admin (já existe `lib/admin-actions.ts → uploadImage`).
+- Adicionar gráficos no dashboard com `recharts` (já instalado).
+- Animações Framer Motion em transições de página.
+
+## Licença
+
+Privado — Barbearia Of Brothers © 2012–presente.

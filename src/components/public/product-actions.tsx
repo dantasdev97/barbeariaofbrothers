@@ -1,0 +1,119 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Minus, Plus, ShoppingBag } from "lucide-react";
+import { toast } from "sonner";
+import type { UnitRow } from "@/types/database.types";
+import { Button } from "@/components/ui/button";
+import { useCart } from "@/hooks/useCart";
+import { trackEvent } from "@/lib/analytics";
+import { buildSingleProductMessage, whatsappLink } from "@/lib/whatsapp";
+import { cn } from "@/lib/utils";
+
+type ProductLite = {
+  id: string;
+  name: string;
+  slug: string;
+  price_cents: number;
+  image_url: string | null;
+};
+
+type Props = {
+  unit: UnitRow;
+  product: ProductLite;
+  className?: string;
+};
+
+export function ProductActions({ unit, product, className }: Props) {
+  const [qty, setQty] = useState(1);
+  const router = useRouter();
+  const add = useCart((s) => s.add);
+
+  function addToCart() {
+    add(
+      {
+        product_id: product.id,
+        unit_slug: unit.slug,
+        name: product.name,
+        slug: product.slug,
+        price_cents: product.price_cents,
+        image_url: product.image_url,
+      },
+      qty,
+    );
+    trackEvent({
+      type: "add_to_cart",
+      unit_id: unit.id,
+      ref_id: product.id,
+      meta: { qty },
+    });
+    toast.success("Adicionado ao carrinho", {
+      description: `${qty}× ${product.name}`,
+      action: {
+        label: "Ver carrinho",
+        onClick: () => router.push(`/${unit.slug}/carrinho`),
+      },
+    });
+  }
+
+  function buyNow() {
+    if (!unit.whatsapp) {
+      toast.error("WhatsApp não configurado para esta unidade.");
+      return;
+    }
+    const msg = buildSingleProductMessage(product, unit);
+    trackEvent({
+      type: "whatsapp_checkout",
+      unit_id: unit.id,
+      ref_id: product.id,
+      meta: { mode: "single", qty },
+    });
+    window.open(whatsappLink(unit.whatsapp, msg), "_blank", "noopener");
+  }
+
+  return (
+    <div className={cn("flex flex-col gap-3", className)}>
+      <div className="flex items-center gap-3">
+        <div className="inline-flex items-center rounded-full border border-white/15 bg-white/5">
+          <button
+            type="button"
+            onClick={() => setQty((q) => Math.max(1, q - 1))}
+            className="inline-flex h-10 w-10 items-center justify-center text-muted-foreground hover:text-foreground"
+            aria-label="Diminuir"
+          >
+            <Minus className="h-4 w-4" />
+          </button>
+          <span className="w-10 text-center text-sm font-semibold">{qty}</span>
+          <button
+            type="button"
+            onClick={() => setQty((q) => q + 1)}
+            className="inline-flex h-10 w-10 items-center justify-center text-muted-foreground hover:text-foreground"
+            aria-label="Aumentar"
+          >
+            <Plus className="h-4 w-4" />
+          </button>
+        </div>
+
+        <Button
+          type="button"
+          size="lg"
+          onClick={addToCart}
+          className="flex-1 bg-white/10 text-foreground hover:bg-white/15"
+        >
+          <ShoppingBag className="mr-2 h-4 w-4" />
+          Adicionar ao carrinho
+        </Button>
+      </div>
+
+      <Button
+        type="button"
+        size="lg"
+        onClick={buyNow}
+        className="bg-brand text-primary-foreground shadow-premium hover:bg-brand-hover"
+      >
+        Comprar via WhatsApp
+      </Button>
+    </div>
+  );
+}
