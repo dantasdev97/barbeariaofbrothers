@@ -75,34 +75,43 @@ export default function HomePage() {
           Enquanto isso, agenda online
         </p>
 
-        <div className="flex flex-col items-center gap-3 sm:flex-row">
+        <div className="flex w-full flex-col gap-3 sm:flex-row">
           <a
             href={BUK_1}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2.5 rounded-full bg-[#F39200]/10 px-6 py-3 text-sm font-semibold text-[#F39200] transition hover:bg-[#F39200]/20"
+            className="flex flex-1 flex-col gap-1 rounded-2xl border border-[#F39200]/20 bg-[#F39200]/10 px-6 py-4 text-left transition hover:bg-[#F39200]/20"
           >
-            {/* Scissors icon */}
-            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/>
-              <line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/>
-              <line x1="8.12" y1="8.12" x2="12" y2="12"/>
-            </svg>
-            Agendar · Unidade 1
+            <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#F39200]/60">Unidade 1</span>
+            <span className="font-semibold text-[#F39200]">Barbearia Of Brothers</span>
+            <span className="text-[12px] text-white/40">Av. Nossa Senhora de Fátima 46, Leiria</span>
+            <span className="mt-2 inline-flex items-center gap-1.5 text-sm font-semibold text-[#F39200]">
+              <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/>
+                <line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/>
+                <line x1="8.12" y1="8.12" x2="12" y2="12"/>
+              </svg>
+              Agendar →
+            </span>
           </a>
 
           <a
             href={BUK_2}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2.5 rounded-full bg-[#F39200]/10 px-6 py-3 text-sm font-semibold text-[#F39200] transition hover:bg-[#F39200]/20"
+            className="flex flex-1 flex-col gap-1 rounded-2xl border border-[#F39200]/20 bg-[#F39200]/10 px-6 py-4 text-left transition hover:bg-[#F39200]/20"
           >
-            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/>
-              <line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/>
-              <line x1="8.12" y1="8.12" x2="12" y2="12"/>
-            </svg>
-            Agendar · Unidade 2
+            <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#F39200]/60">Unidade 2</span>
+            <span className="font-semibold text-[#F39200]">Barbearia Of Brothers 2</span>
+            <span className="text-[12px] text-white/40">R. Vale de Lobos 35, Leiria</span>
+            <span className="mt-2 inline-flex items-center gap-1.5 text-sm font-semibold text-[#F39200]">
+              <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/>
+                <line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/>
+                <line x1="8.12" y1="8.12" x2="12" y2="12"/>
+              </svg>
+              Agendar →
+            </span>
           </a>
         </div>
 
