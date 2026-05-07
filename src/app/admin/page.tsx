@@ -1,118 +1,342 @@
-import { Calendar, MapPin, Package, Scissors } from "lucide-react";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { MetricCard } from "@/components/admin/metric-card";
-
 
 export default async function AdminDashboard() {
   const sb = await createClient();
 
+  const todayStr = new Date().toLocaleDateString("pt-PT", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+
   const [
     { count: barbersCount },
     { count: productsCount },
-    { count: unitsCount },
-    { data: bookingsToday },
-    { data: bookings30d },
-    { data: pageViewsToday },
-    { data: topProducts },
-    { data: topBarbers },
+    { count: bookingsTodayCount },
+    { count: bookings30dCount },
+    { count: pageViews30d },
+    { data: recentActivity },
+    { data: topBarberEvents },
+    { data: barbers },
   ] = await Promise.all([
     sb.from("barbers").select("*", { count: "exact", head: true }),
     sb.from("products").select("*", { count: "exact", head: true }),
-    sb.from("units").select("*", { count: "exact", head: true }).eq("active", true),
     sb
       .from("events")
-      .select("id", { count: "exact" })
+      .select("id", { count: "exact", head: true })
       .eq("type", "booking_click")
       .gte("created_at", startOfDayISO()),
     sb
       .from("events")
-      .select("id", { count: "exact" })
+      .select("id", { count: "exact", head: true })
       .eq("type", "booking_click")
       .gte("created_at", daysAgoISO(30)),
     sb
       .from("events")
-      .select("id", { count: "exact" })
+      .select("id", { count: "exact", head: true })
       .eq("type", "page_view")
-      .gte("created_at", startOfDayISO()),
+      .gte("created_at", daysAgoISO(30)),
     sb
       .from("events")
-      .select("ref_id, type")
-      .eq("type", "product_view")
-      .gte("created_at", daysAgoISO(30))
-      .limit(500),
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(6),
     sb
       .from("events")
-      .select("ref_id, type")
+      .select("ref_id")
       .eq("type", "barber_view")
-      .gte("created_at", daysAgoISO(30))
+      .gte("created_at", daysAgoISO(7))
       .limit(500),
+    sb.from("barbers").select("id, name").eq("active", true).limit(20),
   ]);
 
-  const topProductMap = countByRefId(topProducts ?? []);
-  const topBarberMap = countByRefId(topBarbers ?? []);
+  // Build top barbers ranking
+  const barberViewMap = new Map<string, number>();
+  for (const ev of topBarberEvents ?? []) {
+    if (!ev.ref_id) continue;
+    barberViewMap.set(ev.ref_id, (barberViewMap.get(ev.ref_id) ?? 0) + 1);
+  }
+  const barberById = new Map(
+    (barbers ?? []).map((b) => [b.id, b.name as string]),
+  );
+  const topBarbers = Array.from(barberViewMap.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([id, views]) => ({
+      name: barberById.get(id) ?? id.slice(0, 8),
+      views,
+    }));
+  const maxViews = topBarbers[0]?.views ?? 1;
 
   return (
     <div>
-      <header className="mb-10">
-        <h1 className="font-heading text-4xl font-bold">Dashboard</h1>
-        <p className="mt-2 text-base text-muted-foreground">
-          Visão geral das suas barbearias.
-        </p>
-      </header>
+      {/* ── Top bar ── */}
+      <div className="mb-7 flex items-end justify-between gap-6 border-b border-border pb-6">
+        <div>
+          <h1 className="font-heading text-[32px] font-semibold leading-none tracking-tight">
+            Dashboard
+          </h1>
+          <p className="mt-1.5 text-sm text-muted-foreground">
+            Visão geral das duas unidades · {todayStr}
+          </p>
+        </div>
+        <div className="flex shrink-0 gap-2.5">
+          <button
+            type="button"
+            className="inline-flex items-center gap-2 rounded-[10px] border border-border bg-transparent px-4 py-2.5 text-[13px] font-medium text-muted-foreground transition hover:bg-background hover:text-foreground"
+          >
+            ↗ Exportar
+          </button>
+          <Link
+            href="/admin/barbeiros"
+            className="inline-flex items-center gap-2 rounded-[10px] bg-brand px-4 py-2.5 text-[13px] font-medium text-[#0e0a07] transition hover:opacity-90"
+          >
+            + Novo barbeiro
+          </Link>
+        </div>
+      </div>
 
-      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-10">
-        <MetricCard
-          icon={MapPin}
-          label="Unidades activas"
-          value={unitsCount ?? 0}
+      {/* ── Stat cards ── */}
+      <div className="mb-5 grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <StatCard
+          label="Agendamentos · hoje"
+          value={String(bookingsTodayCount ?? 0)}
+          delta={`${bookings30dCount ?? 0} este mês`}
+          color="orange"
+          idx={0}
         />
-        <MetricCard
-          icon={Scissors}
-          label="Barbeiros"
-          value={barbersCount ?? 0}
+        <StatCard
+          label="Visualizações · 30d"
+          value={String(pageViews30d ?? 0)}
+          delta="page views"
+          color="green"
+          idx={1}
         />
-        <MetricCard
-          icon={Package}
+        <StatCard
           label="Produtos"
-          value={productsCount ?? 0}
+          value={String(productsCount ?? 0)}
+          delta="no catálogo"
+          color="blue"
+          idx={2}
         />
-        <MetricCard
-          icon={Calendar}
-          label="Agendamentos (hoje)"
-          value={bookingsToday?.length ?? 0}
-          hint={`${bookings30d?.length ?? 0} nos últimos 30 dias`}
+        <StatCard
+          label="Barbeiros activos"
+          value={String(barbersCount ?? 0)}
+          delta="2 unidades"
+          color="mute"
+          idx={3}
         />
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <div className="rounded-xl border border-white/10 bg-bg-surface p-8">
-          <h2 className="font-heading text-xl font-bold mb-6">
-            Páginas vistas hoje
-          </h2>
-          <p className="text-5xl font-bold text-brand">
-            {pageViewsToday?.length ?? 0}
-          </p>
-          <p className="mt-3 text-sm text-muted-foreground">
-            Eventos do tipo <code className="px-2 py-1 bg-white/5 rounded text-brand">page_view</code> nas últimas 24h.
-          </p>
+      {/* ── Content row ── */}
+      <div className="grid gap-4" style={{ gridTemplateColumns: "2fr 1fr" }}>
+        {/* Activity table */}
+        <div className="overflow-hidden rounded-2xl border border-border bg-bg-surface">
+          <div className="flex items-start justify-between border-b border-border px-6 py-[22px]">
+            <div>
+              <div className="font-heading text-base font-semibold tracking-tight">
+                Atividade recente
+              </div>
+              <div className="mt-0.5 text-[12.5px] text-muted-foreground">
+                Todas as unidades
+              </div>
+            </div>
+          </div>
+
+          {/* Table head */}
+          <div
+            className="grid gap-3 px-6 py-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground"
+            style={{ gridTemplateColumns: "1.6fr 1.2fr 0.6fr 1fr" }}
+          >
+            <div>Tipo</div>
+            <div>Referência</div>
+            <div>Hora</div>
+            <div>Estado</div>
+          </div>
+
+          {(recentActivity ?? []).length === 0 ? (
+            <p className="px-6 py-10 text-sm text-muted-foreground">
+              Sem eventos recentes.
+            </p>
+          ) : (
+            (recentActivity ?? []).map((ev) => {
+              const d = new Date(ev.created_at as string);
+              const timeStr = d.toLocaleTimeString("pt-PT", {
+                hour: "2-digit",
+                minute: "2-digit",
+              });
+              const isBooking = ev.type === "booking_click";
+              return (
+                <div
+                  key={ev.id}
+                  className="grid gap-3 items-center border-t border-border px-6 py-3 text-sm transition hover:bg-background"
+                  style={{ gridTemplateColumns: "1.6fr 1.2fr 0.6fr 1fr" }}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-background text-xs">
+                      {eventIcon(ev.type as string)}
+                    </div>
+                    <span className="text-[13px] font-medium">
+                      {eventLabel(ev.type as string)}
+                    </span>
+                  </div>
+                  <div className="truncate font-mono text-[12.5px] text-muted-foreground">
+                    {ev.ref_id ? ev.ref_id.slice(0, 8) + "…" : "—"}
+                  </div>
+                  <div className="font-mono text-[12.5px] text-muted-foreground">
+                    {timeStr}
+                  </div>
+                  <div>
+                    <span
+                      className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                        isBooking
+                          ? "bg-green-500/10 text-green-400"
+                          : "bg-brand/10 text-brand"
+                      }`}
+                    >
+                      {isBooking ? "● Agendamento" : "◌ Visita"}
+                    </span>
+                  </div>
+                </div>
+              );
+            })
+          )}
         </div>
 
-        <div className="rounded-xl border border-white/10 bg-bg-surface p-8">
-          <h2 className="font-heading text-xl font-bold mb-6">
-            Top produtos (30d)
-          </h2>
-          <ListTop entries={topProductMap} empty="Sem visualizações ainda." />
-        </div>
-
-        <div className="rounded-xl border border-white/10 bg-bg-surface p-8">
-          <h2 className="font-heading text-xl font-bold mb-6">
-            Top barbeiros (30d)
-          </h2>
-          <ListTop entries={topBarberMap} empty="Sem visualizações ainda." />
+        {/* Top barbers */}
+        <div className="overflow-hidden rounded-2xl border border-border bg-bg-surface">
+          <div className="border-b border-border px-6 py-[22px]">
+            <div className="font-heading text-base font-semibold tracking-tight">
+              Top barbeiros
+            </div>
+            <div className="mt-0.5 text-[12.5px] text-muted-foreground">
+              Esta semana · visualizações
+            </div>
+          </div>
+          <div className="px-5 py-4">
+            {topBarbers.length === 0 ? (
+              <p className="py-8 text-center text-sm text-muted-foreground">
+                Sem dados esta semana.
+              </p>
+            ) : (
+              topBarbers.map((b, i) => (
+                <div
+                  key={b.name}
+                  className={`flex gap-3.5 py-3.5 ${
+                    i < topBarbers.length - 1 ? "border-b border-border" : ""
+                  }`}
+                >
+                  <div
+                    className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg font-heading text-[13px] font-bold ${
+                      i === 0
+                        ? "bg-brand text-[#0e0a07]"
+                        : "bg-background text-muted-foreground"
+                    }`}
+                  >
+                    {i + 1}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[13.5px] font-medium">{b.name}</div>
+                    <div className="mb-2 mt-0.5 text-[11.5px] text-muted-foreground">
+                      {b.views} visualizações
+                    </div>
+                    <div className="h-1 overflow-hidden rounded-full bg-background">
+                      <div
+                        className="h-full rounded-full bg-brand"
+                        style={{
+                          width: `${Math.round((b.views / maxViews) * 100)}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         </div>
       </div>
     </div>
   );
+}
+
+function StatCard({
+  label,
+  value,
+  delta,
+  color,
+  idx,
+}: {
+  label: string;
+  value: string;
+  delta: string;
+  color: "orange" | "green" | "blue" | "mute";
+  idx: number;
+}) {
+  const deltaClass = {
+    orange: "bg-brand/15 text-brand",
+    green: "bg-green-500/15 text-green-400",
+    blue: "bg-blue-500/15 text-blue-400",
+    mute: "bg-background text-muted-foreground",
+  }[color];
+
+  const barClass = {
+    orange: "bg-brand/50",
+    green: "bg-green-500/50",
+    blue: "bg-blue-500/50",
+    mute: "bg-border",
+  }[color];
+
+  const bars = Array.from({ length: 20 }, (_, j) => ({
+    height: `${20 + Math.abs(Math.sin(idx * 3 + j) * 80)}%`,
+  }));
+
+  return (
+    <div className="relative overflow-hidden rounded-2xl border border-border bg-bg-surface p-5">
+      <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+        {label}
+      </div>
+      <div className="my-3 flex items-baseline gap-3">
+        <div className="font-heading text-[32px] font-semibold leading-none tracking-tight">
+          {value}
+        </div>
+        <div className={`rounded-full px-2 py-0.5 text-[12px] font-semibold ${deltaClass}`}>
+          {delta}
+        </div>
+      </div>
+      <div className="flex h-8 items-end gap-0.5">
+        {bars.map((b, j) => (
+          <div
+            key={j}
+            className={`flex-1 rounded-[1px] ${barClass}`}
+            style={{ height: b.height }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function eventLabel(type: string) {
+  const map: Record<string, string> = {
+    booking_click: "Agendamento",
+    page_view: "Visita",
+    product_view: "Produto visto",
+    barber_view: "Barbeiro visto",
+    whatsapp_checkout: "WhatsApp checkout",
+  };
+  return map[type] ?? type;
+}
+
+function eventIcon(type: string) {
+  const map: Record<string, string> = {
+    booking_click: "📅",
+    page_view: "👁",
+    product_view: "🛍",
+    barber_view: "✂",
+    whatsapp_checkout: "💬",
+  };
+  return map[type] ?? "•";
 }
 
 function startOfDayISO() {
@@ -120,47 +344,9 @@ function startOfDayISO() {
   d.setHours(0, 0, 0, 0);
   return d.toISOString();
 }
+
 function daysAgoISO(days: number) {
   const d = new Date();
   d.setDate(d.getDate() - days);
   return d.toISOString();
-}
-function countByRefId(rows: { ref_id: string | null }[]) {
-  const map = new Map<string, number>();
-  for (const r of rows) {
-    if (!r.ref_id) continue;
-    map.set(r.ref_id, (map.get(r.ref_id) ?? 0) + 1);
-  }
-  return Array.from(map.entries())
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5);
-}
-
-function ListTop({
-  entries,
-  empty,
-}: {
-  entries: [string, number][];
-  empty: string;
-}) {
-  if (entries.length === 0)
-    return <p className="text-sm text-muted-foreground">{empty}</p>;
-  return (
-    <ul className="space-y-3">
-      {entries.map(([id, count], idx) => (
-        <li
-          key={id}
-          className="flex items-center justify-between rounded-lg bg-white/[0.03] border border-white/5 px-4 py-3 text-sm hover:bg-white/5 transition"
-        >
-          <div className="flex items-center gap-3">
-            <span className="text-lg font-bold text-brand/60">#{idx + 1}</span>
-            <span className="font-mono text-xs text-muted-foreground">
-              {id.slice(0, 12)}…
-            </span>
-          </div>
-          <span className="font-semibold text-brand text-base">{count}</span>
-        </li>
-      ))}
-    </ul>
-  );
 }
