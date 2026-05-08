@@ -14,14 +14,16 @@ export default async function UnitsPage() {
 
   return (
     <div>
-      <header className="mb-8 flex items-center justify-between gap-4">
+      <header className="mb-7 flex items-end justify-between gap-6 border-b border-border pb-6">
         <div>
-          <h1 className="font-heading text-3xl font-semibold">Unidades</h1>
-          <p className="text-sm text-muted-foreground">
-            Gerir as suas barbearias.
+          <h1 className="font-heading text-[32px] font-semibold leading-none tracking-tight">
+            Unidades
+          </h1>
+          <p className="mt-1.5 text-sm text-muted-foreground">
+            {units?.length ?? 0} barbearia{(units?.length ?? 0) !== 1 ? "s" : ""} · gerir localizações
           </p>
         </div>
-        <Button asChild className="bg-brand text-primary-foreground hover:bg-brand-hover">
+        <Button asChild className="shrink-0 bg-brand text-primary-foreground hover:bg-brand-hover">
           <Link href="/admin/unidades/nova">
             <Plus className="mr-2 h-4 w-4" />
             Nova unidade

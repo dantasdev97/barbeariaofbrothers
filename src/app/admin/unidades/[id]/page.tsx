@@ -1,7 +1,8 @@
+import Link from "next/link";
+import { ChevronLeft } from "lucide-react";
 import { notFound } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { UnitForm } from "../unit-form";
-
 
 export default async function EditUnitPage({
   params,
@@ -18,12 +19,25 @@ export default async function EditUnitPage({
   if (!unit) notFound();
 
   return (
-    <div className="max-w-3xl">
-      <header className="mb-8">
-        <h1 className="font-heading text-3xl font-semibold">{unit.name}</h1>
-        <p className="text-sm text-muted-foreground">Editar unidade.</p>
+    <div>
+      <Link
+        href="/admin/unidades"
+        className="mb-5 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition hover:text-foreground"
+      >
+        <ChevronLeft className="h-4 w-4" />
+        Unidades
+      </Link>
+      <header className="mb-7 border-b border-border pb-6">
+        <h1 className="font-heading text-[32px] font-semibold leading-none tracking-tight">
+          {unit.name}
+        </h1>
+        <p className="mt-1.5 text-sm text-muted-foreground">
+          Editar informações e configurações da unidade.
+        </p>
       </header>
-      <UnitForm initial={unit} />
+      <div className="max-w-3xl">
+        <UnitForm initial={unit} />
+      </div>
     </div>
   );
 }

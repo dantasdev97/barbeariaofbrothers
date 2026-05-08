@@ -69,11 +69,11 @@ export function ProductActions({ unit, product, className }: Props) {
   return (
     <div className={cn("flex flex-col gap-3", className)}>
       <div className="flex items-center gap-3">
-        <div className="inline-flex items-center rounded-full border border-white/15 bg-white/5">
+        <div className="inline-flex items-center rounded-full border border-border bg-bg-surface">
           <button
             type="button"
             onClick={() => setQty((q) => Math.max(1, q - 1))}
-            className="inline-flex h-10 w-10 items-center justify-center text-muted-foreground hover:text-foreground"
+            className="inline-flex h-10 w-10 items-center justify-center text-muted-foreground transition hover:text-foreground"
             aria-label="Diminuir"
           >
             <Minus className="h-4 w-4" />
@@ -82,7 +82,7 @@ export function ProductActions({ unit, product, className }: Props) {
           <button
             type="button"
             onClick={() => setQty((q) => q + 1)}
-            className="inline-flex h-10 w-10 items-center justify-center text-muted-foreground hover:text-foreground"
+            className="inline-flex h-10 w-10 items-center justify-center text-muted-foreground transition hover:text-foreground"
             aria-label="Aumentar"
           >
             <Plus className="h-4 w-4" />
@@ -93,7 +93,7 @@ export function ProductActions({ unit, product, className }: Props) {
           type="button"
           size="lg"
           onClick={addToCart}
-          className="flex-1 bg-white/10 text-foreground hover:bg-white/15"
+          className="flex-1 bg-bg-surface text-foreground hover:bg-secondary"
         >
           <ShoppingBag className="mr-2 h-4 w-4" />
           Adicionar ao carrinho

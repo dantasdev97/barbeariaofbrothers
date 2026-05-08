@@ -202,7 +202,7 @@ export default async function ContatoPage({
               <Clock className="h-3.5 w-3.5" />
               Horário
             </div>
-            <ul className="divide-y divide-white/5">
+            <ul className="divide-y divide-border">
               {DAYS.map(([key, label]) => {
                 const slot = unit.hours?.[key];
                 const isOpen = slot?.open && slot?.close;

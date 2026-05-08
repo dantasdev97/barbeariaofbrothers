@@ -8,6 +8,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { saveBarber } from "@/lib/admin-actions";
 import { slugify } from "@/lib/utils";
 
@@ -67,31 +74,44 @@ export function BarberForm({ initial, units }: Props) {
   }
 
   return (
-    <form onSubmit={onSubmit} className="max-w-3xl space-y-6">
-      <fieldset className="rounded-2xl border border-white/10 bg-bg-surface p-6 space-y-4">
+    <form onSubmit={onSubmit} className="max-w-3xl space-y-5">
+      {/* Unidade & Info básica */}
+      <fieldset className="space-y-4 rounded-2xl border border-border bg-bg-surface p-6">
+        <legend className="px-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          Identificação
+        </legend>
+
         <div className="space-y-1.5">
           <Label htmlFor="unit">Unidade</Label>
-          <select
-            id="unit"
-            value={unitId}
-            onChange={(e) => setUnitId(e.target.value)}
-            className="h-9 w-full rounded-md border border-white/10 bg-input px-3 text-sm"
-          >
-            {units.map((u) => (
-              <option key={u.id} value={u.id} className="bg-bg-surface">
-                {u.name}
-              </option>
-            ))}
-          </select>
+          <Select value={unitId} onValueChange={setUnitId}>
+            <SelectTrigger id="unit">
+              <SelectValue placeholder="Selecionar unidade" />
+            </SelectTrigger>
+            <SelectContent>
+              {units.map((u) => (
+                <SelectItem key={u.id} value={u.id}>
+                  {u.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
-            <Label htmlFor="name">Nome</Label>
-            <Input id="name" required value={name} onChange={(e) => setName(e.target.value)} />
+            <Label htmlFor="name">Nome *</Label>
+            <Input
+              id="name"
+              required
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="slug">Slug</Label>
+            <Label htmlFor="slug">
+              Slug{" "}
+              <span className="font-normal text-muted-foreground">(auto)</span>
+            </Label>
             <Input
               id="slug"
               value={slug}
@@ -120,32 +140,73 @@ export function BarberForm({ initial, units }: Props) {
             onChange={(e) => setDescription(e.target.value)}
           />
         </div>
+      </fieldset>
+
+      {/* Media & Booking */}
+      <fieldset className="space-y-4 rounded-2xl border border-border bg-bg-surface p-6">
+        <legend className="px-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          Media & Agendamento
+        </legend>
 
         <div className="space-y-1.5">
           <Label htmlFor="photo">Foto (URL)</Label>
-          <Input id="photo" value={photoUrl} onChange={(e) => setPhotoUrl(e.target.value)} />
+          <Input
+            id="photo"
+            value={photoUrl}
+            placeholder="https://…"
+            onChange={(e) => setPhotoUrl(e.target.value)}
+          />
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="buk">Buk URL (específico do barbeiro)</Label>
-          <Input id="buk" value={bukUrl} onChange={(e) => setBukUrl(e.target.value)} />
+          <Label htmlFor="buk">Buk URL (específico deste barbeiro)</Label>
+          <Input
+            id="buk"
+            value={bukUrl}
+            placeholder="https://buk.pt/…"
+            onChange={(e) => setBukUrl(e.target.value)}
+          />
         </div>
+      </fieldset>
 
+      {/* Redes sociais */}
+      <fieldset className="space-y-4 rounded-2xl border border-border bg-bg-surface p-6">
+        <legend className="px-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          Redes sociais
+        </legend>
         <div className="grid gap-4 sm:grid-cols-3">
           <div className="space-y-1.5">
             <Label htmlFor="ig">Instagram</Label>
-            <Input id="ig" value={instagram} onChange={(e) => setInstagram(e.target.value)} />
+            <Input
+              id="ig"
+              value={instagram}
+              onChange={(e) => setInstagram(e.target.value)}
+            />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="fb">Facebook</Label>
-            <Input id="fb" value={facebook} onChange={(e) => setFacebook(e.target.value)} />
+            <Input
+              id="fb"
+              value={facebook}
+              onChange={(e) => setFacebook(e.target.value)}
+            />
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="tk">TikTok</Label>
-            <Input id="tk" value={tiktok} onChange={(e) => setTiktok(e.target.value)} />
+            <Input
+              id="tk"
+              value={tiktok}
+              onChange={(e) => setTiktok(e.target.value)}
+            />
           </div>
         </div>
+      </fieldset>
 
+      {/* Configurações */}
+      <fieldset className="space-y-4 rounded-2xl border border-border bg-bg-surface p-6">
+        <legend className="px-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          Configurações
+        </legend>
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
             <Label htmlFor="order">Ordem de exibição</Label>
@@ -156,28 +217,40 @@ export function BarberForm({ initial, units }: Props) {
               onChange={(e) => setOrder(Number(e.target.value))}
             />
           </div>
-          <label className="inline-flex items-center gap-2 self-end pb-2 text-sm">
-            <input
-              type="checkbox"
-              checked={active}
-              onChange={(e) => setActive(e.target.checked)}
-              className="h-4 w-4 rounded border-white/20 bg-white/5 text-brand"
-            />
-            Activo
-          </label>
+          <div className="flex items-end pb-1">
+            <label className="inline-flex cursor-pointer items-center gap-3 text-sm">
+              <div
+                role="checkbox"
+                aria-checked={active}
+                tabIndex={0}
+                onClick={() => setActive((a) => !a)}
+                onKeyDown={(e) => e.key === " " && setActive((a) => !a)}
+                className={`relative h-5 w-9 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2 focus:ring-offset-bg-surface ${
+                  active ? "bg-brand" : "bg-border"
+                }`}
+              >
+                <span
+                  className={`absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${
+                    active ? "translate-x-4" : "translate-x-0"
+                  }`}
+                />
+              </div>
+              Activo (visível no site)
+            </label>
+          </div>
         </div>
       </fieldset>
 
-      <div className="flex gap-2">
+      <div className="flex gap-2 pt-1">
         <Button
           type="submit"
           disabled={pending}
           size="lg"
           className="bg-brand text-primary-foreground hover:bg-brand-hover"
         >
-          {pending ? "A guardar…" : "Guardar"}
+          {pending ? "A guardar…" : "Guardar barbeiro"}
         </Button>
-        <Button type="button" variant="ghost" onClick={() => router.back()}>
+        <Button type="button" variant="ghost" size="lg" onClick={() => router.back()}>
           Cancelar
         </Button>
       </div>

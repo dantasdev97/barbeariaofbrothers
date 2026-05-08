@@ -36,7 +36,7 @@ export function CartView({ unit }: Props) {
   if (!hydrated) {
     return (
       <div className="container-page py-16">
-        <div className="h-8 w-48 animate-pulse rounded bg-white/5" />
+        <div className="h-8 w-48 animate-pulse rounded bg-bg-surface" />
       </div>
     );
   }
@@ -75,7 +75,7 @@ export function CartView({ unit }: Props) {
       </header>
 
       {unitItems.length === 0 ? (
-        <div className="rounded-2xl border border-white/10 bg-bg-surface p-10 text-center">
+        <div className="rounded-2xl border border-border bg-bg-surface p-10 text-center">
           <ShoppingBag className="mx-auto mb-3 h-10 w-10 text-brand" />
           <p className="text-muted-foreground">O seu carrinho está vazio.</p>
           <Button
@@ -91,7 +91,7 @@ export function CartView({ unit }: Props) {
             {unitItems.map((item) => (
               <li
                 key={item.product_id}
-                className="flex gap-4 rounded-2xl border border-white/10 bg-bg-surface p-3 sm:p-4"
+                className="flex gap-4 rounded-2xl border border-border bg-bg-surface p-3 sm:p-4"
               >
                 <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-background sm:h-24 sm:w-24">
                   {item.image_url ? (
@@ -131,7 +131,7 @@ export function CartView({ unit }: Props) {
                   </span>
 
                   <div className="mt-auto flex items-center justify-between">
-                    <div className="inline-flex items-center rounded-full border border-white/15 bg-white/5">
+                    <div className="inline-flex items-center rounded-full border border-border bg-bg-surface">
                       <button
                         type="button"
                         onClick={() =>
@@ -165,14 +165,14 @@ export function CartView({ unit }: Props) {
             ))}
           </ul>
 
-          <aside className="h-fit rounded-2xl border border-white/10 bg-bg-surface p-6">
+          <aside className="h-fit rounded-2xl border border-border bg-bg-surface p-6">
             <h2 className="font-heading text-lg font-semibold">Resumo</h2>
             <dl className="mt-4 space-y-2 text-sm">
               <div className="flex justify-between text-muted-foreground">
                 <dt>Subtotal</dt>
                 <dd>{formatPrice(total)}</dd>
               </div>
-              <div className="flex justify-between border-t border-white/10 pt-3 text-base font-semibold">
+              <div className="flex justify-between border-t border-border pt-3 text-base font-semibold">
                 <dt>Total</dt>
                 <dd className="text-brand">{formatPrice(total)}</dd>
               </div>

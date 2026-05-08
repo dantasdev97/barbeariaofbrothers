@@ -11,10 +11,12 @@ export default async function CategoriesPage() {
 
   return (
     <div>
-      <header className="mb-8">
-        <h1 className="font-heading text-3xl font-semibold">Categorias</h1>
-        <p className="text-sm text-muted-foreground">
-          Organize os produtos por categoria por unidade.
+      <header className="mb-7 border-b border-border pb-6">
+        <h1 className="font-heading text-[32px] font-semibold leading-none tracking-tight">
+          Categorias
+        </h1>
+        <p className="mt-1.5 text-sm text-muted-foreground">
+          {categories?.length ?? 0} categoria{(categories?.length ?? 0) !== 1 ? "s" : ""} · organize por unidade
         </p>
       </header>
       <CategoriesManager

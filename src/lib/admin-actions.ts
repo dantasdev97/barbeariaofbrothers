@@ -184,7 +184,7 @@ export async function saveCategory(input: CategoryInput) {
     if (error) throw new Error(error.message);
   }
   revalidatePath('/');
-  revalidatePath('/');
+  revalidatePath('/admin', 'layout');
   return { ok: true };
 }
 
@@ -194,7 +194,7 @@ export async function deleteCategory(id: string, unitId: string) {
   const { error } = await sb.from("product_categories").delete().eq("id", id);
   if (error) throw new Error(error.message);
   revalidatePath('/');
-  revalidatePath('/');
+  revalidatePath('/admin', 'layout');
   return { ok: true };
 }
 

@@ -1,7 +1,8 @@
+import Link from "next/link";
+import { ChevronLeft } from "lucide-react";
 import { notFound } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ProductForm } from "../product-form";
-
 
 export default async function EditProductPage({
   params,
@@ -19,8 +20,20 @@ export default async function EditProductPage({
 
   return (
     <div>
-      <header className="mb-8">
-        <h1 className="font-heading text-3xl font-semibold">{product.name}</h1>
+      <Link
+        href="/admin/produtos"
+        className="mb-5 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition hover:text-foreground"
+      >
+        <ChevronLeft className="h-4 w-4" />
+        Produtos
+      </Link>
+      <header className="mb-7 border-b border-border pb-6">
+        <h1 className="font-heading text-[32px] font-semibold leading-none tracking-tight">
+          {product.name}
+        </h1>
+        <p className="mt-1.5 text-sm text-muted-foreground">
+          Editar informações do produto.
+        </p>
       </header>
       <ProductForm
         initial={product}

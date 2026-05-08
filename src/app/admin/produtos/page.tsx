@@ -13,12 +13,16 @@ export default async function ProductsAdmin() {
   ]);
   return (
     <div>
-      <header className="mb-8 flex items-center justify-between gap-4">
+      <header className="mb-7 flex items-end justify-between gap-6 border-b border-border pb-6">
         <div>
-          <h1 className="font-heading text-3xl font-semibold">Produtos</h1>
-          <p className="text-sm text-muted-foreground">Catálogo geral.</p>
+          <h1 className="font-heading text-[32px] font-semibold leading-none tracking-tight">
+            Produtos
+          </h1>
+          <p className="mt-1.5 text-sm text-muted-foreground">
+            {products?.length ?? 0} produto{(products?.length ?? 0) !== 1 ? "s" : ""} · catálogo geral
+          </p>
         </div>
-        <Button asChild className="bg-brand text-primary-foreground hover:bg-brand-hover">
+        <Button asChild className="shrink-0 bg-brand text-primary-foreground hover:bg-brand-hover">
           <Link href="/admin/produtos/novo">
             <Plus className="mr-2 h-4 w-4" />
             Novo produto
