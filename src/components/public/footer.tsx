@@ -18,24 +18,6 @@ export function Footer({ unit }: Props) {
 
   return (
     <footer className="mt-0 bg-[#0b1115]">
-      {/* ── Big CTA strip ── */}
-      <div className="border-b border-white/10 px-4 py-16 text-center sm:px-6">
-        <h2 className="font-heading text-4xl font-semibold leading-tight tracking-tight text-white sm:text-5xl">
-          Pronto para o próximo corte?
-        </h2>
-        {unit.buk_url && (
-          <a
-            href={unit.buk_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-8 inline-flex items-center gap-3 rounded-full bg-brand px-8 py-4 text-[17px] font-semibold text-primary-foreground transition hover:bg-brand-hover"
-          >
-            Agendar agora
-            <span>→</span>
-          </a>
-        )}
-      </div>
-
       {/* ── 4-col grid ── */}
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-16 sm:px-6 md:grid-cols-4">
         {/* Brand */}
@@ -100,9 +82,6 @@ export function Footer({ unit }: Props) {
           <ul className="space-y-2 text-sm text-white/70">
             {[
               { href: base, label: "Início" },
-              { href: `${base}/barbeiros`, label: "Barbeiros" },
-              { href: `${base}/produtos`, label: "Produtos" },
-              { href: `${base}/contato`, label: "Contacto" },
             ].map((l) => (
               <li key={l.href}>
                 <Link

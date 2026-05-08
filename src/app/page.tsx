@@ -35,12 +35,6 @@ export default async function HomePage() {
               </p>
             </div>
           </Link>
-          <Link
-            href="/login"
-            className="rounded-full border border-border px-4 py-2 text-sm font-medium text-muted-foreground transition hover:border-brand hover:text-foreground"
-          >
-            Admin
-          </Link>
         </header>
 
         <div className="grid flex-1 items-center gap-10 py-14 lg:grid-cols-[0.9fr_1.1fr]">
@@ -68,13 +62,6 @@ export default async function HomePage() {
                   Ainda nao ha unidades publicas disponiveis. Entre no painel
                   administrativo para ativar ou criar uma unidade.
                 </p>
-                <Link
-                  href="/login"
-                  className="mt-6 inline-flex items-center gap-2 rounded-full bg-brand px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:bg-brand-hover"
-                >
-                  Abrir admin
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
               </div>
             ) : (
               <div className="grid gap-3">

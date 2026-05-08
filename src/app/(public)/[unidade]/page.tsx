@@ -11,23 +11,6 @@ import { BookingButton } from "@/components/public/booking-button";
 import { TrackPageView } from "@/components/public/track-page-view";
 import { formatPrice } from "@/lib/utils";
 
-// ─── Static data (no DB table for services yet) ───────────────────────────────
-const SERVICES = [
-  { num: "01", name: "Corte Clássico", time: "30 min", price: "12€" },
-  { num: "02", name: "Corte + Barba", time: "50 min", price: "18€" },
-  { num: "03", name: "Barba Terapêutica", time: "25 min", price: "10€" },
-  { num: "04", name: "Pai & Filho", time: "45 min", price: "20€" },
-];
-
-const MARQUEE_ITEMS = [
-  "CORTE CLÁSSICO",
-  "BARBA TERAPÊUTICA",
-  "SOBRANCELHA",
-  "DEGRADÊ",
-  "NAVALHA",
-  "PIGMENTAÇÃO",
-];
-
 const BARBER_GRADIENTS = [
   "linear-gradient(135deg, #1a1410, #3a302a)",
   "linear-gradient(135deg, #3a302a, #5a4a3e)",
@@ -135,54 +118,6 @@ export default async function UnitHome({
           </div>
         </div>
 
-        {/* ── Services marquee strip ── */}
-        <div className="relative mt-20 overflow-hidden bg-foreground py-5 -mx-4 sm:-mx-6 lg:-mx-12">
-          <div
-            className="flex w-max gap-12"
-            style={{ animation: "marquee 30s linear infinite" }}
-          >
-            {[...MARQUEE_ITEMS, ...MARQUEE_ITEMS].map((item, i) => (
-              <div key={i} className="flex items-center gap-12">
-                <span className="font-heading text-[22px] font-medium tracking-wide text-background">
-                  {item}
-                </span>
-                <span className="text-brand">●</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ─────────────────────────── SERVICES ───────────────────────────── */}
-      <section className="mx-auto max-w-5xl px-4 py-24 sm:px-6">
-        <div className="mx-auto mb-14 max-w-2xl text-center">
-          <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-brand">
-            01 — Serviços
-          </p>
-          <h2 className="font-heading text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
-            Preços simples, qualidade alta.
-          </h2>
-        </div>
-        <div className="mx-auto max-w-3xl">
-          {SERVICES.map((s, i) => (
-            <div
-              key={i}
-              className="group grid grid-cols-[auto_1fr_auto_auto_auto] items-center gap-4 sm:gap-6 border-b border-border py-6 text-lg transition-all hover:pl-3"
-            >
-              <span className="font-heading text-[13px] font-medium tracking-widest text-muted-foreground">
-                {s.num}
-              </span>
-              <span className="font-heading font-medium tracking-tight group-hover:text-brand transition-colors">
-                {s.name}
-              </span>
-              <div className="h-px flex-1 border-b-2 border-dotted border-border" />
-              <span className="text-sm text-muted-foreground">{s.time}</span>
-              <span className="font-heading text-2xl font-semibold tracking-tight">
-                {s.price}
-              </span>
-            </div>
-          ))}
-        </div>
       </section>
 
       {/* ──────────────────────────── BARBERS ────────────────────────────── */}
@@ -383,42 +318,6 @@ export default async function UnitHome({
         </section>
       )}
 
-      {/* ───────────────────────────── ABOUT ─────────────────────────────── */}
-      <section className="px-4 py-24 sm:px-6">
-        <div className="mx-auto max-w-4xl">
-          <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-brand">
-            04 — A casa
-          </p>
-          <h2 className="font-heading text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
-            Uma barbearia.{" "}
-            <span className="text-muted-foreground">Dois irmãos. {yearsOpen} anos.</span>
-          </h2>
-          <p className="mt-6 max-w-2xl text-[17px] leading-relaxed text-muted-foreground">
-            Abrimos em 2012 com a ideia de fazer da barbearia um sítio onde se
-            vem mais do que uma vez. Hoje somos duas unidades em Leiria — com a
-            mesma equipa, os mesmos produtos e o mesmo cuidado.
-          </p>
-          <p className="mt-4 max-w-2xl text-[17px] leading-relaxed text-muted-foreground">
-            Estás na unidade{" "}
-            <strong className="text-foreground">{unit.name}</strong>, com{" "}
-            {barbers.length > 0 ? `${barbers.length} barbeiros` : "a nossa equipa"} e horário
-            das 09:30 às 19:30, segunda a sábado.
-          </p>
-          <ul className="mt-8 grid gap-2.5 text-sm sm:grid-cols-2">
-            {[
-              "Profissionais certificados",
-              "Produtos importados (Turquia · Itália)",
-              "Estacionamento gratuito",
-              "Wi-fi e bebidas",
-            ].map((item) => (
-              <li key={item} className="flex items-center gap-2.5">
-                <span className="text-brand">●</span>
-                {item}
-              </li>
-            ))}
-          </ul>
-        </div>
-      </section>
     </>
   );
 }
