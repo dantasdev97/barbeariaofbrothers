@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getUnitBySlug } from "@/lib/data";
+import { getAllUnits, getUnitBySlug } from "@/lib/data";
 import { buildLocalBusinessJsonLd, buildUnitMetadata } from "@/lib/seo";
 import { Header } from "@/components/public/header";
 import { Footer } from "@/components/public/footer";
@@ -25,7 +25,7 @@ export default async function UnitLayout({
   children: React.ReactNode;
 }) {
   const { unidade } = await params;
-  const unit = await getUnitBySlug(unidade);
+  const [unit, units] = await Promise.all([getUnitBySlug(unidade), getAllUnits()]);
   if (!unit) notFound();
 
   const jsonLd = buildLocalBusinessJsonLd(unit);
@@ -36,7 +36,7 @@ export default async function UnitLayout({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <Header unit={unit} />
+      <Header unit={unit} units={units} />
       <main className="flex-1">{children}</main>
       <Footer unit={unit} />
       <FloatingCTA unit={unit} />

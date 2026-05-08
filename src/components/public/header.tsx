@@ -2,19 +2,34 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ShoppingBag } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ChevronDown, Check, ShoppingBag } from "lucide-react";
 import type { UnitRow } from "@/types/database.types";
 import { useCart } from "@/hooks/useCart";
+import { useUnidade } from "@/hooks/useUnidade";
 import { trackEvent } from "@/lib/analytics";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 
-type Props = { unit: UnitRow };
+type Props = { unit: UnitRow; units: UnitRow[] };
 
-export function Header({ unit }: Props) {
+export function Header({ unit, units }: Props) {
+  const router = useRouter();
+  const setSlug = useUnidade((s) => s.setSlug);
   const totalItems = useCart((s) => s.totalItems());
 
   const base = `/${unit.slug}`;
 
   const unitNum = unit.name.replace(/\D/g, "") || unit.slug.replace(/\D/g, "") || "1";
+
+  function switchUnit(slug: string) {
+    setSlug(slug);
+    router.push(`/${slug}`);
+  }
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/92 backdrop-blur-xl">
@@ -43,15 +58,28 @@ export function Header({ unit }: Props) {
 
         {/* Actions */}
         <div className="flex items-center gap-2">
-          {/* Unit switcher pill */}
-          <Link
-            href="/"
-            className="hidden items-center gap-2 rounded-full border border-border px-3.5 py-2 text-[13px] font-medium transition hover:border-foreground sm:flex"
-          >
-            <span className="h-2 w-2 rounded-full bg-brand shadow-[0_0_0_3px_rgba(243,146,0,0.2)]" />
-            Unidade {unitNum}
-            <span className="text-[10px] text-muted-foreground">▾</span>
-          </Link>
+          {/* Unit switcher dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger className="hidden items-center gap-2 rounded-full border border-border px-3.5 py-2 text-[13px] font-medium transition hover:border-foreground sm:inline-flex">
+              <span className="h-2 w-2 rounded-full bg-brand shadow-[0_0_0_3px_rgba(243,146,0,0.2)]" />
+              Unidade {unitNum}
+              <ChevronDown className="h-4 w-4 text-muted-foreground" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              {units.map((u) => (
+                <DropdownMenuItem
+                  key={u.id}
+                  onSelect={() => switchUnit(u.slug)}
+                  className="flex items-center justify-between gap-2"
+                >
+                  <span>{u.name}</span>
+                  {u.slug === unit.slug ? (
+                    <Check className="h-4 w-4 text-brand" />
+                  ) : null}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           {/* Book now */}
           {unit.buk_url && (

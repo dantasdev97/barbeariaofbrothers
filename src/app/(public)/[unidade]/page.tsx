@@ -11,6 +11,15 @@ import { BookingButton } from "@/components/public/booking-button";
 import { TrackPageView } from "@/components/public/track-page-view";
 import { formatPrice } from "@/lib/utils";
 
+const MARQUEE_ITEMS = [
+  "CORTE CLÁSSICO",
+  "BARBA TERAPÊUTICA",
+  "SOBRANCELHA",
+  "DEGRADÊ",
+  "NAVALHA",
+  "PIGMENTAÇÃO",
+];
+
 const BARBER_GRADIENTS = [
   "linear-gradient(135deg, #1a1410, #3a302a)",
   "linear-gradient(135deg, #3a302a, #5a4a3e)",
@@ -118,6 +127,21 @@ export default async function UnitHome({
           </div>
         </div>
 
+        <div className="relative mt-20 overflow-hidden bg-foreground py-5 -mx-4 sm:-mx-6 lg:-mx-12">
+          <div
+            className="flex w-max gap-12"
+            style={{ animation: "marquee 30s linear infinite" }}
+          >
+            {[...MARQUEE_ITEMS, ...MARQUEE_ITEMS].map((item, i) => (
+              <div key={i} className="flex items-center gap-12">
+                <span className="font-heading text-[22px] font-medium tracking-wide text-background">
+                  {item}
+                </span>
+                <span className="text-brand">●</span>
+              </div>
+            ))}
+          </div>
+        </div>
       </section>
 
       {/* ──────────────────────────── BARBERS ────────────────────────────── */}
