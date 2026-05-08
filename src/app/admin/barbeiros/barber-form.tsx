@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { Hash, Image as ImageIcon, Link2, Share2, SlidersHorizontal, User } from "lucide-react";
 import type { BarberRow, UnitRow } from "@/types/database.types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { ImageUpload } from "@/components/admin/image-upload";
 import { saveBarber } from "@/lib/admin-actions";
 import { slugify } from "@/lib/utils";
 
@@ -32,7 +34,7 @@ export function BarberForm({ initial, units, onSuccess }: Props) {
   const [slug, setSlug] = useState(initial?.slug ?? "");
   const [speciality, setSpeciality] = useState(initial?.speciality ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
-  const [photoUrl, setPhotoUrl] = useState(initial?.photo_url ?? "");
+  const [photoUrl, setPhotoUrl] = useState<string | null>(initial?.photo_url ?? null);
   const [bukUrl, setBukUrl] = useState(initial?.buk_url ?? "");
   const [instagram, setInstagram] = useState(initial?.socials?.instagram ?? "");
   const [facebook, setFacebook] = useState(initial?.socials?.facebook ?? "");
@@ -79,186 +81,208 @@ export function BarberForm({ initial, units, onSuccess }: Props) {
   }
 
   return (
-    <form onSubmit={onSubmit} className="max-w-3xl space-y-5">
-      {/* Unidade & Info básica */}
-      <fieldset className="space-y-4 rounded-2xl border border-border bg-bg-surface p-6">
-        <legend className="px-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Identificação
-        </legend>
-
-        <div className="space-y-1.5">
-          <Label htmlFor="unit">Unidade</Label>
-          <Select value={unitId} onValueChange={(v) => setUnitId(v ?? "")}>
-            <SelectTrigger id="unit">
-              <SelectValue placeholder="Selecionar unidade" />
-            </SelectTrigger>
-            <SelectContent>
-              {units.map((u) => (
-                <SelectItem key={u.id} value={u.id}>
-                  {u.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
+    <form onSubmit={onSubmit} className="space-y-5">
+      {/* Identificação */}
+      <Section icon={<User className="h-4 w-4 text-brand" />} title="Identificação">
         <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-1.5">
-            <Label htmlFor="name">Nome *</Label>
-            <Input
-              id="name"
-              required
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="slug">
-              Slug{" "}
-              <span className="font-normal text-muted-foreground">(auto)</span>
-            </Label>
-            <Input
-              id="slug"
-              value={slug}
-              placeholder={slugify(name) || "ex: joao"}
-              onChange={(e) => setSlug(slugify(e.target.value))}
-            />
-          </div>
-        </div>
-
-        <div className="space-y-1.5">
-          <Label htmlFor="speciality">Especialidade</Label>
-          <Input
-            id="speciality"
-            value={speciality}
-            placeholder="Corte clássico & navalha"
-            onChange={(e) => setSpeciality(e.target.value)}
-          />
-        </div>
-
-        <div className="space-y-1.5">
-          <Label htmlFor="description">Descrição</Label>
-          <Textarea
-            id="description"
-            value={description}
-            rows={4}
-            onChange={(e) => setDescription(e.target.value)}
-          />
-        </div>
-      </fieldset>
-
-      {/* Media & Booking */}
-      <fieldset className="space-y-4 rounded-2xl border border-border bg-bg-surface p-6">
-        <legend className="px-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Media & Agendamento
-        </legend>
-
-        <div className="space-y-1.5">
-          <Label htmlFor="photo">Foto (URL)</Label>
-          <Input
-            id="photo"
-            value={photoUrl}
-            placeholder="https://…"
-            onChange={(e) => setPhotoUrl(e.target.value)}
-          />
-        </div>
-
-        <div className="space-y-1.5">
-          <Label htmlFor="buk">Buk URL (específico deste barbeiro)</Label>
-          <Input
-            id="buk"
-            value={bukUrl}
-            placeholder="https://buk.pt/…"
-            onChange={(e) => setBukUrl(e.target.value)}
-          />
-        </div>
-      </fieldset>
-
-      {/* Redes sociais */}
-      <fieldset className="space-y-4 rounded-2xl border border-border bg-bg-surface p-6">
-        <legend className="px-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Redes sociais
-        </legend>
-        <div className="grid gap-4 sm:grid-cols-3">
-          <div className="space-y-1.5">
-            <Label htmlFor="ig">Instagram</Label>
-            <Input
-              id="ig"
-              value={instagram}
-              onChange={(e) => setInstagram(e.target.value)}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="fb">Facebook</Label>
-            <Input
-              id="fb"
-              value={facebook}
-              onChange={(e) => setFacebook(e.target.value)}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="tk">TikTok</Label>
-            <Input
-              id="tk"
-              value={tiktok}
-              onChange={(e) => setTiktok(e.target.value)}
-            />
-          </div>
-        </div>
-      </fieldset>
-
-      {/* Configurações */}
-      <fieldset className="space-y-4 rounded-2xl border border-border bg-bg-surface p-6">
-        <legend className="px-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Configurações
-        </legend>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-1.5">
-            <Label htmlFor="order">Ordem de exibição</Label>
+          <Field id="unit" label="Unidade">
+            <Select value={unitId} onValueChange={(v) => setUnitId(v ?? "")}>
+              <SelectTrigger id="unit">
+                <SelectValue placeholder="Selecionar unidade" />
+              </SelectTrigger>
+              <SelectContent>
+                {units.map((u) => (
+                  <SelectItem key={u.id} value={u.id}>
+                    {u.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
+          <Field id="order" label="Ordem de exibição">
             <Input
               id="order"
               type="number"
               value={order}
               onChange={(e) => setOrder(Number(e.target.value))}
             />
-          </div>
-          <div className="flex items-end pb-1">
-            <label className="inline-flex cursor-pointer items-center gap-3 text-sm">
-              <div
-                role="checkbox"
-                aria-checked={active}
-                tabIndex={0}
-                onClick={() => setActive((a) => !a)}
-                onKeyDown={(e) => e.key === " " && setActive((a) => !a)}
-                className={`relative h-5 w-9 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2 focus:ring-offset-bg-surface ${
-                  active ? "bg-brand" : "bg-border"
-                }`}
-              >
-                <span
-                  className={`absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${
-                    active ? "translate-x-4" : "translate-x-0"
-                  }`}
-                />
-              </div>
-              Activo (visível no site)
-            </label>
-          </div>
+          </Field>
         </div>
-      </fieldset>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field id="name" label="Nome *">
+            <Input
+              id="name"
+              required
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </Field>
+          <Field id="speciality" label="Especialidade">
+            <Input
+              id="speciality"
+              value={speciality}
+              placeholder="Corte clássico & navalha"
+              onChange={(e) => setSpeciality(e.target.value)}
+            />
+          </Field>
+        </div>
+
+        <Field
+          id="slug"
+          label={
+            <>
+              Slug{" "}
+              <span className="font-normal text-muted-foreground">(auto)</span>
+            </>
+          }
+        >
+          <Input
+            id="slug"
+            value={slug}
+            placeholder={slugify(name) || "ex: joao"}
+            onChange={(e) => setSlug(slugify(e.target.value))}
+          />
+        </Field>
+
+        <Field id="description" label="Descrição">
+          <Textarea
+            id="description"
+            value={description}
+            rows={3}
+            onChange={(e) => setDescription(e.target.value)}
+          />
+        </Field>
+      </Section>
+
+      {/* Foto */}
+      <Section icon={<ImageIcon className="h-4 w-4 text-brand" />} title="Foto">
+        <ImageUpload
+          value={photoUrl}
+          onChange={setPhotoUrl}
+          bucket="barbers"
+          pathPrefix="photos"
+          aspectRatio="square"
+          label="Foto do barbeiro"
+        />
+      </Section>
+
+      {/* Agendamento */}
+      <Section icon={<Link2 className="h-4 w-4 text-brand" />} title="Agendamento">
+        <Field id="buk" label="Buk URL (específico deste barbeiro)">
+          <Input
+            id="buk"
+            value={bukUrl}
+            placeholder="https://buk.pt/…"
+            onChange={(e) => setBukUrl(e.target.value)}
+          />
+        </Field>
+      </Section>
+
+      {/* Redes sociais */}
+      <Section icon={<Share2 className="h-4 w-4 text-brand" />} title="Redes sociais">
+        <div className="grid gap-4 sm:grid-cols-3">
+          <Field id="ig" label="Instagram">
+            <Input
+              id="ig"
+              value={instagram}
+              onChange={(e) => setInstagram(e.target.value)}
+            />
+          </Field>
+          <Field id="fb" label="Facebook">
+            <Input
+              id="fb"
+              value={facebook}
+              onChange={(e) => setFacebook(e.target.value)}
+            />
+          </Field>
+          <Field id="tk" label="TikTok">
+            <Input
+              id="tk"
+              value={tiktok}
+              onChange={(e) => setTiktok(e.target.value)}
+            />
+          </Field>
+        </div>
+      </Section>
+
+      {/* Estado */}
+      <Section icon={<SlidersHorizontal className="h-4 w-4 text-brand" />} title="Estado">
+        <label className="inline-flex cursor-pointer items-center gap-3 text-sm">
+          <button
+            type="button"
+            role="switch"
+            aria-checked={active}
+            onClick={() => setActive((a) => !a)}
+            className={`relative h-5 w-9 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2 ${
+              active ? "bg-brand" : "bg-border"
+            }`}
+          >
+            <span
+              className={`absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${
+                active ? "translate-x-4" : "translate-x-0"
+              }`}
+            />
+          </button>
+          Activo (visível no site)
+        </label>
+      </Section>
 
       <div className="flex gap-2 pt-1">
         <Button
           type="submit"
           disabled={pending}
-          size="lg"
           className="bg-brand text-primary-foreground hover:bg-brand-hover"
         >
           {pending ? "A guardar…" : "Guardar barbeiro"}
         </Button>
-        <Button type="button" variant="ghost" size="lg" onClick={() => onSuccess ? onSuccess() : router.back()}>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => (onSuccess ? onSuccess() : router.back())}
+        >
           Cancelar
         </Button>
       </div>
     </form>
+  );
+}
+
+function Section({
+  icon,
+  title,
+  children,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-xl border border-border bg-white p-5">
+      <div className="mb-4 flex items-center gap-2">
+        {icon}
+        <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+      </div>
+      <div className="space-y-4">{children}</div>
+    </div>
+  );
+}
+
+function Field({
+  id,
+  label,
+  children,
+}: {
+  id: string;
+  label: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <Label htmlFor={id} className="text-sm font-medium">
+        {label}
+      </Label>
+      {children}
+    </div>
   );
 }

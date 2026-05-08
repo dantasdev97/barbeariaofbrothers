@@ -21,7 +21,7 @@ export default async function AdminLayout({
     .maybeSingle();
 
   return (
-    <div className="dark flex min-h-[100dvh] bg-background">
+    <div className="admin flex min-h-[100dvh] bg-background">
       <AdminSidebar
         email={user.email ?? ""}
         role={profile?.role ?? "super_admin"}

@@ -3,11 +3,21 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import {
+  Image as ImageIcon,
+  Link2,
+  MapPin,
+  Search,
+  Share2,
+  SlidersHorizontal,
+  Store,
+} from "lucide-react";
 import type { UnitRow } from "@/types/database.types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { ImageUpload } from "@/components/admin/image-upload";
 import { saveUnit } from "@/lib/admin-actions";
 import { slugify } from "@/lib/utils";
 
@@ -23,8 +33,8 @@ export function UnitForm({ initial, onSuccess }: Props) {
   const [whatsapp, setWhatsapp] = useState(initial?.whatsapp ?? "");
   const [phone, setPhone] = useState(initial?.phone ?? "");
   const [bukUrl, setBukUrl] = useState(initial?.buk_url ?? "");
-  const [logoUrl, setLogoUrl] = useState(initial?.logo_url ?? "");
-  const [bannerUrl, setBannerUrl] = useState(initial?.banner_url ?? "");
+  const [logoUrl, setLogoUrl] = useState<string | null>(initial?.logo_url ?? null);
+  const [bannerUrl, setBannerUrl] = useState<string | null>(initial?.banner_url ?? null);
   const [seoTitle, setSeoTitle] = useState(initial?.seo?.title ?? "");
   const [seoDescription, setSeoDescription] = useState(initial?.seo?.description ?? "");
   const [instagram, setInstagram] = useState(initial?.socials?.instagram ?? "");
@@ -74,11 +84,19 @@ export function UnitForm({ initial, onSuccess }: Props) {
   return (
     <form onSubmit={onSubmit} className="space-y-5">
       {/* Identificação */}
-      <Section title="Identificação">
+      <Section icon={<Store className="h-4 w-4 text-brand" />} title="Identificação">
         <Field id="name" label="Nome *">
           <Input id="name" value={name} required onChange={(e) => setName(e.target.value)} />
         </Field>
-        <Field id="slug" label={<>Slug (URL) <span className="font-normal text-muted-foreground">(auto)</span></>}>
+        <Field
+          id="slug"
+          label={
+            <>
+              Slug (URL){" "}
+              <span className="font-normal text-muted-foreground">(auto)</span>
+            </>
+          }
+        >
           <Input
             id="slug"
             value={slug}
@@ -89,7 +107,7 @@ export function UnitForm({ initial, onSuccess }: Props) {
       </Section>
 
       {/* Contacto */}
-      <Section title="Contacto">
+      <Section icon={<MapPin className="h-4 w-4 text-brand" />} title="Contacto">
         <Field id="address" label="Morada">
           <Input id="address" value={address} onChange={(e) => setAddress(e.target.value)} />
         </Field>
@@ -100,7 +118,7 @@ export function UnitForm({ initial, onSuccess }: Props) {
           <Field id="phone" label="Telefone">
             <Input id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
           </Field>
-          <Field id="whatsapp" label="WhatsApp (só dígitos, com indicativo)">
+          <Field id="whatsapp" label="WhatsApp (com indicativo)">
             <Input
               id="whatsapp"
               value={whatsapp}
@@ -109,23 +127,39 @@ export function UnitForm({ initial, onSuccess }: Props) {
             />
           </Field>
         </div>
+      </Section>
+
+      {/* Agendamento */}
+      <Section icon={<Link2 className="h-4 w-4 text-brand" />} title="Agendamento">
         <Field id="buk" label="URL Buk.pt">
           <Input id="buk" value={bukUrl} onChange={(e) => setBukUrl(e.target.value)} />
         </Field>
       </Section>
 
       {/* Imagens */}
-      <Section title="Imagens">
-        <Field id="logo" label="Logo (URL)">
-          <Input id="logo" value={logoUrl} placeholder="https://…" onChange={(e) => setLogoUrl(e.target.value)} />
-        </Field>
-        <Field id="banner" label="Banner (URL)">
-          <Input id="banner" value={bannerUrl} placeholder="https://…" onChange={(e) => setBannerUrl(e.target.value)} />
-        </Field>
+      <Section icon={<ImageIcon className="h-4 w-4 text-brand" />} title="Imagens">
+        <div className="grid gap-6 sm:grid-cols-2">
+          <ImageUpload
+            value={logoUrl}
+            onChange={setLogoUrl}
+            bucket="units"
+            pathPrefix="logos"
+            aspectRatio="square"
+            label="Logo"
+          />
+          <ImageUpload
+            value={bannerUrl}
+            onChange={setBannerUrl}
+            bucket="units"
+            pathPrefix="banners"
+            aspectRatio="wide"
+            label="Banner"
+          />
+        </div>
       </Section>
 
       {/* Redes sociais */}
-      <Section title="Redes sociais">
+      <Section icon={<Share2 className="h-4 w-4 text-brand" />} title="Redes sociais">
         <div className="grid gap-4 sm:grid-cols-3">
           <Field id="instagram" label="Instagram">
             <Input id="instagram" value={instagram} onChange={(e) => setInstagram(e.target.value)} />
@@ -140,7 +174,7 @@ export function UnitForm({ initial, onSuccess }: Props) {
       </Section>
 
       {/* SEO */}
-      <Section title="SEO">
+      <Section icon={<Search className="h-4 w-4 text-brand" />} title="SEO">
         <Field id="seo-title" label="Título SEO">
           <Input id="seo-title" value={seoTitle} onChange={(e) => setSeoTitle(e.target.value)} />
         </Field>
@@ -155,15 +189,17 @@ export function UnitForm({ initial, onSuccess }: Props) {
       </Section>
 
       {/* Estado */}
-      <Section title="Estado">
+      <Section
+        icon={<SlidersHorizontal className="h-4 w-4 text-brand" />}
+        title="Estado"
+      >
         <label className="inline-flex cursor-pointer items-center gap-3 text-sm">
-          <div
-            role="checkbox"
+          <button
+            type="button"
+            role="switch"
             aria-checked={active}
-            tabIndex={0}
             onClick={() => setActive((a) => !a)}
-            onKeyDown={(e) => e.key === " " && setActive((a) => !a)}
-            className={`relative h-5 w-9 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2 focus:ring-offset-bg-surface ${
+            className={`relative h-5 w-9 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2 ${
               active ? "bg-brand" : "bg-border"
             }`}
           >
@@ -172,7 +208,7 @@ export function UnitForm({ initial, onSuccess }: Props) {
                 active ? "translate-x-4" : "translate-x-0"
               }`}
             />
-          </div>
+          </button>
           Activa (visível no site)
         </label>
       </Section>
@@ -181,12 +217,15 @@ export function UnitForm({ initial, onSuccess }: Props) {
         <Button
           type="submit"
           disabled={pending}
-          size="lg"
           className="bg-brand text-primary-foreground hover:bg-brand-hover"
         >
           {pending ? "A guardar…" : "Guardar unidade"}
         </Button>
-        <Button type="button" variant="ghost" size="lg" onClick={() => onSuccess ? onSuccess() : router.back()}>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => (onSuccess ? onSuccess() : router.back())}
+        >
           Cancelar
         </Button>
       </div>
@@ -195,19 +234,22 @@ export function UnitForm({ initial, onSuccess }: Props) {
 }
 
 function Section({
+  icon,
   title,
   children,
 }: {
+  icon: React.ReactNode;
   title: string;
   children: React.ReactNode;
 }) {
   return (
-    <fieldset className="rounded-2xl border border-border bg-bg-surface p-6">
-      <legend className="px-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-        {title}
-      </legend>
-      <div className="mt-1 space-y-4">{children}</div>
-    </fieldset>
+    <div className="rounded-xl border border-border bg-white p-5">
+      <div className="mb-4 flex items-center gap-2">
+        {icon}
+        <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+      </div>
+      <div className="space-y-4">{children}</div>
+    </div>
   );
 }
 
@@ -222,7 +264,9 @@ function Field({
 }) {
   return (
     <div className="space-y-1.5">
-      <Label htmlFor={id}>{label}</Label>
+      <Label htmlFor={id} className="text-sm font-medium">
+        {label}
+      </Label>
       {children}
     </div>
   );
