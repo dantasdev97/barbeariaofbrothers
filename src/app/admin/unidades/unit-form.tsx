@@ -11,9 +11,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { saveUnit } from "@/lib/admin-actions";
 import { slugify } from "@/lib/utils";
 
-type Props = { initial?: UnitRow };
+type Props = { initial?: UnitRow; onSuccess?: () => void };
 
-export function UnitForm({ initial }: Props) {
+export function UnitForm({ initial, onSuccess }: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [name, setName] = useState(initial?.name ?? "");
@@ -59,7 +59,11 @@ export function UnitForm({ initial }: Props) {
           active,
         });
         toast.success("Unidade guardada.");
-        router.push("/admin/unidades");
+        if (onSuccess) {
+          onSuccess();
+        } else {
+          router.push("/admin/unidades");
+        }
         router.refresh();
       } catch (e) {
         toast.error(e instanceof Error ? e.message : "Falhou.");
@@ -182,7 +186,7 @@ export function UnitForm({ initial }: Props) {
         >
           {pending ? "A guardar…" : "Guardar unidade"}
         </Button>
-        <Button type="button" variant="ghost" size="lg" onClick={() => router.back()}>
+        <Button type="button" variant="ghost" size="lg" onClick={() => onSuccess ? onSuccess() : router.back()}>
           Cancelar
         </Button>
       </div>

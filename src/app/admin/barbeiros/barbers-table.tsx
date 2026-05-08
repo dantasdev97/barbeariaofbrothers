@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import Link from "next/link";
 import { Pencil, Scissors, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import type { BarberRow } from "@/types/database.types";
@@ -15,9 +14,13 @@ type UnitLite = { id: string; name: string; slug: string };
 export function BarbersTable({
   barbers,
   units,
+  onEdit,
+  onAdd,
 }: {
   barbers: BarberRow[];
   units: UnitLite[];
+  onEdit?: (b: BarberRow) => void;
+  onAdd?: () => void;
 }) {
   const [pending, startTransition] = useTransition();
   const [toDelete, setToDelete] = useState<BarberRow | null>(null);
@@ -44,8 +47,11 @@ export function BarbersTable({
         </div>
         <p className="font-heading text-base font-semibold">Sem barbeiros ainda</p>
         <p className="mt-1 text-sm text-muted-foreground">Adicione o primeiro barbeiro para começar.</p>
-        <Button asChild className="mt-6 bg-brand text-primary-foreground hover:bg-brand-hover">
-          <Link href="/admin/barbeiros/novo">Adicionar barbeiro</Link>
+        <Button
+          className="mt-6 bg-brand text-primary-foreground hover:bg-brand-hover"
+          onClick={onAdd}
+        >
+          Adicionar barbeiro
         </Button>
       </div>
     );
@@ -84,11 +90,13 @@ export function BarbersTable({
                 </td>
                 <td className="px-5 py-4 text-right">
                   <div className="flex justify-end gap-1">
-                    <Button asChild size="sm" variant="ghost">
-                      <Link href={`/admin/barbeiros/${b.id}`}>
-                        <Pencil className="mr-1 h-3.5 w-3.5" />
-                        Editar
-                      </Link>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => onEdit?.(b)}
+                    >
+                      <Pencil className="mr-1 h-3.5 w-3.5" />
+                      Editar
                     </Button>
                     <Button
                       size="sm"

@@ -26,9 +26,10 @@ type Props = {
   initial?: ProductRow;
   units: Pick<UnitRow, "id" | "name">[];
   categories: ProductCategoryRow[];
+  onSuccess?: () => void;
 };
 
-export function ProductForm({ initial, units, categories }: Props) {
+export function ProductForm({ initial, units, categories, onSuccess }: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [unitId, setUnitId] = useState(initial?.unit_id ?? units[0]?.id ?? "");
@@ -72,7 +73,11 @@ export function ProductForm({ initial, units, categories }: Props) {
           active,
         });
         toast.success("Produto guardado.");
-        router.push("/admin/produtos");
+        if (onSuccess) {
+          onSuccess();
+        } else {
+          router.push("/admin/produtos");
+        }
         router.refresh();
       } catch (e) {
         toast.error(e instanceof Error ? e.message : "Falhou.");
@@ -256,7 +261,7 @@ export function ProductForm({ initial, units, categories }: Props) {
         >
           {pending ? "A guardar…" : "Guardar produto"}
         </Button>
-        <Button type="button" variant="ghost" size="lg" onClick={() => router.back()}>
+        <Button type="button" variant="ghost" size="lg" onClick={() => onSuccess ? onSuccess() : router.back()}>
           Cancelar
         </Button>
       </div>

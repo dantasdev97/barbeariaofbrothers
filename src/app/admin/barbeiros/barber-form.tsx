@@ -21,9 +21,10 @@ import { slugify } from "@/lib/utils";
 type Props = {
   initial?: BarberRow;
   units: Pick<UnitRow, "id" | "name" | "slug">[];
+  onSuccess?: () => void;
 };
 
-export function BarberForm({ initial, units }: Props) {
+export function BarberForm({ initial, units, onSuccess }: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [unitId, setUnitId] = useState(initial?.unit_id ?? units[0]?.id ?? "");
@@ -65,7 +66,11 @@ export function BarberForm({ initial, units }: Props) {
           active,
         });
         toast.success("Barbeiro guardado.");
-        router.push("/admin/barbeiros");
+        if (onSuccess) {
+          onSuccess();
+        } else {
+          router.push("/admin/barbeiros");
+        }
         router.refresh();
       } catch (e) {
         toast.error(e instanceof Error ? e.message : "Falhou.");
@@ -250,7 +255,7 @@ export function BarberForm({ initial, units }: Props) {
         >
           {pending ? "A guardar…" : "Guardar barbeiro"}
         </Button>
-        <Button type="button" variant="ghost" size="lg" onClick={() => router.back()}>
+        <Button type="button" variant="ghost" size="lg" onClick={() => onSuccess ? onSuccess() : router.back()}>
           Cancelar
         </Button>
       </div>

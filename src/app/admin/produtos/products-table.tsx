@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import Link from "next/link";
 import { Package, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import type { ProductRow } from "@/types/database.types";
@@ -16,9 +15,13 @@ type UnitLite = { id: string; name: string; slug: string };
 export function ProductsTable({
   products,
   units,
+  onEdit,
+  onAdd,
 }: {
   products: ProductRow[];
   units: UnitLite[];
+  onEdit?: (p: ProductRow) => void;
+  onAdd?: () => void;
 }) {
   const [pending, startTransition] = useTransition();
   const [toDelete, setToDelete] = useState<ProductRow | null>(null);
@@ -45,8 +48,11 @@ export function ProductsTable({
         </div>
         <p className="font-heading text-base font-semibold">Sem produtos ainda</p>
         <p className="mt-1 text-sm text-muted-foreground">Adicione o primeiro produto ao catálogo.</p>
-        <Button asChild className="mt-6 bg-brand text-primary-foreground hover:bg-brand-hover">
-          <Link href="/admin/produtos/novo">Adicionar produto</Link>
+        <Button
+          className="mt-6 bg-brand text-primary-foreground hover:bg-brand-hover"
+          onClick={onAdd}
+        >
+          Adicionar produto
         </Button>
       </div>
     );
@@ -85,11 +91,13 @@ export function ProductsTable({
                 </td>
                 <td className="px-5 py-4 text-right">
                   <div className="flex justify-end gap-1">
-                    <Button asChild size="sm" variant="ghost">
-                      <Link href={`/admin/produtos/${p.id}`}>
-                        <Pencil className="mr-1 h-3.5 w-3.5" />
-                        Editar
-                      </Link>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => onEdit?.(p)}
+                    >
+                      <Pencil className="mr-1 h-3.5 w-3.5" />
+                      Editar
                     </Button>
                     <Button
                       size="sm"
