@@ -60,7 +60,7 @@ export function Header({ unit, units }: Props) {
         <div className="flex items-center gap-2">
           {/* Unit switcher dropdown */}
           <DropdownMenu>
-            <DropdownMenuTrigger className="hidden items-center gap-2 rounded-full border border-border px-3.5 py-2 text-[13px] font-medium transition hover:border-foreground sm:inline-flex">
+            <DropdownMenuTrigger className="inline-flex items-center gap-2 rounded-full border border-border px-3.5 py-2 text-[13px] font-medium transition hover:border-foreground">
               <span className="h-2 w-2 rounded-full bg-brand shadow-[0_0_0_3px_rgba(243,146,0,0.2)]" />
               Unidade {unitNum}
               <ChevronDown className="h-4 w-4 text-muted-foreground" />
