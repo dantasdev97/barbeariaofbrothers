@@ -69,18 +69,18 @@ export function AdminSidebar({ email, role }: Props) {
   return (
     <>
       {/* Top bar (mobile) */}
-      <div className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background/90 px-4 backdrop-blur md:hidden">
+      <div className="sticky top-0 z-30 flex h-14 items-center justify-between border-b border-border bg-background/90 px-4 backdrop-blur md:hidden">
         <Link href="/admin" className="flex items-center gap-2">
-          <Image src="/logo.png" alt="" width={28} height={28} />
+          <Image src="/logo.png" alt="" width={24} height={24} />
           <span className="font-heading text-sm font-semibold">Admin</span>
         </Link>
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-background transition hover:bg-muted"
+          className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-background transition hover:bg-muted"
           aria-label="Abrir menu"
         >
-          <Menu className="h-4 w-4" />
+          <Menu className="h-5 w-5" />
         </button>
       </div>
 
@@ -91,19 +91,19 @@ export function AdminSidebar({ email, role }: Props) {
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             onClick={() => setOpen(false)}
           />
-          <aside className="absolute inset-y-0 left-0 flex w-72 flex-col border-r border-border bg-bg-surface">
-            <div className="flex h-16 items-center justify-between border-b border-border px-4">
+          <aside className="absolute inset-y-0 left-0 flex w-[85%] max-w-[280px] flex-col border-r border-border bg-bg-surface">
+            <div className="flex h-14 items-center justify-between border-b border-border px-4">
               <Link href="/admin" className="flex items-center gap-2">
-                <Image src="/logo.png" alt="" width={28} height={28} />
+                <Image src="/logo.png" alt="" width={24} height={24} />
                 <span className="font-heading text-sm font-semibold">Admin</span>
               </Link>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-background transition hover:bg-muted"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-background transition hover:bg-muted"
                 aria-label="Fechar"
               >
-                <X className="h-4 w-4" />
+                <X className="h-5 w-5" />
               </button>
             </div>
             {navList(() => setOpen(false))}

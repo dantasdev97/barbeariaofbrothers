@@ -42,7 +42,7 @@ export function ProductsTable({
 
   if (products.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-2xl border border-border bg-bg-surface py-16 text-center">
+      <div className="flex flex-col items-center justify-center rounded-xl border border-border bg-bg-surface py-12 text-center sm:rounded-2xl sm:py-16">
         <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-background">
           <Package className="h-6 w-6 text-muted-foreground" />
         </div>
@@ -60,60 +60,63 @@ export function ProductsTable({
 
   return (
     <>
-      <div className="overflow-hidden rounded-2xl border border-border bg-bg-surface">
-        <table className="w-full text-sm">
-          <thead className="border-b border-border text-xs uppercase tracking-wider text-muted-foreground">
-            <tr>
-              <th className="px-5 py-4 text-left font-medium">Produto</th>
-              <th className="hidden px-5 py-4 text-left font-medium sm:table-cell">Unidade</th>
-              <th className="px-5 py-4 text-left font-medium">Preço</th>
-              <th className="px-5 py-4 text-left font-medium">Estado</th>
-              <th className="px-5 py-4" />
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">
-            {products.map((p) => (
-              <tr key={p.id} className="transition hover:bg-background">
-                <td className="px-5 py-4 font-medium">{p.name}</td>
-                <td className="hidden px-5 py-4 text-muted-foreground sm:table-cell">
-                  {unitsById.get(p.unit_id)?.name ?? "—"}
-                </td>
-                <td className="px-5 py-4 font-semibold text-brand">
-                  {formatPrice(p.price_cents)}
-                </td>
-                <td className="px-5 py-4">
-                  <Badge
-                    variant={p.active ? "default" : "secondary"}
-                    className={p.active ? "bg-brand/15 text-brand" : ""}
-                  >
-                    {p.active ? "Activo" : "Inactivo"}
-                  </Badge>
-                </td>
-                <td className="px-5 py-4 text-right">
-                  <div className="flex justify-end gap-1">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => onEdit?.(p)}
-                    >
-                      <Pencil className="mr-1 h-3.5 w-3.5" />
-                      Editar
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => setToDelete(p)}
-                      className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-                    >
-                      <Trash2 className="mr-1 h-3.5 w-3.5" />
-                      Eliminar
-                    </Button>
-                  </div>
-                </td>
+      <div className="overflow-hidden rounded-xl border border-border bg-bg-surface sm:rounded-2xl">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[600px] text-sm">
+            <thead className="border-b border-border text-xs uppercase tracking-wider text-muted-foreground">
+              <tr>
+                <th className="px-3 py-3 text-left font-medium sm:px-5 sm:py-4">Produto</th>
+                <th className="hidden px-3 py-3 text-left font-medium sm:table-cell sm:px-5 sm:py-4">Unidade</th>
+                <th className="px-3 py-3 text-left font-medium sm:px-5 sm:py-4">Preço</th>
+                <th className="px-3 py-3 text-left font-medium sm:px-5 sm:py-4">Estado</th>
+                <th className="px-3 py-3 sm:px-5 sm:py-4" />
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {products.map((p) => (
+                <tr key={p.id} className="transition hover:bg-background">
+                  <td className="px-3 py-3 font-medium sm:px-5 sm:py-4">{p.name}</td>
+                  <td className="hidden px-3 py-3 text-muted-foreground sm:table-cell sm:px-5 sm:py-4">
+                    {unitsById.get(p.unit_id)?.name ?? "—"}
+                  </td>
+                  <td className="px-3 py-3 font-semibold text-brand sm:px-5 sm:py-4">
+                    {formatPrice(p.price_cents)}
+                  </td>
+                  <td className="px-3 py-3 sm:px-5 sm:py-4">
+                    <Badge
+                      variant={p.active ? "default" : "secondary"}
+                      className={p.active ? "bg-brand/15 text-brand" : ""}
+                    >
+                      {p.active ? "Activo" : "Inactivo"}
+                    </Badge>
+                  </td>
+                  <td className="px-3 py-3 text-right sm:px-5 sm:py-4">
+                    <div className="flex justify-end gap-1">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => onEdit?.(p)}
+                        className="h-8 px-2 sm:h-9 sm:px-3"
+                      >
+                        <Pencil className="h-3.5 w-3.5 sm:mr-1" />
+                        <span className="sr-only sm:not-sr-only">Editar</span>
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setToDelete(p)}
+                        className="h-8 px-2 text-destructive hover:bg-destructive/10 hover:text-destructive sm:h-9 sm:px-3"
+                      >
+                        <Trash2 className="h-3.5 w-3.5 sm:mr-1" />
+                        <span className="sr-only sm:not-sr-only">Eliminar</span>
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <ConfirmDialog

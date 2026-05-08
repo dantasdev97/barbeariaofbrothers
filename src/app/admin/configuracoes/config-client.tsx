@@ -100,17 +100,17 @@ export function ConfigClient({ units }: { units: UnitRow[] }) {
 
   return (
     <div>
-      <header className="mb-7 border-b border-border pb-6">
-        <h1 className="font-heading text-[32px] font-semibold leading-none tracking-tight">
+      <header className="mb-5 border-b border-border pb-5 sm:mb-7 sm:pb-6">
+        <h1 className="font-heading text-2xl font-semibold leading-none tracking-tight sm:text-[32px]">
           Configurações
         </h1>
-        <p className="mt-1.5 text-sm text-muted-foreground">
+        <p className="mt-1.5 text-xs text-muted-foreground sm:text-sm">
           Logo, SEO e informações — geridos por unidade.
         </p>
       </header>
 
       {/* Per-unit cards */}
-      <div className="mb-10 space-y-6">
+      <div className="mb-8 space-y-4 sm:mb-10 sm:space-y-6">
         {units.map((u) => {
           const s = states[u.id];
           const previewUrl = `${siteUrl}/${u.slug}`;
@@ -118,10 +118,10 @@ export function ConfigClient({ units }: { units: UnitRow[] }) {
           return (
             <div
               key={u.id}
-              className="rounded-2xl border border-border bg-white shadow-sm"
+              className="rounded-xl border border-border bg-white shadow-sm sm:rounded-2xl"
             >
               {/* Card header */}
-              <div className="flex items-center gap-4 border-b border-border px-6 py-4">
+              <div className="flex items-center gap-3 border-b border-border px-4 py-3 sm:gap-4 sm:px-6 sm:py-4">
                 {s.logoUrl ? (
                   <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-border bg-muted">
                     <Image src={s.logoUrl} alt={u.name} fill className="object-contain p-1" sizes="48px" />
@@ -154,7 +154,7 @@ export function ConfigClient({ units }: { units: UnitRow[] }) {
               </div>
 
               {/* Card body */}
-              <div className="grid gap-8 p-6 sm:grid-cols-2">
+              <div className="grid gap-6 p-4 sm:grid-cols-2 sm:gap-8 sm:p-6">
                 {/* Logo upload */}
                 <div>
                   <div className="mb-3 flex items-center gap-2">
@@ -215,7 +215,7 @@ export function ConfigClient({ units }: { units: UnitRow[] }) {
               </div>
 
               {/* Google preview */}
-              <div className="border-t border-border px-6 pb-6 pt-4">
+              <div className="border-t border-border px-4 pb-4 pt-3 sm:px-6 sm:pb-6 sm:pt-4">
                 <div className="mb-2 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
                   <Globe className="h-3.5 w-3.5" />
                   Pré-visualização Google
@@ -228,11 +228,11 @@ export function ConfigClient({ units }: { units: UnitRow[] }) {
               </div>
 
               {/* Save button */}
-              <div className="flex justify-end border-t border-border px-6 py-4">
+              <div className="flex justify-end border-t border-border px-4 py-3 sm:px-6 sm:py-4">
                 <Button
                   onClick={() => save(u)}
                   disabled={isSaving}
-                  className="bg-brand text-primary-foreground hover:bg-brand-hover"
+                  className="w-full bg-brand text-primary-foreground hover:bg-brand-hover sm:w-auto"
                 >
                   {isSaving ? "A guardar…" : `Guardar ${u.name}`}
                 </Button>
@@ -243,14 +243,14 @@ export function ConfigClient({ units }: { units: UnitRow[] }) {
       </div>
 
       {/* Global config */}
-      <div className="rounded-2xl border border-border bg-white p-8">
-        <div className="mb-6 flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand/10">
-            <Settings2 className="h-5 w-5 text-brand" />
+      <div className="rounded-xl border border-border bg-white p-5 sm:rounded-2xl sm:p-8">
+        <div className="mb-5 flex items-center gap-3 sm:mb-6">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand/10 sm:h-10 sm:w-10 sm:rounded-xl">
+            <Settings2 className="h-4 w-4 text-brand sm:h-5 sm:w-5" />
           </div>
           <div>
-            <h2 className="font-heading text-xl font-semibold">Configuração global</h2>
-            <p className="text-sm text-muted-foreground">
+            <h2 className="font-heading text-lg font-semibold sm:text-xl">Configuração global</h2>
+            <p className="text-xs text-muted-foreground sm:text-sm">
               Ficheiros partilhados por todas as unidades
             </p>
           </div>

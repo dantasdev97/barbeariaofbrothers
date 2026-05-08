@@ -11,11 +11,11 @@ export default async function CategoriesPage() {
 
   return (
     <div>
-      <header className="mb-7 border-b border-border pb-6">
-        <h1 className="font-heading text-[32px] font-semibold leading-none tracking-tight">
+      <header className="mb-5 border-b border-border pb-5 sm:mb-7 sm:pb-6">
+        <h1 className="font-heading text-2xl font-semibold leading-none tracking-tight sm:text-[32px]">
           Categorias
         </h1>
-        <p className="mt-1.5 text-sm text-muted-foreground">
+        <p className="mt-1.5 text-xs text-muted-foreground sm:text-sm">
           {categories?.length ?? 0} categoria{(categories?.length ?? 0) !== 1 ? "s" : ""} · organize por unidade
         </p>
       </header>

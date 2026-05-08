@@ -72,25 +72,25 @@ export default async function AdminDashboard() {
   return (
     <div>
       {/* ── Top bar ── */}
-      <div className="mb-7 flex items-end justify-between gap-6 border-b border-border pb-6">
+      <div className="mb-5 flex flex-col gap-4 border-b border-border pb-5 sm:mb-7 sm:flex-row sm:items-end sm:justify-between sm:gap-6 sm:pb-6">
         <div>
-          <h1 className="font-heading text-[32px] font-semibold leading-none tracking-tight">
+          <h1 className="font-heading text-2xl font-semibold leading-none tracking-tight sm:text-[32px]">
             Dashboard
           </h1>
-          <p className="mt-1.5 text-sm text-muted-foreground">
+          <p className="mt-1.5 text-xs text-muted-foreground sm:text-sm">
             Visão geral das duas unidades · {todayStr}
           </p>
         </div>
-        <div className="flex shrink-0 gap-2.5">
+        <div className="flex shrink-0 gap-2">
           <button
             type="button"
-            className="inline-flex items-center gap-2 rounded-[10px] border border-border bg-transparent px-4 py-2.5 text-[13px] font-medium text-muted-foreground transition hover:bg-background hover:text-foreground"
+            className="inline-flex flex-1 items-center justify-center gap-2 rounded-[10px] border border-border bg-transparent px-3 py-2.5 text-xs font-medium text-muted-foreground transition hover:bg-background hover:text-foreground sm:flex-initial sm:px-4 sm:text-[13px]"
           >
             ↗ Exportar
           </button>
           <Link
             href="/admin/barbeiros"
-            className="inline-flex items-center gap-2 rounded-[10px] bg-brand px-4 py-2.5 text-[13px] font-medium text-[#0e0a07] transition hover:opacity-90"
+            className="inline-flex flex-1 items-center justify-center gap-2 rounded-[10px] bg-brand px-3 py-2.5 text-xs font-medium text-[#0e0a07] transition hover:opacity-90 sm:flex-initial sm:px-4 sm:text-[13px]"
           >
             + Novo barbeiro
           </Link>
@@ -98,7 +98,7 @@ export default async function AdminDashboard() {
       </div>
 
       {/* ── Stat cards ── */}
-      <div className="mb-5 grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="mb-4 grid grid-cols-2 gap-2 sm:mb-5 sm:gap-4 lg:grid-cols-4">
         <StatCard
           label="Agendamentos · hoje"
           value={String(bookingsTodayCount ?? 0)}
@@ -130,7 +130,7 @@ export default async function AdminDashboard() {
       </div>
 
       {/* ── Content row ── */}
-      <div className="grid gap-4" style={{ gridTemplateColumns: "2fr 1fr" }}>
+      <div className="grid gap-4 lg:grid-cols-[2fr_1fr]">
         {/* Activity table */}
         <div className="overflow-hidden rounded-2xl border border-border bg-bg-surface">
           <div className="flex items-start justify-between border-b border-border px-6 py-[22px]">
@@ -146,7 +146,7 @@ export default async function AdminDashboard() {
 
           {/* Table head */}
           <div
-            className="grid gap-3 px-6 py-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground"
+            className="hidden gap-3 px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground sm:grid sm:px-6"
             style={{ gridTemplateColumns: "1.6fr 1.2fr 0.6fr 1fr" }}
           >
             <div>Tipo</div>
@@ -156,7 +156,7 @@ export default async function AdminDashboard() {
           </div>
 
           {(recentActivity ?? []).length === 0 ? (
-            <p className="px-6 py-10 text-sm text-muted-foreground">
+            <p className="px-4 py-10 text-sm text-muted-foreground sm:px-6">
               Sem eventos recentes.
             </p>
           ) : (
@@ -170,8 +170,8 @@ export default async function AdminDashboard() {
               return (
                 <div
                   key={ev.id}
-                  className="grid gap-3 items-center border-t border-border px-6 py-3 text-sm transition hover:bg-background"
-                  style={{ gridTemplateColumns: "1.6fr 1.2fr 0.6fr 1fr" }}
+                  className="flex flex-wrap items-center gap-2 border-t border-border px-4 py-3 text-sm transition hover:bg-background sm:grid sm:gap-3 sm:px-6"
+                  style={{ gridTemplateColumns: "1.6fr 1.2fr 0.6fr 1fr" } as React.CSSProperties}
                 >
                   <div className="flex items-center gap-2.5">
                     <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-background text-xs">
@@ -181,13 +181,13 @@ export default async function AdminDashboard() {
                       {eventLabel(ev.type as string)}
                     </span>
                   </div>
-                  <div className="truncate font-mono text-[12.5px] text-muted-foreground">
+                  <div className="hidden truncate font-mono text-[12.5px] text-muted-foreground sm:block">
                     {ev.ref_id ? ev.ref_id.slice(0, 8) + "…" : "—"}
                   </div>
-                  <div className="font-mono text-[12.5px] text-muted-foreground">
+                  <div className="ml-auto font-mono text-[12.5px] text-muted-foreground sm:ml-0">
                     {timeStr}
                   </div>
-                  <div>
+                  <div className="w-full sm:w-auto">
                     <span
                       className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ${
                         isBooking
@@ -292,19 +292,19 @@ function StatCard({
   }));
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-border bg-bg-surface p-5">
-      <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+    <div className="relative overflow-hidden rounded-xl border border-border bg-bg-surface p-3 sm:rounded-2xl sm:p-5">
+      <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground sm:text-[11px]">
         {label}
       </div>
-      <div className="my-3 flex items-baseline gap-3">
-        <div className="font-heading text-[32px] font-semibold leading-none tracking-tight">
+      <div className="my-2 flex flex-wrap items-baseline gap-2 sm:my-3 sm:gap-3">
+        <div className="font-heading text-xl font-semibold leading-none tracking-tight sm:text-[32px]">
           {value}
         </div>
-        <div className={`rounded-full px-2 py-0.5 text-[12px] font-semibold ${deltaClass}`}>
+        <div className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold sm:px-2 sm:text-[12px] ${deltaClass}`}>
           {delta}
         </div>
       </div>
-      <div className="flex h-8 items-end gap-0.5">
+      <div className="hidden h-8 items-end gap-0.5 sm:flex">
         {bars.map((b, j) => (
           <div
             key={j}

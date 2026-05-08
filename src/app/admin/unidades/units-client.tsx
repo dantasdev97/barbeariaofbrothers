@@ -37,18 +37,18 @@ export function UnitsClient({ units }: { units: UnitRow[] }) {
 
   return (
     <div>
-      <header className="mb-7 flex items-end justify-between gap-6 border-b border-border pb-6">
+      <header className="mb-5 flex flex-col gap-4 border-b border-border pb-5 sm:mb-7 sm:flex-row sm:items-end sm:justify-between sm:gap-6 sm:pb-6">
         <div>
-          <h1 className="font-heading text-[32px] font-semibold leading-none tracking-tight">
+          <h1 className="font-heading text-2xl font-semibold leading-none tracking-tight sm:text-[32px]">
             Unidades
           </h1>
-          <p className="mt-1.5 text-sm text-muted-foreground">
+          <p className="mt-1.5 text-xs text-muted-foreground sm:text-sm">
             {units.length} barbearia{units.length !== 1 ? "s" : ""} · gerir localizações
           </p>
         </div>
         <Button
           onClick={openNew}
-          className="shrink-0 bg-brand text-primary-foreground hover:bg-brand-hover"
+          className="w-full shrink-0 bg-brand text-primary-foreground hover:bg-brand-hover sm:w-auto"
         >
           <Plus className="mr-2 h-4 w-4" />
           Nova unidade
@@ -60,8 +60,7 @@ export function UnitsClient({ units }: { units: UnitRow[] }) {
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent
           side="right"
-          className="overflow-y-auto"
-          style={{ maxWidth: "560px" }}
+          className="w-full overflow-y-auto sm:max-w-[560px]"
         >
           <SheetHeader className="px-4 pt-4 pb-2">
             <SheetTitle>

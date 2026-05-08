@@ -213,20 +213,21 @@ export function UnitForm({ initial, onSuccess }: Props) {
         </label>
       </Section>
 
-      <div className="flex gap-2 pt-1">
-        <Button
-          type="submit"
-          disabled={pending}
-          className="bg-brand text-primary-foreground hover:bg-brand-hover"
-        >
-          {pending ? "A guardar…" : "Guardar unidade"}
-        </Button>
+      <div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row">
         <Button
           type="button"
           variant="outline"
           onClick={() => (onSuccess ? onSuccess() : router.back())}
+          className="w-full sm:w-auto"
         >
           Cancelar
+        </Button>
+        <Button
+          type="submit"
+          disabled={pending}
+          className="w-full bg-brand text-primary-foreground hover:bg-brand-hover sm:w-auto"
+        >
+          {pending ? "A guardar…" : "Guardar unidade"}
         </Button>
       </div>
     </form>
@@ -243,12 +244,12 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-xl border border-border bg-white p-5">
-      <div className="mb-4 flex items-center gap-2">
+    <div className="rounded-lg border border-border bg-white p-4 sm:rounded-xl sm:p-5">
+      <div className="mb-3 flex items-center gap-2 sm:mb-4">
         {icon}
         <h3 className="text-sm font-semibold text-foreground">{title}</h3>
       </div>
-      <div className="space-y-4">{children}</div>
+      <div className="space-y-3 sm:space-y-4">{children}</div>
     </div>
   );
 }

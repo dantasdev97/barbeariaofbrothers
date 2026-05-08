@@ -69,13 +69,13 @@ export function CategoriesManager({
 
   return (
     <>
-      <div className="grid gap-6 lg:grid-cols-[360px_1fr]">
+      <div className="grid gap-4 sm:gap-6 lg:grid-cols-[360px_1fr]">
         {/* Add form */}
         <form
           onSubmit={add}
-          className="space-y-4 rounded-2xl border border-border bg-bg-surface p-6"
+          className="space-y-4 rounded-xl border border-border bg-bg-surface p-4 sm:rounded-2xl sm:p-6"
         >
-          <h3 className="font-heading text-lg font-semibold">Nova categoria</h3>
+          <h3 className="font-heading text-base font-semibold sm:text-lg">Nova categoria</h3>
 
           <div className="space-y-1.5">
             <Label htmlFor="cat-unit">Unidade</Label>
@@ -134,8 +134,8 @@ export function CategoriesManager({
         </form>
 
         {/* Categories list */}
-        <div className="rounded-2xl border border-border bg-bg-surface p-6">
-          <h3 className="mb-5 font-heading text-lg font-semibold">
+        <div className="rounded-xl border border-border bg-bg-surface p-4 sm:rounded-2xl sm:p-6">
+          <h3 className="mb-4 font-heading text-base font-semibold sm:mb-5 sm:text-lg">
             Categorias da unidade
           </h3>
 
