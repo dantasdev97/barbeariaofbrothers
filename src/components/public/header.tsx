@@ -69,7 +69,7 @@ export function Header({ unit, units }: Props) {
               {units.map((u) => (
                 <DropdownMenuItem
                   key={u.id}
-                  onSelect={() => switchUnit(u.slug)}
+                  onClick={() => switchUnit(u.slug)}
                   className="flex items-center justify-between gap-2"
                 >
                   <span>{u.name}</span>
