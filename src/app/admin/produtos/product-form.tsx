@@ -94,7 +94,7 @@ export function ProductForm({ initial, units, categories }: Props) {
             <Select
               value={unitId}
               onValueChange={(v) => {
-                setUnitId(v);
+                setUnitId(v ?? "");
                 setCategoryId("");
               }}
             >
@@ -112,7 +112,7 @@ export function ProductForm({ initial, units, categories }: Props) {
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="cat">Categoria</Label>
-            <Select value={categoryId} onValueChange={setCategoryId}>
+            <Select value={categoryId} onValueChange={(v) => setCategoryId(v ?? "")}>
               <SelectTrigger id="cat">
                 <SelectValue placeholder="— Sem categoria —" />
               </SelectTrigger>

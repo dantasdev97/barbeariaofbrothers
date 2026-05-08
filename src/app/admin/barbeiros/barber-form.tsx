@@ -83,7 +83,7 @@ export function BarberForm({ initial, units }: Props) {
 
         <div className="space-y-1.5">
           <Label htmlFor="unit">Unidade</Label>
-          <Select value={unitId} onValueChange={setUnitId}>
+          <Select value={unitId} onValueChange={(v) => setUnitId(v ?? "")}>
             <SelectTrigger id="unit">
               <SelectValue placeholder="Selecionar unidade" />
             </SelectTrigger>
