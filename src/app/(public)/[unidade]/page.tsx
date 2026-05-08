@@ -77,113 +77,61 @@ export default async function UnitHome({
 
       {/* ───────────────────────────── HERO ──────────────────────────────── */}
       <section className="px-4 pt-14 sm:px-6 lg:px-12">
-        <div className="mx-auto grid max-w-7xl gap-16 lg:grid-cols-[1.1fr_1fr] lg:items-center">
-          {/* Left column */}
-          <div>
-            {/* Eyebrow badge */}
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-bg-surface px-4 py-2 text-xs font-medium text-foreground/70">
-              <span className="h-1.5 w-1.5 rounded-full bg-green-500 shadow-[0_0_0_3px_rgba(34,197,94,0.2)]" />
-              Aberto hoje · 09:30 — 19:30
-            </div>
-
-            {/* Hero title — 84px like the model */}
-            <h1 className="font-heading text-[56px] font-semibold leading-[0.98] tracking-tight sm:text-[68px] lg:text-[84px]">
-              Cortes que ficam.
-              <br />
-              <em className="font-normal not-italic text-brand" style={{ fontStyle: "italic" }}>
-                Estilo que dura.
-              </em>
-            </h1>
-
-            {/* Subtext */}
-            <p className="mt-6 max-w-[480px] text-[17px] leading-relaxed text-muted-foreground">
-              Unidade <strong className="text-foreground">{unit.name}</strong>
-              {unit.address && <> · {unit.address}.</>}{" "}
-              {yearsOpen}+ anos de experiência, equipa premiada e produtos
-              profissionais.
-            </p>
-
-            {/* CTA buttons */}
-            <div className="mt-8 flex flex-wrap gap-3">
-              <BookingButton
-                unit={unit}
-                className="rounded-full px-7 py-3.5 text-[15px] font-medium"
-              />
-              <Link
-                href={`/${unit.slug}/produtos`}
-                className="inline-flex items-center gap-2 rounded-full border border-border bg-transparent px-7 py-3.5 text-[15px] font-medium text-foreground transition hover:bg-foreground hover:text-background"
-              >
-                <ShoppingBag className="h-4 w-4" />
-                Ver produtos
-              </Link>
-            </div>
-
-            {/* Stats row */}
-            <div className="mt-10 grid w-max grid-cols-3 gap-12 border-t border-border pt-8">
-              {[
-                { num: `${yearsOpen}+`, label: "anos abertos" },
-                { num: "350", label: "cortes / mês" },
-                { num: "4.9", label: "★ Google" },
-              ].map((s) => (
-                <div key={s.label}>
-                  <div className="font-heading text-3xl font-semibold tracking-tight">
-                    {s.num}
-                  </div>
-                  <div className="mt-0.5 text-xs uppercase tracking-[0.08em] text-muted-foreground">
-                    {s.label}
-                  </div>
-                </div>
-              ))}
-            </div>
+        <div className="mx-auto max-w-4xl">
+          {/* Eyebrow badge */}
+          <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-bg-surface px-4 py-2 text-xs font-medium text-foreground/70">
+            <span className="h-1.5 w-1.5 rounded-full bg-green-500 shadow-[0_0_0_3px_rgba(34,197,94,0.2)]" />
+            Aberto hoje · 09:30 — 19:30
           </div>
 
-          {/* Right column — photo placeholders */}
-          <div className="relative hidden aspect-square lg:grid lg:grid-cols-[1.4fr_1fr] lg:grid-rows-2 lg:gap-3">
-            {/* Main large placeholder */}
-            <div
-              className="row-span-2 flex items-center justify-center overflow-hidden rounded-2xl"
-              style={{
-                backgroundImage:
-                  "repeating-linear-gradient(45deg, rgba(255,255,255,.04) 0 14px, rgba(255,255,255,.08) 14px 15px), linear-gradient(135deg, #2a221c, #4a3d34)",
-              }}
+          {/* Hero title */}
+          <h1 className="font-heading text-[56px] font-semibold leading-[0.98] tracking-tight sm:text-[68px] lg:text-[84px]">
+            Cortes que ficam.
+            <br />
+            <em className="font-normal not-italic text-brand" style={{ fontStyle: "italic" }}>
+              Estilo que dura.
+            </em>
+          </h1>
+
+          {/* Subtext */}
+          <p className="mt-6 max-w-[540px] text-[17px] leading-relaxed text-muted-foreground">
+            Unidade <strong className="text-foreground">{unit.name}</strong>
+            {unit.address && <> · {unit.address}.</>}{" "}
+            {yearsOpen}+ anos de experiência, equipa premiada e produtos
+            profissionais.
+          </p>
+
+          {/* CTA buttons */}
+          <div className="mt-8 flex flex-wrap gap-3">
+            <BookingButton
+              unit={unit}
+              className="rounded-full px-7 py-3.5 text-[15px] font-medium"
+            />
+            <Link
+              href={`/${unit.slug}/produtos`}
+              className="inline-flex items-center gap-2 rounded-full border border-border bg-transparent px-7 py-3.5 text-[15px] font-medium text-foreground transition hover:bg-foreground hover:text-background"
             >
-              <span className="rounded bg-white/90 px-2 py-1 font-mono text-[11px] uppercase tracking-widest text-[#847a72]">
-                FOTO · interior
-              </span>
-            </div>
-            {/* Small placeholder A */}
-            <div
-              className="flex items-center justify-center overflow-hidden rounded-2xl"
-              style={{
-                backgroundImage:
-                  "repeating-linear-gradient(45deg, #f3ede4 0 14px, #ece4d7 14px 15px)",
-              }}
-            >
-              <span className="rounded bg-white/80 px-2 py-1 font-mono text-[10px] uppercase tracking-widest text-[#847a72]">
-                FOTO · corte
-              </span>
-            </div>
-            {/* Small placeholder B */}
-            <div
-              className="flex items-center justify-center overflow-hidden rounded-2xl"
-              style={{
-                backgroundImage:
-                  "repeating-linear-gradient(45deg, #faf6f0 0 14px, #efe7d8 14px 15px)",
-              }}
-            >
-              <span className="rounded bg-white/80 px-2 py-1 font-mono text-[10px] uppercase tracking-widest text-[#847a72]">
-                FOTO · barba
-              </span>
-            </div>
-            {/* "Desde 2012" badge */}
-            <div
-              className="absolute -right-4 -top-4 grid h-24 w-24 place-items-center rounded-full bg-brand text-center font-heading text-[12px] leading-tight text-[#1a1410]"
-              style={{ transform: "rotate(-12deg)" }}
-            >
-              Desde
-              <br />
-              <strong className="text-xl font-bold">2012</strong>
-            </div>
+              <ShoppingBag className="h-4 w-4" />
+              Ver produtos
+            </Link>
+          </div>
+
+          {/* Stats row */}
+          <div className="mt-10 grid w-max grid-cols-3 gap-12 border-t border-border pt-8">
+            {[
+              { num: `${yearsOpen}+`, label: "anos abertos" },
+              { num: "350", label: "cortes / mês" },
+              { num: "4.9", label: "★ Google" },
+            ].map((s) => (
+              <div key={s.label}>
+                <div className="font-heading text-3xl font-semibold tracking-tight">
+                  {s.num}
+                </div>
+                <div className="mt-0.5 text-xs uppercase tracking-[0.08em] text-muted-foreground">
+                  {s.label}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -437,67 +385,38 @@ export default async function UnitHome({
 
       {/* ───────────────────────────── ABOUT ─────────────────────────────── */}
       <section className="px-4 py-24 sm:px-6">
-        <div className="mx-auto grid max-w-7xl gap-16 lg:grid-cols-2 lg:items-center">
-          {/* Text */}
-          <div>
-            <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-brand">
-              04 — A casa
-            </p>
-            <h2 className="font-heading text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
-              Uma barbearia.{" "}
-              <span className="text-muted-foreground">Dois irmãos. {yearsOpen} anos.</span>
-            </h2>
-            <p className="mt-6 text-[17px] leading-relaxed text-muted-foreground">
-              Abrimos em 2012 com a ideia de fazer da barbearia um sítio onde se
-              vem mais do que uma vez. Hoje somos duas unidades em Leiria — com a
-              mesma equipa, os mesmos produtos e o mesmo cuidado.
-            </p>
-            <p className="mt-4 text-[17px] leading-relaxed text-muted-foreground">
-              Estás na unidade{" "}
-              <strong className="text-foreground">{unit.name}</strong>, com{" "}
-              {barbers.length > 0 ? `${barbers.length} barbeiros` : "a nossa equipa"} e horário
-              das 09:30 às 19:30, segunda a sábado.
-            </p>
-            <ul className="mt-8 grid gap-2.5 text-sm">
-              {[
-                "Profissionais certificados",
-                "Produtos importados (Turquia · Itália)",
-                "Estacionamento gratuito",
-                "Wi-fi e bebidas",
-              ].map((item) => (
-                <li key={item} className="flex items-center gap-2.5">
-                  <span className="text-brand">●</span>
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Photo placeholders */}
-          <div className="hidden aspect-square grid-cols-2 gap-4 lg:grid">
-            <div
-              className="row-span-2 flex items-center justify-center rounded-2xl"
-              style={{
-                backgroundImage:
-                  "repeating-linear-gradient(45deg, #f3ede4 0 14px, #ece4d7 14px 15px)",
-              }}
-            >
-              <span className="rounded bg-white/70 px-2 py-1 font-mono text-[10px] uppercase tracking-widest text-[#847a72]">
-                FOTO · vitrine
-              </span>
-            </div>
-            <div
-              className="flex items-center justify-center rounded-2xl"
-              style={{
-                backgroundImage:
-                  "repeating-linear-gradient(45deg, #faf6f0 0 14px, #efe7d8 14px 15px)",
-              }}
-            >
-              <span className="rounded bg-white/70 px-2 py-1 font-mono text-[10px] uppercase tracking-widest text-[#847a72]">
-                FOTO · cadeira
-              </span>
-            </div>
-          </div>
+        <div className="mx-auto max-w-4xl">
+          <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-brand">
+            04 — A casa
+          </p>
+          <h2 className="font-heading text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
+            Uma barbearia.{" "}
+            <span className="text-muted-foreground">Dois irmãos. {yearsOpen} anos.</span>
+          </h2>
+          <p className="mt-6 max-w-2xl text-[17px] leading-relaxed text-muted-foreground">
+            Abrimos em 2012 com a ideia de fazer da barbearia um sítio onde se
+            vem mais do que uma vez. Hoje somos duas unidades em Leiria — com a
+            mesma equipa, os mesmos produtos e o mesmo cuidado.
+          </p>
+          <p className="mt-4 max-w-2xl text-[17px] leading-relaxed text-muted-foreground">
+            Estás na unidade{" "}
+            <strong className="text-foreground">{unit.name}</strong>, com{" "}
+            {barbers.length > 0 ? `${barbers.length} barbeiros` : "a nossa equipa"} e horário
+            das 09:30 às 19:30, segunda a sábado.
+          </p>
+          <ul className="mt-8 grid gap-2.5 text-sm sm:grid-cols-2">
+            {[
+              "Profissionais certificados",
+              "Produtos importados (Turquia · Itália)",
+              "Estacionamento gratuito",
+              "Wi-fi e bebidas",
+            ].map((item) => (
+              <li key={item} className="flex items-center gap-2.5">
+                <span className="text-brand">●</span>
+                {item}
+              </li>
+            ))}
+          </ul>
         </div>
       </section>
     </>
