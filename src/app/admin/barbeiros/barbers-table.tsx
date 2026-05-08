@@ -59,7 +59,51 @@ export function BarbersTable({
 
   return (
     <>
-      <div className="overflow-hidden rounded-2xl border border-border bg-bg-surface">
+      <div className="space-y-3 md:hidden">
+        {barbers.map((b) => (
+          <article
+            key={b.id}
+            className="rounded-xl border border-border bg-bg-surface p-4"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <h2 className="truncate font-heading text-lg font-semibold">
+                  {b.name}
+                </h2>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {unitsById.get(b.unit_id)?.name ?? "-"}
+                </p>
+              </div>
+              <Badge
+                variant={b.active ? "default" : "secondary"}
+                className={b.active ? "shrink-0 bg-brand/15 text-brand" : "shrink-0"}
+              >
+                {b.active ? "Activo" : "Inactivo"}
+              </Badge>
+            </div>
+            <p className="mt-3 text-sm text-muted-foreground">
+              {b.speciality ?? "Sem especialidade definida"}
+            </p>
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              <Button size="sm" variant="secondary" onClick={() => onEdit?.(b)}>
+                <Pencil className="mr-1 h-3.5 w-3.5" />
+                Editar
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setToDelete(b)}
+                className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+              >
+                <Trash2 className="mr-1 h-3.5 w-3.5" />
+                Eliminar
+              </Button>
+            </div>
+          </article>
+        ))}
+      </div>
+
+      <div className="hidden overflow-hidden rounded-2xl border border-border bg-bg-surface md:block">
         <table className="w-full text-sm">
           <thead className="border-b border-border text-xs uppercase tracking-wider text-muted-foreground">
             <tr>

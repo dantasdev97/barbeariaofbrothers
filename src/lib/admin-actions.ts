@@ -1,40 +1,23 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
+import { assertAdmin } from "@/lib/admin-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
-import type {
-  Hours,
-  SeoMeta,
-  Socials,
-} from "@/types/database.types";
+import type { Hours, SeoMeta, Socials } from "@/types/database.types";
 
 async function requireAdmin() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("Não autenticado.");
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .maybeSingle();
-  if (!profile || profile.role !== "super_admin") {
-    throw new Error("Sem permissão.");
+  try {
+    return await assertAdmin();
+  } catch {
+    throw new Error("Sem permissao.");
   }
-  return user;
 }
 
-function bustUnitTags(slug?: string | null, _unitId?: string | null) {
-  revalidatePath('/');
-  if (slug) revalidatePath('/' + slug);
-  revalidatePath('/admin', 'layout');
+function bustUnitTags(slug?: string | null) {
+  revalidatePath("/");
+  if (slug) revalidatePath(`/${slug}`);
+  revalidatePath("/admin", "layout");
 }
-
-// =====================================================================
-// Units
-// =====================================================================
 
 type UnitInput = {
   id?: string;
@@ -72,13 +55,9 @@ export async function deleteUnit(id: string, slug: string) {
   const sb = createAdminClient();
   const { error } = await sb.from("units").delete().eq("id", id);
   if (error) throw new Error(error.message);
-  bustUnitTags(slug, id);
+  bustUnitTags(slug);
   return { ok: true };
 }
-
-// =====================================================================
-// Barbers
-// =====================================================================
 
 type BarberInput = {
   id?: string;
@@ -104,22 +83,21 @@ export async function saveBarber(input: BarberInput) {
     const { error } = await sb.from("barbers").insert(input);
     if (error) throw new Error(error.message);
   }
-  revalidatePath('/');
+  revalidatePath("/");
+  revalidatePath("/admin", "layout");
   return { ok: true };
 }
 
-export async function deleteBarber(id: string, unitId: string) {
+export async function deleteBarber(id: string, _unitId?: string) {
+  void _unitId;
   await requireAdmin();
   const sb = createAdminClient();
   const { error } = await sb.from("barbers").delete().eq("id", id);
   if (error) throw new Error(error.message);
-  revalidatePath('/');
+  revalidatePath("/");
+  revalidatePath("/admin", "layout");
   return { ok: true };
 }
-
-// =====================================================================
-// Products
-// =====================================================================
 
 type ProductInput = {
   id?: string;
@@ -145,22 +123,21 @@ export async function saveProduct(input: ProductInput) {
     const { error } = await sb.from("products").insert(input);
     if (error) throw new Error(error.message);
   }
-  revalidatePath('/');
+  revalidatePath("/");
+  revalidatePath("/admin", "layout");
   return { ok: true };
 }
 
-export async function deleteProduct(id: string, unitId: string) {
+export async function deleteProduct(id: string, _unitId?: string) {
+  void _unitId;
   await requireAdmin();
   const sb = createAdminClient();
   const { error } = await sb.from("products").delete().eq("id", id);
   if (error) throw new Error(error.message);
-  revalidatePath('/');
+  revalidatePath("/");
+  revalidatePath("/admin", "layout");
   return { ok: true };
 }
-
-// =====================================================================
-// Categories
-// =====================================================================
 
 type CategoryInput = {
   id?: string;
@@ -183,24 +160,21 @@ export async function saveCategory(input: CategoryInput) {
     const { error } = await sb.from("product_categories").insert(input);
     if (error) throw new Error(error.message);
   }
-  revalidatePath('/');
-  revalidatePath('/admin', 'layout');
+  revalidatePath("/");
+  revalidatePath("/admin", "layout");
   return { ok: true };
 }
 
-export async function deleteCategory(id: string, unitId: string) {
+export async function deleteCategory(id: string, _unitId?: string) {
+  void _unitId;
   await requireAdmin();
   const sb = createAdminClient();
   const { error } = await sb.from("product_categories").delete().eq("id", id);
   if (error) throw new Error(error.message);
-  revalidatePath('/');
-  revalidatePath('/admin', 'layout');
+  revalidatePath("/");
+  revalidatePath("/admin", "layout");
   return { ok: true };
 }
-
-// =====================================================================
-// Storage uploads (returns public URL)
-// =====================================================================
 
 export async function uploadImage(
   bucket: "units" | "barbers" | "products",
@@ -210,12 +184,10 @@ export async function uploadImage(
   await requireAdmin();
   const sb = createAdminClient();
   const arrayBuffer = await file.arrayBuffer();
-  const { error } = await sb.storage
-    .from(bucket)
-    .upload(path, arrayBuffer, {
-      contentType: file.type,
-      upsert: true,
-    });
+  const { error } = await sb.storage.from(bucket).upload(path, arrayBuffer, {
+    contentType: file.type,
+    upsert: true,
+  });
   if (error) throw new Error(error.message);
   const { data } = sb.storage.from(bucket).getPublicUrl(path);
   return data.publicUrl;

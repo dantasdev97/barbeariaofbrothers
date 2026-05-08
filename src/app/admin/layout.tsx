@@ -1,5 +1,4 @@
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { requireAdminSession } from "@/lib/admin-auth";
 import { AdminSidebar } from "@/components/admin/admin-sidebar";
 
 export default async function AdminLayout({
@@ -8,29 +7,17 @@ export default async function AdminLayout({
   children: React.ReactNode;
 }) {
   // Admin shell is always dynamic (auth-gated)
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", user.id)
-    .maybeSingle();
+  const { user, profile } = await requireAdminSession();
 
   return (
-    <div className="admin flex min-h-[100dvh] bg-background">
+    <div className="admin flex min-h-[100dvh] flex-col bg-background md:flex-row">
       <AdminSidebar
         email={user.email ?? ""}
-        role={profile?.role ?? "super_admin"}
+        role={profile.role}
       />
-      <div className="flex flex-1 flex-col">
-        <main className="flex-1 overflow-auto p-6 sm:p-8 lg:p-10">
-          <div className="max-w-7xl mx-auto">
-            {children}
-          </div>
+      <div className="flex min-w-0 flex-1 flex-col">
+        <main className="flex-1 overflow-auto px-4 py-5 sm:p-8 lg:p-10">
+          <div className="mx-auto w-full max-w-7xl">{children}</div>
         </main>
       </div>
     </div>

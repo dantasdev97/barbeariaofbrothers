@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Hash, Image as ImageIcon, Link2, Share2, SlidersHorizontal, User } from "lucide-react";
+import { Image as ImageIcon, Link2, Share2, SlidersHorizontal, User } from "lucide-react";
 import type { BarberRow, UnitRow } from "@/types/database.types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

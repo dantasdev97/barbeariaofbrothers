@@ -72,7 +72,7 @@ export default async function AdminDashboard() {
   return (
     <div>
       {/* ── Top bar ── */}
-      <div className="mb-7 flex items-end justify-between gap-6 border-b border-border pb-6">
+      <div className="mb-7 flex flex-col items-stretch gap-5 border-b border-border pb-6 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="font-heading text-[32px] font-semibold leading-none tracking-tight">
             Dashboard
@@ -81,7 +81,7 @@ export default async function AdminDashboard() {
             Visão geral das duas unidades · {todayStr}
           </p>
         </div>
-        <div className="flex shrink-0 gap-2.5">
+      <div className="grid shrink-0 grid-cols-2 gap-2.5 sm:flex">
           <button
             type="button"
             className="inline-flex items-center gap-2 rounded-[10px] border border-border bg-transparent px-4 py-2.5 text-[13px] font-medium text-muted-foreground transition hover:bg-background hover:text-foreground"
@@ -98,7 +98,7 @@ export default async function AdminDashboard() {
       </div>
 
       {/* ── Stat cards ── */}
-      <div className="mb-5 grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           label="Agendamentos · hoje"
           value={String(bookingsTodayCount ?? 0)}
@@ -130,7 +130,7 @@ export default async function AdminDashboard() {
       </div>
 
       {/* ── Content row ── */}
-      <div className="grid gap-4" style={{ gridTemplateColumns: "2fr 1fr" }}>
+      <div className="grid gap-4 xl:grid-cols-[2fr_1fr]">
         {/* Activity table */}
         <div className="overflow-hidden rounded-2xl border border-border bg-bg-surface">
           <div className="flex items-start justify-between border-b border-border px-6 py-[22px]">
@@ -145,10 +145,7 @@ export default async function AdminDashboard() {
           </div>
 
           {/* Table head */}
-          <div
-            className="grid gap-3 px-6 py-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground"
-            style={{ gridTemplateColumns: "1.6fr 1.2fr 0.6fr 1fr" }}
-          >
+          <div className="hidden gap-3 px-6 py-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground md:grid md:grid-cols-[1.6fr_1.2fr_0.6fr_1fr]">
             <div>Tipo</div>
             <div>Referência</div>
             <div>Hora</div>
@@ -170,8 +167,7 @@ export default async function AdminDashboard() {
               return (
                 <div
                   key={ev.id}
-                  className="grid gap-3 items-center border-t border-border px-6 py-3 text-sm transition hover:bg-background"
-                  style={{ gridTemplateColumns: "1.6fr 1.2fr 0.6fr 1fr" }}
+                  className="grid gap-2 border-t border-border px-4 py-4 text-sm transition hover:bg-background sm:px-6 md:grid-cols-[1.6fr_1.2fr_0.6fr_1fr] md:items-center md:gap-3 md:py-3"
                 >
                   <div className="flex items-center gap-2.5">
                     <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-background text-xs">

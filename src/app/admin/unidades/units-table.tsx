@@ -54,7 +54,48 @@ export function UnitsTable({
 
   return (
     <>
-      <div className="overflow-hidden rounded-2xl border border-border bg-bg-surface">
+      <div className="space-y-3 md:hidden">
+        {units.map((u) => (
+          <article
+            key={u.id}
+            className="rounded-xl border border-border bg-bg-surface p-4"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <h2 className="truncate font-heading text-lg font-semibold">
+                  {u.name}
+                </h2>
+                <p className="mt-1 truncate font-mono text-xs text-muted-foreground">
+                  /{u.slug}
+                </p>
+              </div>
+              <Badge
+                variant={u.active ? "default" : "secondary"}
+                className={u.active ? "shrink-0 bg-brand/15 text-brand" : "shrink-0"}
+              >
+                {u.active ? "Activa" : "Inactiva"}
+              </Badge>
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              <Button size="sm" variant="secondary" onClick={() => onEdit?.(u)}>
+                <Pencil className="mr-1 h-3.5 w-3.5" />
+                Editar
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setToDelete(u)}
+                className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+              >
+                <Trash2 className="mr-1 h-3.5 w-3.5" />
+                Eliminar
+              </Button>
+            </div>
+          </article>
+        ))}
+      </div>
+
+      <div className="hidden overflow-hidden rounded-2xl border border-border bg-bg-surface md:block">
         <table className="w-full text-sm">
           <thead className="border-b border-border text-xs uppercase tracking-wider text-muted-foreground">
             <tr>
