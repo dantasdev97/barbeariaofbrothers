@@ -6,46 +6,29 @@ export async function middleware(request: NextRequest) {
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!supabaseUrl || !supabaseKey) return response;
 
-  let user: { id: string } | null = null;
-
-  if (supabaseUrl && supabaseKey) {
-    const supabase = createServerClient(supabaseUrl, supabaseKey, {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value),
-          );
-          response = NextResponse.next({ request });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options),
-          );
-        },
+  const supabase = createServerClient(supabaseUrl, supabaseKey, {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll();
       },
-    });
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value }) =>
+          request.cookies.set(name, value),
+        );
+        response = NextResponse.next({ request });
+        cookiesToSet.forEach(({ name, value, options }) =>
+          response.cookies.set(name, value, options),
+        );
+      },
+    },
+  });
 
-    const { data } = await supabase.auth.getUser();
-    user = data.user ?? null;
-  }
-
-  const { pathname } = request.nextUrl;
-
-  if (pathname.startsWith("/admin") && !user) {
-    const redirect = request.nextUrl.clone();
-    redirect.pathname = "/login";
-    redirect.searchParams.set("next", pathname);
-    return NextResponse.redirect(redirect);
-  }
-
-  if (pathname === "/login" && user) {
-    const redirect = request.nextUrl.clone();
-    redirect.pathname = "/admin";
-    redirect.search = "";
-    return NextResponse.redirect(redirect);
-  }
+  // Refresh the Supabase session cookie. Auth gating itself is handled by
+  // requireAdminSession() in the admin layout — keeping it here too caused a
+  // redirect loop with authenticated users that lack an admin profile.
+  await supabase.auth.getUser();
 
   return response;
 }
