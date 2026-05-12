@@ -24,7 +24,7 @@ import { GooglePreview } from "@/components/admin/google-preview";
 import { Stepper, type WizardStep } from "@/components/admin/stepper";
 import { Section, Field, Toggle, CharCounter } from "@/components/admin/form-bits";
 import { saveProduct } from "@/lib/admin-actions";
-import { slugify, formatPrice } from "@/lib/utils";
+import { slugify, formatPrice, formatPriceOrAsk, cn } from "@/lib/utils";
 
 type UnitLite = Pick<UnitRow, "id" | "name" | "slug">;
 
@@ -58,10 +58,13 @@ function toCents(euros: string): number | null {
 
 export function ProductForm({ initial, units, categories, onSuccess }: Props) {
   const router = useRouter();
+  const isNew = !initial;
   const [pending, startTransition] = useTransition();
   const [step, setStep] = useState(0);
 
-  const [unitId, setUnitId] = useState(initial?.unit_id ?? units[0]?.id ?? "");
+  const [unitIds, setUnitIds] = useState<string[]>(
+    initial ? [initial.unit_id] : units[0] ? [units[0].id] : [],
+  );
   const [categoryId, setCategoryId] = useState(initial?.category_id ?? "");
   const [name, setName] = useState(initial?.name ?? "");
   const [slug, setSlug] = useState(initial?.slug ?? "");
@@ -78,30 +81,42 @@ export function ProductForm({ initial, units, categories, onSuccess }: Props) {
   const [seoDescription, setSeoDescription] = useState(initial?.seo_description ?? "");
   const [active, setActive] = useState(initial?.active ?? true);
 
+  const primaryUnitId = unitIds[0] ?? "";
   const filteredCategories = useMemo(
-    () => categories.filter((c) => c.unit_id === unitId),
-    [categories, unitId],
+    () => categories.filter((c) => c.unit_id === primaryUnitId),
+    [categories, primaryUnitId],
   );
-  const unit = units.find((u) => u.id === unitId);
+  const unit = units.find((u) => u.id === primaryUnitId);
   const effSlug = slug || slugify(name);
 
   const priceCents = toCents(priceEuros);
   const compareCents = toCents(compareEuros);
   const discountPct =
-    compareCents != null && priceCents != null && compareCents > priceCents
+    compareCents != null && priceCents != null && priceCents > 0 && compareCents > priceCents
       ? Math.round(((compareCents - priceCents) / compareCents) * 100)
       : null;
 
+  function toggleUnit(id: string) {
+    setUnitIds((prev) => {
+      const has = prev.includes(id);
+      const next = has ? prev.filter((x) => x !== id) : [...prev, id];
+      // category belongs to a unit — reset if the primary unit changed
+      if (next[0] !== prev[0]) setCategoryId("");
+      return next;
+    });
+  }
+
   function validateStep(s: number): string | null {
     if (s === 0) {
-      if (!unitId) return "Selecione uma unidade.";
+      if (unitIds.filter(Boolean).length === 0) return "Selecione pelo menos uma unidade.";
       if (!name.trim()) return "Indique o nome do produto.";
     }
     if (s === 1) {
-      if (priceCents == null) return "Indique um preço válido.";
-      if (compareEuros.trim() !== "" && compareCents == null)
-        return "Preço antes inválido.";
-      if (compareCents != null && priceCents != null && compareCents <= priceCents)
+      if (priceEuros.trim() !== "" && priceCents == null) return "Preço inválido.";
+      if (compareEuros.trim() !== "" && compareCents == null) return "Preço antes inválido.";
+      if (
+        compareCents != null && priceCents != null && priceCents > 0 && compareCents <= priceCents
+      )
         return "O 'preço antes' tem de ser maior que o preço actual.";
       const st = Number(stock);
       if (!Number.isInteger(st) || st < 0) return "Stock inválido.";
@@ -132,26 +147,30 @@ export function ProductForm({ initial, units, categories, onSuccess }: Props) {
         return toast.error(err);
       }
     }
+    const targets = isNew ? unitIds.filter(Boolean) : [primaryUnitId];
+    const base = {
+      category_id: categoryId || null,
+      name: name.trim(),
+      slug: effSlug,
+      description: description.trim() || null,
+      price_cents: priceCents ?? 0,
+      compare_at_price_cents: compareCents,
+      stock: Number(stock),
+      out_of_stock: outOfStock,
+      featured,
+      image_url: imageUrl || null,
+      seo_title: seoTitle.trim() || null,
+      seo_description: seoDescription.trim() || null,
+      active,
+    };
     startTransition(async () => {
       try {
-        await saveProduct({
-          id: initial?.id,
-          unit_id: unitId,
-          category_id: categoryId || null,
-          name: name.trim(),
-          slug: effSlug,
-          description: description.trim() || null,
-          price_cents: priceCents!,
-          compare_at_price_cents: compareCents,
-          stock: Number(stock),
-          out_of_stock: outOfStock,
-          featured,
-          image_url: imageUrl || null,
-          seo_title: seoTitle.trim() || null,
-          seo_description: seoDescription.trim() || null,
-          active,
-        });
-        toast.success("Produto guardado.");
+        for (const uid of targets) {
+          await saveProduct({ id: initial?.id, unit_id: uid, ...base });
+        }
+        toast.success(
+          targets.length > 1 ? `Produto guardado em ${targets.length} unidades.` : "Produto guardado.",
+        );
         if (onSuccess) onSuccess();
         else router.push("/admin/produtos");
         router.refresh();
@@ -168,6 +187,12 @@ export function ProductForm({ initial, units, categories, onSuccess }: Props) {
   }
 
   const isLast = step === STEPS.length - 1;
+  const unitSummary = (() => {
+    const sel = isNew ? unitIds.filter(Boolean) : [primaryUnitId];
+    if (sel.length === 0) return "—";
+    if (sel.length === 1) return units.find((u) => u.id === sel[0])?.name ?? "—";
+    return `${sel.length} unidades`;
+  })();
 
   return (
     <form onSubmit={onFormSubmit} className="space-y-5">
@@ -175,17 +200,47 @@ export function ProductForm({ initial, units, categories, onSuccess }: Props) {
 
       {step === 0 && (
         <Section icon={<Tag className="h-4 w-4 text-brand" />} title="Produto">
-          <div className="grid gap-4 sm:grid-cols-2">
+          {isNew ? (
+            <Field label="Unidades *" hint="O produto é criado em cada unidade seleccionada.">
+              <div className="flex flex-wrap items-center gap-2">
+                {units.map((u) => {
+                  const on = unitIds.includes(u.id);
+                  return (
+                    <button
+                      key={u.id}
+                      type="button"
+                      onClick={() => toggleUnit(u.id)}
+                      className={cn(
+                        "rounded-full border px-3 py-1.5 text-sm font-medium transition",
+                        on
+                          ? "border-brand bg-brand text-primary-foreground"
+                          : "border-border bg-bg-surface text-muted-foreground hover:bg-background hover:text-foreground",
+                      )}
+                    >
+                      {u.name}
+                    </button>
+                  );
+                })}
+                {units.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setUnitIds(unitIds.length === units.length ? [units[0].id] : units.map((u) => u.id))
+                    }
+                    className="rounded-full border border-dashed border-border px-3 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground"
+                  >
+                    {unitIds.length === units.length ? "Limpar" : "Todas as unidades"}
+                  </button>
+                )}
+              </div>
+            </Field>
+          ) : (
             <Field id="unit" label="Unidade *">
-              <Select
-                value={unitId}
-                onValueChange={(v) => {
-                  setUnitId(v ?? "");
-                  setCategoryId("");
-                }}
-              >
+              <Select value={primaryUnitId} onValueChange={(v) => { setUnitIds([v ?? ""]); setCategoryId(""); }}>
                 <SelectTrigger id="unit">
-                  <SelectValue placeholder="Selecionar unidade" />
+                  <SelectValue placeholder="Selecionar unidade">
+                    {(v) => units.find((u) => u.id === v)?.name ?? ""}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {units.map((u) => (
@@ -196,10 +251,15 @@ export function ProductForm({ initial, units, categories, onSuccess }: Props) {
                 </SelectContent>
               </Select>
             </Field>
+          )}
+
+          <div className="grid gap-4 sm:grid-cols-2">
             <Field id="cat" label="Categoria">
               <Select value={categoryId} onValueChange={(v) => setCategoryId(v ?? "")}>
                 <SelectTrigger id="cat">
-                  <SelectValue placeholder="— Sem categoria —" />
+                  <SelectValue placeholder="— Sem categoria —">
+                    {(v) => filteredCategories.find((c) => c.id === v)?.name ?? "— Sem categoria —"}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">— Sem categoria —</SelectItem>
@@ -211,15 +271,10 @@ export function ProductForm({ initial, units, categories, onSuccess }: Props) {
                 </SelectContent>
               </Select>
             </Field>
+            <Field id="name" label="Nome *">
+              <Input id="name" value={name} onChange={(e) => setName(e.target.value)} />
+            </Field>
           </div>
-
-          <Field id="name" label="Nome *">
-            <Input
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-          </Field>
 
           <Field id="description" label="Descrição">
             <Textarea
@@ -243,12 +298,9 @@ export function ProductForm({ initial, units, categories, onSuccess }: Props) {
       )}
 
       {step === 1 && (
-        <Section
-          icon={<Tag className="h-4 w-4 text-brand" />}
-          title="Preço & stock"
-        >
+        <Section icon={<Tag className="h-4 w-4 text-brand" />} title="Preço & stock">
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field id="price" label="Preço (€) *">
+            <Field id="price" label="Preço (€)" hint="Opcional — em branco mostra 'Sob consulta' na loja.">
               <Input
                 id="price"
                 type="number"
@@ -303,7 +355,7 @@ export function ProductForm({ initial, units, categories, onSuccess }: Props) {
               checked={featured}
               onChange={setFeatured}
               label="Em destaque"
-              description="Aparece primeiro na loja e na secção de destaques da unidade."
+              description="Aparece primeiro na loja da unidade."
             />
           </div>
         </Section>
@@ -358,6 +410,9 @@ export function ProductForm({ initial, units, categories, onSuccess }: Props) {
             <div className="mb-2 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
               <Search className="h-3.5 w-3.5" />
               Pré-visualização Google
+              {isNew && unitIds.filter(Boolean).length > 1 && (
+                <span className="ml-1 text-muted-foreground/70">(+{unitIds.filter(Boolean).length - 1} unidades)</span>
+              )}
             </div>
             <GooglePreview
               title={seoTitle || `${name || "Produto"} | ${unit?.name ?? "Barbearia Of Brothers"}`}
@@ -382,7 +437,7 @@ export function ProductForm({ initial, units, categories, onSuccess }: Props) {
 
           <dl className="grid gap-x-4 gap-y-2 rounded-lg bg-bg-surface p-4 text-sm sm:grid-cols-2">
             <Summary label="Nome" value={name || "—"} />
-            <Summary label="Unidade" value={unit?.name ?? "—"} />
+            <Summary label={isNew && unitIds.filter(Boolean).length > 1 ? "Unidades" : "Unidade"} value={unitSummary} />
             <Summary
               label="Categoria"
               value={filteredCategories.find((c) => c.id === categoryId)?.name ?? "Sem categoria"}
@@ -390,11 +445,11 @@ export function ProductForm({ initial, units, categories, onSuccess }: Props) {
             <Summary
               label="Preço"
               value={
-                priceCents != null
-                  ? compareCents != null
-                    ? `${formatPrice(priceCents)} (antes ${formatPrice(compareCents)} · −${discountPct}%)`
-                    : formatPrice(priceCents)
-                  : "—"
+                (priceCents ?? 0) > 0
+                  ? compareCents != null && discountPct != null
+                    ? `${formatPrice(priceCents!)} (antes ${formatPrice(compareCents)} · −${discountPct}%)`
+                    : formatPrice(priceCents!)
+                  : formatPriceOrAsk(0)
               }
             />
             <Summary

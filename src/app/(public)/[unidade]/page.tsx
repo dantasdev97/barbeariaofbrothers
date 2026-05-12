@@ -9,7 +9,7 @@ import {
 } from "@/lib/data";
 import { BookingButton } from "@/components/public/booking-button";
 import { TrackPageView } from "@/components/public/track-page-view";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice, formatPriceOrAsk } from "@/lib/utils";
 
 const MARQUEE_ITEMS = [
   "CORTE CLÁSSICO",
@@ -35,15 +35,6 @@ function getInitials(name: string): string {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
-function getProductTag(index: number, name: string): string | null {
-  const low = name.toLowerCase();
-  if (low.includes("voucher") || low.includes("vale") || low.includes("gift"))
-    return "GIFT";
-  if (index === 0) return "BESTSELLER";
-  if (index === 1) return "NOVIDADE";
-  return null;
-}
-
 const yearsOpen = new Date().getFullYear() - 2012;
 
 export default async function UnitHome({
@@ -61,7 +52,6 @@ export default async function UnitHome({
   ]);
 
   const featuredBarbers = barbers.slice(0, 3);
-  const featuredProducts = products.slice(0, 3);
 
   return (
     <>
@@ -99,17 +89,17 @@ export default async function UnitHome({
               unit={unit}
               className="rounded-full px-7 py-3.5 text-[15px] font-medium"
             />
-            <Link
-              href={`/${unit.slug}/produtos`}
+            <a
+              href="#produtos"
               className="inline-flex items-center gap-2 rounded-full border border-border bg-transparent px-7 py-3.5 text-[15px] font-medium text-foreground transition hover:bg-foreground hover:text-background"
             >
               <ShoppingBag className="h-4 w-4" />
               Ver produtos
-            </Link>
+            </a>
           </div>
 
           {/* Stats row */}
-          <div className="mt-10 grid w-max grid-cols-3 gap-12 border-t border-border pt-8">
+          <div className="mt-10 grid grid-cols-3 gap-4 border-t border-border pt-8 sm:w-max sm:gap-12">
             {[
               { num: `${yearsOpen}+`, label: "anos abertos" },
               { num: "350", label: "cortes / mês" },
@@ -258,8 +248,8 @@ export default async function UnitHome({
       )}
 
       {/* ──────────────────────────── PRODUCTS ───────────────────────────── */}
-      {featuredProducts.length > 0 && (
-        <section className="px-4 py-24 sm:px-6">
+      {products.length > 0 && (
+        <section id="produtos" className="scroll-mt-24 px-4 py-24 sm:px-6">
           <div className="mx-auto max-w-7xl">
             <div className="mx-auto mb-14 max-w-2xl text-center">
               <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-brand">
@@ -274,20 +264,21 @@ export default async function UnitHome({
               </p>
             </div>
 
-            {/* 3-col grid matching the model */}
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {featuredProducts.map((p, i) => {
-                const tag = getProductTag(i, p.name);
+            {/* Horizontal carousel */}
+            <div className="-mx-4 flex gap-4 overflow-x-auto snap-x snap-mandatory px-4 pb-4 sm:-mx-6 sm:px-6">
+              {products.map((p) => {
                 const out = p.out_of_stock || p.stock === 0;
                 const pct =
                   p.compare_at_price_cents != null && p.compare_at_price_cents > p.price_cents
-                    ? Math.round(((p.compare_at_price_cents - p.price_cents) / p.compare_at_price_cents) * 100)
+                    ? Math.round(
+                        ((p.compare_at_price_cents - p.price_cents) / p.compare_at_price_cents) * 100,
+                      )
                     : null;
                 return (
                   <Link
                     key={p.id}
                     href={`/${unit.slug}/produtos/${p.slug}`}
-                    className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card transition-all duration-200 hover:-translate-y-1 hover:border-brand/40 hover:shadow-[0_24px_50px_-24px_rgba(26,20,16,0.2)]"
+                    className="group w-[200px] shrink-0 snap-start flex flex-col overflow-hidden rounded-2xl border border-border bg-card transition-all duration-200 hover:-translate-y-1 hover:border-brand/40 hover:shadow-[0_24px_50px_-24px_rgba(26,20,16,0.2)] sm:w-[230px]"
                   >
                     {/* Product image */}
                     <div className="relative aspect-square overflow-hidden bg-bg-surface">
@@ -296,78 +287,49 @@ export default async function UnitHome({
                           src={p.image_url}
                           alt={p.name}
                           fill
-                          sizes="(min-width: 1024px) 33vw, 50vw"
-                          className={`object-contain p-8 transition duration-300 group-hover:scale-105 drop-shadow-[0_12px_24px_rgba(0,0,0,0.15)] ${out ? "opacity-50 grayscale" : ""}`}
+                          sizes="230px"
+                          className={`object-contain p-6 transition duration-300 group-hover:scale-105 drop-shadow-[0_8px_16px_rgba(0,0,0,0.15)] ${out ? "opacity-50 grayscale" : ""}`}
                         />
                       ) : (
                         <div className="flex h-full items-center justify-center">
-                          <ShoppingBag className="h-12 w-12 text-muted-foreground/30" />
-                        </div>
-                      )}
-                      {!out && tag && (
-                        <div className="absolute left-4 top-4 rounded-full bg-foreground px-3 py-1.5 text-[11px] font-semibold uppercase tracking-widest text-background">
-                          {tag}
+                          <ShoppingBag className="h-10 w-10 text-muted-foreground/30" />
                         </div>
                       )}
                       {pct != null && !out && (
-                        <div className="absolute right-4 top-4 rounded-full bg-brand px-3 py-1.5 text-[11px] font-semibold uppercase tracking-widest text-[#1a1410]">
+                        <div className="absolute right-2 top-2 rounded-full bg-brand px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-[#1a1410]">
                           −{pct}%
                         </div>
                       )}
                       {out && (
-                        <div className="absolute left-4 top-4 rounded-full bg-foreground px-3 py-1.5 text-[11px] font-semibold uppercase tracking-widest text-background">
+                        <div className="absolute left-2 top-2 rounded-full bg-foreground px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-background">
                           Esgotado
                         </div>
                       )}
                     </div>
 
                     {/* Product body */}
-                    <div className="flex flex-1 flex-col p-5">
-                      <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                        {p.name.split(" ")[0].toUpperCase()}
-                      </p>
-                      <h3 className="font-heading text-[19px] font-medium leading-tight tracking-tight">
+                    <div className="flex flex-1 flex-col p-4">
+                      <h3 className="font-heading text-[15px] font-medium leading-tight tracking-tight line-clamp-2">
                         {p.name}
                       </h3>
-                      <div className="mt-auto flex items-center justify-between pt-4">
-                        <span className="flex items-baseline gap-2">
-                          {pct != null && (
-                            <s className="text-sm text-muted-foreground">{formatPrice(p.compare_at_price_cents!)}</s>
-                          )}
-                          <span className="font-heading text-[28px] font-semibold tracking-tight">
-                            {formatPrice(p.price_cents)}
-                          </span>
-                        </span>
-                        {out ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-muted px-4 py-1.5 text-sm font-medium text-muted-foreground">
-                            Esgotado
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-foreground px-4 py-1.5 text-sm font-medium text-background transition group-hover:bg-brand group-hover:text-[#1a1410]">
-                            Comprar →
-                          </span>
+                      <div className="mt-auto pt-3 flex flex-col gap-0.5">
+                        {pct != null && (
+                          <s className="text-xs text-muted-foreground">
+                            {formatPrice(p.compare_at_price_cents!)}
+                          </s>
                         )}
+                        <span className="font-heading text-[20px] font-semibold tracking-tight">
+                          {formatPriceOrAsk(p.price_cents)}
+                        </span>
                       </div>
                     </div>
                   </Link>
                 );
               })}
             </div>
-
-            {products.length > 3 && (
-              <div className="mt-10 text-center">
-                <Link
-                  href={`/${unit.slug}/produtos`}
-                  className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition hover:text-foreground"
-                >
-                  Ver todos os produtos →
-                </Link>
-              </div>
-            )}
           </div>
         </section>
       )}
-
     </>
   );
 }

@@ -188,11 +188,15 @@ export async function uploadImage(
   await requireAdmin();
   const sb = createAdminClient();
   const arrayBuffer = await file.arrayBuffer();
-  const { error } = await sb.storage.from(bucket).upload(path, arrayBuffer, {
-    contentType: file.type,
-    upsert: true,
-  });
+  const opts = { contentType: file.type, upsert: true };
+
+  let { error } = await sb.storage.from(bucket).upload(path, arrayBuffer, opts);
+  if (error && /bucket not found/i.test(error.message)) {
+    await sb.storage.createBucket(bucket, { public: true });
+    ({ error } = await sb.storage.from(bucket).upload(path, arrayBuffer, opts));
+  }
   if (error) throw new Error(error.message);
+
   const { data } = sb.storage.from(bucket).getPublicUrl(path);
   return data.publicUrl;
 }

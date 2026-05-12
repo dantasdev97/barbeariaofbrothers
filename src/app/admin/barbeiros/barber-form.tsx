@@ -134,7 +134,9 @@ export function BarberForm({ initial, units, onSuccess }: Props) {
             <Field id="unit" label="Unidade *">
               <Select value={unitId} onValueChange={(v) => setUnitId(v ?? "")}>
                 <SelectTrigger id="unit">
-                  <SelectValue placeholder="Selecionar unidade" />
+                  <SelectValue placeholder="Selecionar unidade">
+                    {(v: string) => units.find((u) => u.id === v)?.name ?? ""}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {units.map((u) => (

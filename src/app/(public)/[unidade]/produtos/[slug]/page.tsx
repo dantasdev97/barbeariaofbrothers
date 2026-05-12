@@ -7,7 +7,7 @@ import { getProductBySlug, getProductsByUnit, getUnitBySlug } from "@/lib/data";
 import { buildUnitMetadata } from "@/lib/seo";
 import { TrackPageView } from "@/components/public/track-page-view";
 import { ProductActions } from "@/components/public/product-actions";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice, formatPriceOrAsk } from "@/lib/utils";
 
 type Params = { unidade: string; slug: string };
 
@@ -51,7 +51,7 @@ export default async function ProductDetail({
 
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
         <Link
-          href={`/${unit.slug}/produtos`}
+          href={`/${unit.slug}#produtos`}
           className="mb-10 inline-flex items-center gap-2 text-sm text-muted-foreground transition hover:text-brand"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -90,7 +90,7 @@ export default async function ProductDetail({
                 <s className="text-2xl text-muted-foreground">{formatPrice(p.compare_at_price_cents)}</s>
               )}
               <p className="font-heading text-4xl font-semibold tracking-tight text-brand">
-                {formatPrice(p.price_cents)}
+                {formatPriceOrAsk(p.price_cents)}
               </p>
               {(p.out_of_stock || p.stock === 0) && (
                 <span className="rounded-full bg-foreground px-3 py-1 text-xs font-semibold uppercase tracking-widest text-background">
@@ -163,7 +163,7 @@ export default async function ProductDetail({
                       {rp.name}
                     </h3>
                     <span className="mt-auto pt-2 font-heading text-lg font-semibold text-brand">
-                      {formatPrice(rp.price_cents)}
+                      {formatPriceOrAsk(rp.price_cents)}
                     </span>
                   </div>
                 </Link>

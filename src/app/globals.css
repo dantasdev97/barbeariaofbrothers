@@ -161,6 +161,7 @@
   }
   html {
     @apply font-sans antialiased;
+    scroll-behavior: smooth;
   }
   body {
     @apply bg-background text-foreground min-h-screen;

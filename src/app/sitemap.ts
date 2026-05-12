@@ -27,7 +27,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       entries.push(
         { url: absoluteUrl(base), priority: 0.9, changeFrequency: "weekly" },
         { url: absoluteUrl(`${base}/barbeiros`), priority: 0.8, changeFrequency: "weekly" },
-        { url: absoluteUrl(`${base}/produtos`), priority: 0.8, changeFrequency: "weekly" },
         { url: absoluteUrl(`${base}/contato`), priority: 0.5, changeFrequency: "monthly" },
       );
     }

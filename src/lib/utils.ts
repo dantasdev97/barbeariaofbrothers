@@ -14,6 +14,10 @@ export function formatPrice(cents: number, currency: "EUR" | "BRL" = "EUR") {
   }).format(cents / 100);
 }
 
+export function formatPriceOrAsk(cents: number, currency: "EUR" | "BRL" = "EUR") {
+  return cents > 0 ? formatPrice(cents, currency) : "Sob consulta";
+}
+
 export function slugify(text: string) {
   return text
     .toString()

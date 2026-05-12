@@ -82,7 +82,7 @@ export function CartView({ unit }: Props) {
             asChild
             className="mt-6 bg-brand text-primary-foreground hover:bg-brand-hover"
           >
-            <Link href={`/${unit.slug}/produtos`}>Ver produtos</Link>
+            <Link href={`/${unit.slug}#produtos`}>Ver produtos</Link>
           </Button>
         </div>
       ) : (
