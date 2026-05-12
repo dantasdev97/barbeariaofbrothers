@@ -316,7 +316,7 @@ export default async function UnitHome({
                           alt={p.name}
                           fill
                           sizes="230px"
-                          className={`object-contain p-2 transition duration-300 group-hover:scale-105 drop-shadow-[0_8px_16px_rgba(0,0,0,0.15)] ${out ? "opacity-50 grayscale" : ""}`}
+                          className={`object-cover transition duration-300 group-hover:scale-105 ${out ? "opacity-50 grayscale" : ""}`}
                         />
                       ) : (
                         <div className="flex h-full items-center justify-center">
