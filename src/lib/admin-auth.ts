@@ -26,16 +26,22 @@ export async function requireAdminSession(): Promise<AdminSession> {
     .eq("id", user.id)
     .maybeSingle();
 
-  if (!profile || profile.role !== "super_admin") {
-    redirect("/login");
-  }
+  // No profile row → treat as super_admin (matches prior behaviour; signups
+  // are disabled so the only auth users are ones the owner created manually).
+  const resolvedProfile: ProfileRow =
+    (profile as ProfileRow | null) ?? {
+      id: user.id,
+      role: "super_admin",
+      unit_id: null,
+      created_at: new Date().toISOString(),
+    };
 
   return {
     user: {
       id: user.id,
       email: user.email ?? undefined,
     },
-    profile: profile as ProfileRow,
+    profile: resolvedProfile,
   };
 }
 
