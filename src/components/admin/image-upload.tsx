@@ -16,6 +16,31 @@ type Props = {
   aspectRatio?: "square" | "wide";
 };
 
+async function toWebP(file: File): Promise<File> {
+  if (file.type === "image/webp") return file;
+  return new Promise((resolve) => {
+    const img = new window.Image();
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      canvas.getContext("2d")?.drawImage(img, 0, 0);
+      canvas.toBlob(
+        (blob) => {
+          URL.revokeObjectURL(img.src);
+          if (!blob) { resolve(file); return; }
+          const name = file.name.replace(/\.[^.]+$/, ".webp");
+          resolve(new File([blob], name, { type: "image/webp" }));
+        },
+        "image/webp",
+        0.88,
+      );
+    };
+    img.onerror = () => { URL.revokeObjectURL(img.src); resolve(file); };
+    img.src = URL.createObjectURL(file);
+  });
+}
+
 export function ImageUpload({
   value,
   onChange,
@@ -35,8 +60,9 @@ export function ImageUpload({
     }
     setUploading(true);
     try {
-      const path = `${pathPrefix}/${Date.now()}-${file.name}`;
-      const url = await uploadImage(bucket, path, file);
+      const webpFile = await toWebP(file);
+      const path = `${pathPrefix}/${Date.now()}.webp`;
+      const url = await uploadImage(bucket, path, webpFile);
       onChange(url);
       toast.success("Imagem carregada.");
     } catch (e) {
@@ -84,7 +110,7 @@ export function ImageUpload({
         {uploading ? (
           <div className="flex h-full flex-col items-center justify-center gap-2 text-muted-foreground">
             <Loader2 className="h-6 w-6 animate-spin text-brand" />
-            <p className="text-xs">A carregar…</p>
+            <p className="text-xs">A converter e carregar…</p>
           </div>
         ) : value ? (
           <>
@@ -116,7 +142,7 @@ export function ImageUpload({
           <div className="flex h-full flex-col items-center justify-center gap-2 px-4 text-center text-muted-foreground">
             <ImageIcon className="h-8 w-8 opacity-40" />
             <p className="text-sm font-medium">Clique ou arraste a imagem</p>
-            <p className="text-xs opacity-60">PNG, JPG, WEBP</p>
+            <p className="text-xs opacity-60">Converte automaticamente para WebP</p>
           </div>
         )}
       </div>

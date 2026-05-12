@@ -47,9 +47,9 @@ export function ProductsClient({
 
   return (
     <div>
-      <header className="mb-7 flex items-end justify-between gap-6 border-b border-border pb-6">
+      <header className="mb-7 flex flex-wrap items-end justify-between gap-4 border-b border-border pb-6">
         <div>
-          <h1 className="font-heading text-[32px] font-semibold leading-none tracking-tight">
+          <h1 className="font-heading text-[28px] font-semibold leading-none tracking-tight sm:text-[32px]">
             Produtos
           </h1>
           <p className="mt-1.5 text-sm text-muted-foreground">
@@ -76,7 +76,7 @@ export function ProductsClient({
         <SheetContent
           side="right"
           className="overflow-y-auto"
-          style={{ maxWidth: "560px" }}
+          style={{ width: "min(560px, 95vw)" }}
         >
           <SheetHeader className="px-4 pt-4 pb-2">
             <SheetTitle>
