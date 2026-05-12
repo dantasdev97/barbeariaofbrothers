@@ -53,6 +53,8 @@ export default async function UnitHome({
 
   const featuredBarbers = barbers.slice(0, 3);
   const hasVideo = Boolean(unit.hero_video_url);
+  const heroImage = !hasVideo && unit.banner_url ? unit.banner_url : null;
+  const hasMedia = hasVideo || Boolean(heroImage);
 
   return (
     <>
@@ -62,21 +64,33 @@ export default async function UnitHome({
       <section
         className={[
           "relative overflow-hidden px-4 pt-14 pb-20 sm:px-6 lg:px-12",
-          hasVideo ? "min-h-[560px] sm:min-h-[640px] lg:min-h-[720px]" : "",
+          hasMedia ? "min-h-[560px] sm:min-h-[640px] lg:min-h-[720px]" : "",
         ].join(" ")}
       >
-        {/* ── Video background ── */}
+        {/* ── Media background (video, or banner image as fallback) ── */}
         {hasVideo && (
+          <video
+            autoPlay
+            muted
+            loop
+            playsInline
+            src={unit.hero_video_url!}
+            className="absolute inset-0 h-full w-full object-cover"
+            aria-hidden="true"
+          />
+        )}
+        {heroImage && (
+          <Image
+            src={heroImage}
+            alt=""
+            fill
+            priority
+            sizes="100vw"
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+        )}
+        {hasMedia && (
           <>
-            <video
-              autoPlay
-              muted
-              loop
-              playsInline
-              src={unit.hero_video_url!}
-              className="absolute inset-0 h-full w-full object-cover"
-              aria-hidden="true"
-            />
             {/* Top-to-bottom: transparent at top → opaque background at bottom */}
             <div className="absolute inset-0 bg-gradient-to-b from-background/20 via-background/60 to-background" />
             {/* Side vignette for depth */}

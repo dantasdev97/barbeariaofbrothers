@@ -6,11 +6,11 @@ import { Plus } from "lucide-react";
 import type { UnitRow } from "@/types/database.types";
 import { Button } from "@/components/ui/button";
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { UnitsTable } from "./units-table";
 import { UnitForm } from "./unit-form";
 
@@ -57,26 +57,20 @@ export function UnitsClient({ units }: { units: UnitRow[] }) {
 
       <UnitsTable units={units} onEdit={openEdit} onAdd={openNew} />
 
-      <Sheet open={open} onOpenChange={setOpen}>
-        <SheetContent
-          side="right"
-          className="overflow-y-auto"
-          style={{ width: "min(560px, 95vw)" }}
-        >
-          <SheetHeader className="px-4 pt-4 pb-2">
-            <SheetTitle>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent size="lg">
+          <DialogHeader>
+            <DialogTitle>
               {editing ? `Editar — ${editing.name}` : "Nova unidade"}
-            </SheetTitle>
-          </SheetHeader>
-          <div className="px-4 pb-8">
-            <UnitForm
-              key={editing?.id ?? "new"}
-              initial={editing ?? undefined}
-              onSuccess={handleSuccess}
-            />
-          </div>
-        </SheetContent>
-      </Sheet>
+            </DialogTitle>
+          </DialogHeader>
+          <UnitForm
+            key={editing?.id ?? "new"}
+            initial={editing ?? undefined}
+            onSuccess={handleSuccess}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
