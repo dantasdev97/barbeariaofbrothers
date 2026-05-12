@@ -30,6 +30,7 @@ type UnitInput = {
   buk_url?: string | null;
   logo_url?: string | null;
   banner_url?: string | null;
+  hero_video_url?: string | null;
   hours?: Hours | null;
   socials?: Socials | null;
   seo?: SeoMeta | null;

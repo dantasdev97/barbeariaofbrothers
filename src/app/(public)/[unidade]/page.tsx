@@ -52,16 +52,44 @@ export default async function UnitHome({
   ]);
 
   const featuredBarbers = barbers.slice(0, 3);
+  const hasVideo = Boolean(unit.hero_video_url);
 
   return (
     <>
       <TrackPageView unitId={unit.id} />
 
       {/* ───────────────────────────── HERO ──────────────────────────────── */}
-      <section className="px-4 pt-14 sm:px-6 lg:px-12">
-        <div className="mx-auto max-w-4xl">
+      <section
+        className={[
+          "relative overflow-hidden px-4 pt-14 pb-20 sm:px-6 lg:px-12",
+          hasVideo ? "min-h-[560px] sm:min-h-[640px] lg:min-h-[720px]" : "",
+        ].join(" ")}
+      >
+        {/* ── Video background ── */}
+        {hasVideo && (
+          <>
+            <video
+              autoPlay
+              muted
+              loop
+              playsInline
+              src={unit.hero_video_url!}
+              className="absolute inset-0 h-full w-full object-cover"
+              aria-hidden="true"
+            />
+            {/* Top-to-bottom: transparent at top → opaque background at bottom */}
+            <div className="absolute inset-0 bg-gradient-to-b from-background/20 via-background/60 to-background" />
+            {/* Side vignette for depth */}
+            <div className="absolute inset-0 bg-gradient-to-r from-background/50 via-transparent to-background/50" />
+            {/* Subtle top scrim so the eyebrow badge reads cleanly */}
+            <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-background/60 to-transparent" />
+          </>
+        )}
+
+        {/* ── Content ── */}
+        <div className="relative mx-auto max-w-4xl">
           {/* Eyebrow badge */}
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-bg-surface px-4 py-2 text-xs font-medium text-foreground/70">
+          <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-bg-surface/90 px-4 py-2 text-xs font-medium text-foreground/70 backdrop-blur-sm">
             <span className="h-1.5 w-1.5 rounded-full bg-green-500 shadow-[0_0_0_3px_rgba(34,197,94,0.2)]" />
             Aberto hoje · 09:30 — 19:30
           </div>
@@ -116,23 +144,24 @@ export default async function UnitHome({
             ))}
           </div>
         </div>
-
-        <div className="relative mt-20 overflow-hidden bg-foreground py-5 -mx-4 sm:-mx-6 lg:-mx-12">
-          <div
-            className="flex w-max gap-12"
-            style={{ animation: "marquee 30s linear infinite" }}
-          >
-            {[...MARQUEE_ITEMS, ...MARQUEE_ITEMS].map((item, i) => (
-              <div key={i} className="flex items-center gap-12">
-                <span className="font-heading text-[22px] font-medium tracking-wide text-background">
-                  {item}
-                </span>
-                <span className="text-brand">●</span>
-              </div>
-            ))}
-          </div>
-        </div>
       </section>
+
+      {/* ── Marquee band — standalone full-width block ── */}
+      <div className="relative overflow-hidden bg-foreground py-5">
+        <div
+          className="flex w-max gap-12"
+          style={{ animation: "marquee 30s linear infinite" }}
+        >
+          {[...MARQUEE_ITEMS, ...MARQUEE_ITEMS].map((item, i) => (
+            <div key={i} className="flex items-center gap-12">
+              <span className="font-heading text-[22px] font-medium tracking-wide text-background">
+                {item}
+              </span>
+              <span className="text-brand">●</span>
+            </div>
+          ))}
+        </div>
+      </div>
 
       {/* ──────────────────────────── BARBERS ────────────────────────────── */}
       {featuredBarbers.length > 0 && (
@@ -162,7 +191,6 @@ export default async function UnitHome({
                     key={b.id}
                     className="group overflow-hidden rounded-2xl border border-border bg-card transition-all duration-300 hover:-translate-y-1 hover:border-brand/40 hover:shadow-[0_24px_50px_-24px_rgba(26,20,16,0.2)]"
                   >
-                    {/* Photo placeholder with initials */}
                     <div
                       className="relative flex aspect-[4/5] items-center justify-center overflow-hidden"
                       style={{ background: gradient }}
@@ -187,13 +215,11 @@ export default async function UnitHome({
                           {initials}
                         </span>
                       )}
-                      {/* Years badge */}
                       <div className="absolute right-4 top-4 rounded-full bg-card px-3 py-1.5 text-[12px] font-medium tracking-wide text-foreground">
                         {i < 3 ? [12, 8, 5][i] : 4} anos
                       </div>
                     </div>
 
-                    {/* Card body */}
                     <div className="p-6">
                       <div className="mb-3">
                         {b.speciality && (
@@ -269,9 +295,12 @@ export default async function UnitHome({
               {products.map((p) => {
                 const out = p.out_of_stock || p.stock === 0;
                 const pct =
-                  p.compare_at_price_cents != null && p.compare_at_price_cents > p.price_cents
+                  p.compare_at_price_cents != null &&
+                  p.compare_at_price_cents > p.price_cents
                     ? Math.round(
-                        ((p.compare_at_price_cents - p.price_cents) / p.compare_at_price_cents) * 100,
+                        ((p.compare_at_price_cents - p.price_cents) /
+                          p.compare_at_price_cents) *
+                          100,
                       )
                     : null;
                 return (
@@ -280,7 +309,6 @@ export default async function UnitHome({
                     href={`/${unit.slug}/produtos/${p.slug}`}
                     className="group w-[200px] shrink-0 snap-start flex flex-col overflow-hidden rounded-2xl border border-border bg-card transition-all duration-200 hover:-translate-y-1 hover:border-brand/40 hover:shadow-[0_24px_50px_-24px_rgba(26,20,16,0.2)] sm:w-[230px]"
                   >
-                    {/* Product image */}
                     <div className="relative aspect-square overflow-hidden bg-bg-surface">
                       {p.image_url ? (
                         <Image
@@ -307,7 +335,6 @@ export default async function UnitHome({
                       )}
                     </div>
 
-                    {/* Product body */}
                     <div className="flex flex-1 flex-col p-4">
                       <h3 className="font-heading text-[15px] font-medium leading-tight tracking-tight line-clamp-2">
                         {p.name}
