@@ -21,10 +21,11 @@ type ProductLite = {
 type Props = {
   unit: UnitRow;
   product: ProductLite;
+  outOfStock?: boolean;
   className?: string;
 };
 
-export function ProductActions({ unit, product, className }: Props) {
+export function ProductActions({ unit, product, outOfStock = false, className }: Props) {
   const [qty, setQty] = useState(1);
   const router = useRouter();
   const add = useCart((s) => s.add);
@@ -64,6 +65,30 @@ export function ProductActions({ unit, product, className }: Props) {
       meta: { mode: "single", qty },
     });
     router.push(`/${unit.slug}/agendar`);
+  }
+
+  if (outOfStock) {
+    return (
+      <div className={cn("flex flex-col gap-3", className)}>
+        <Button
+          type="button"
+          size="lg"
+          disabled
+          className="bg-bg-surface text-muted-foreground"
+        >
+          <ShoppingBag className="mr-2 h-4 w-4" />
+          Esgotado
+        </Button>
+        <Button
+          type="button"
+          size="lg"
+          onClick={buyNow}
+          className="bg-brand text-primary-foreground shadow-premium hover:bg-brand-hover"
+        >
+          Agendar agora
+        </Button>
+      </div>
+    );
   }
 
   return (

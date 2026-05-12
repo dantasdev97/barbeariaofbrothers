@@ -84,7 +84,10 @@ export async function getProductsByUnit(unitId: string): Promise<ProductRow[]> {
     .eq("active", true)
     .order("name", { ascending: true });
 
-  return (data ?? []) as ProductRow[];
+  const rows = (data ?? []) as ProductRow[];
+  // Featured first (stable on `name`). Done in JS so a missing `featured`
+  // column never breaks the public catalog before the migration runs.
+  return rows.sort((a, b) => Number(Boolean(b.featured)) - Number(Boolean(a.featured)));
 }
 
 export async function getProductBySlug(

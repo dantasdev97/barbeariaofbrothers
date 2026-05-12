@@ -278,6 +278,11 @@ export default async function UnitHome({
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {featuredProducts.map((p, i) => {
                 const tag = getProductTag(i, p.name);
+                const out = p.out_of_stock || p.stock === 0;
+                const pct =
+                  p.compare_at_price_cents != null && p.compare_at_price_cents > p.price_cents
+                    ? Math.round(((p.compare_at_price_cents - p.price_cents) / p.compare_at_price_cents) * 100)
+                    : null;
                 return (
                   <Link
                     key={p.id}
@@ -292,16 +297,26 @@ export default async function UnitHome({
                           alt={p.name}
                           fill
                           sizes="(min-width: 1024px) 33vw, 50vw"
-                          className="object-contain p-8 transition duration-300 group-hover:scale-105 drop-shadow-[0_12px_24px_rgba(0,0,0,0.15)]"
+                          className={`object-contain p-8 transition duration-300 group-hover:scale-105 drop-shadow-[0_12px_24px_rgba(0,0,0,0.15)] ${out ? "opacity-50 grayscale" : ""}`}
                         />
                       ) : (
                         <div className="flex h-full items-center justify-center">
                           <ShoppingBag className="h-12 w-12 text-muted-foreground/30" />
                         </div>
                       )}
-                      {tag && (
+                      {!out && tag && (
                         <div className="absolute left-4 top-4 rounded-full bg-foreground px-3 py-1.5 text-[11px] font-semibold uppercase tracking-widest text-background">
                           {tag}
+                        </div>
+                      )}
+                      {pct != null && !out && (
+                        <div className="absolute right-4 top-4 rounded-full bg-brand px-3 py-1.5 text-[11px] font-semibold uppercase tracking-widest text-[#1a1410]">
+                          −{pct}%
+                        </div>
+                      )}
+                      {out && (
+                        <div className="absolute left-4 top-4 rounded-full bg-foreground px-3 py-1.5 text-[11px] font-semibold uppercase tracking-widest text-background">
+                          Esgotado
                         </div>
                       )}
                     </div>
@@ -315,12 +330,23 @@ export default async function UnitHome({
                         {p.name}
                       </h3>
                       <div className="mt-auto flex items-center justify-between pt-4">
-                        <span className="font-heading text-[28px] font-semibold tracking-tight">
-                          {formatPrice(p.price_cents)}
+                        <span className="flex items-baseline gap-2">
+                          {pct != null && (
+                            <s className="text-sm text-muted-foreground">{formatPrice(p.compare_at_price_cents!)}</s>
+                          )}
+                          <span className="font-heading text-[28px] font-semibold tracking-tight">
+                            {formatPrice(p.price_cents)}
+                          </span>
                         </span>
-                        <span className="inline-flex items-center gap-1 rounded-full bg-foreground px-4 py-1.5 text-sm font-medium text-background transition group-hover:bg-brand group-hover:text-[#1a1410]">
-                          Comprar →
-                        </span>
+                        {out ? (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-muted px-4 py-1.5 text-sm font-medium text-muted-foreground">
+                            Esgotado
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-foreground px-4 py-1.5 text-sm font-medium text-background transition group-hover:bg-brand group-hover:text-[#1a1410]">
+                            Comprar →
+                          </span>
+                        )}
                       </div>
                     </div>
                   </Link>

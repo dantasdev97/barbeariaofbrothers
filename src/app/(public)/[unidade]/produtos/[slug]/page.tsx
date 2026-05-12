@@ -85,9 +85,19 @@ export default async function ProductDetail({
             <h1 className="font-heading text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
               {p.name}
             </h1>
-            <p className="mt-4 font-heading text-4xl font-semibold tracking-tight text-brand">
-              {formatPrice(p.price_cents)}
-            </p>
+            <div className="mt-4 flex items-baseline gap-3">
+              {p.compare_at_price_cents != null && p.compare_at_price_cents > p.price_cents && (
+                <s className="text-2xl text-muted-foreground">{formatPrice(p.compare_at_price_cents)}</s>
+              )}
+              <p className="font-heading text-4xl font-semibold tracking-tight text-brand">
+                {formatPrice(p.price_cents)}
+              </p>
+              {(p.out_of_stock || p.stock === 0) && (
+                <span className="rounded-full bg-foreground px-3 py-1 text-xs font-semibold uppercase tracking-widest text-background">
+                  Esgotado
+                </span>
+              )}
+            </div>
 
             {p.description && (
               <p className="mt-6 text-[17px] leading-relaxed text-muted-foreground">
@@ -97,6 +107,7 @@ export default async function ProductDetail({
 
             <ProductActions
               unit={unit}
+              outOfStock={p.out_of_stock || p.stock === 0}
               product={{
                 id: p.id,
                 name: p.name,

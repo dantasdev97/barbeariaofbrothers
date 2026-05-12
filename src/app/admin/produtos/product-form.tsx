@@ -3,7 +3,7 @@
 import { useState, useTransition, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Image as ImageIcon, Search, SlidersHorizontal, Tag } from "lucide-react";
+import { Search, SlidersHorizontal, Tag } from "lucide-react";
 import type {
   ProductCategoryRow,
   ProductRow,
@@ -11,7 +11,6 @@ import type {
 } from "@/types/database.types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
@@ -21,28 +20,60 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ImageUpload } from "@/components/admin/image-upload";
+import { GooglePreview } from "@/components/admin/google-preview";
+import { Stepper, type WizardStep } from "@/components/admin/stepper";
+import { Section, Field, Toggle, CharCounter } from "@/components/admin/form-bits";
 import { saveProduct } from "@/lib/admin-actions";
-import { slugify } from "@/lib/utils";
+import { slugify, formatPrice } from "@/lib/utils";
+
+type UnitLite = Pick<UnitRow, "id" | "name" | "slug">;
 
 type Props = {
   initial?: ProductRow;
-  units: Pick<UnitRow, "id" | "name">[];
+  units: UnitLite[];
   categories: ProductCategoryRow[];
   onSuccess?: () => void;
 };
 
+const STEPS: WizardStep[] = [
+  { id: "produto", title: "Produto", subtitle: "Informações básicas" },
+  { id: "preco", title: "Preço & stock", subtitle: "Valores e disponibilidade" },
+  { id: "seo", title: "SEO", subtitle: "Otimização para pesquisa" },
+  { id: "estado", title: "Estado", subtitle: "Visibilidade e revisão" },
+];
+
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ?? "https://barbeariaofbrothers.pt";
+
+function toEuros(cents: number | null | undefined) {
+  return cents != null ? (cents / 100).toFixed(2) : "";
+}
+function toCents(euros: string): number | null {
+  const t = euros.trim();
+  if (t === "") return null;
+  const n = Number(t.replace(",", "."));
+  if (!Number.isFinite(n) || n < 0) return null;
+  return Math.round(n * 100);
+}
+
 export function ProductForm({ initial, units, categories, onSuccess }: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const [step, setStep] = useState(0);
+
   const [unitId, setUnitId] = useState(initial?.unit_id ?? units[0]?.id ?? "");
   const [categoryId, setCategoryId] = useState(initial?.category_id ?? "");
   const [name, setName] = useState(initial?.name ?? "");
   const [slug, setSlug] = useState(initial?.slug ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
-  const [priceEuros, setPriceEuros] = useState(
-    initial ? (initial.price_cents / 100).toFixed(2) : "",
-  );
   const [imageUrl, setImageUrl] = useState<string | null>(initial?.image_url ?? null);
+
+  const [priceEuros, setPriceEuros] = useState(toEuros(initial?.price_cents));
+  const [compareEuros, setCompareEuros] = useState(toEuros(initial?.compare_at_price_cents));
+  const [stock, setStock] = useState(String(initial?.stock ?? 0));
+  const [outOfStock, setOutOfStock] = useState(initial?.out_of_stock ?? false);
+  const [featured, setFeatured] = useState(initial?.featured ?? false);
+
   const [seoTitle, setSeoTitle] = useState(initial?.seo_title ?? "");
   const [seoDescription, setSeoDescription] = useState(initial?.seo_description ?? "");
   const [active, setActive] = useState(initial?.active ?? true);
@@ -51,35 +82,78 @@ export function ProductForm({ initial, units, categories, onSuccess }: Props) {
     () => categories.filter((c) => c.unit_id === unitId),
     [categories, unitId],
   );
+  const unit = units.find((u) => u.id === unitId);
+  const effSlug = slug || slugify(name);
 
-  function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!unitId) return toast.error("Selecione uma unidade.");
-    const cents = Math.round(Number(priceEuros) * 100);
-    if (!Number.isFinite(cents) || cents < 0)
-      return toast.error("Preço inválido.");
+  const priceCents = toCents(priceEuros);
+  const compareCents = toCents(compareEuros);
+  const discountPct =
+    compareCents != null && priceCents != null && compareCents > priceCents
+      ? Math.round(((compareCents - priceCents) / compareCents) * 100)
+      : null;
 
+  function validateStep(s: number): string | null {
+    if (s === 0) {
+      if (!unitId) return "Selecione uma unidade.";
+      if (!name.trim()) return "Indique o nome do produto.";
+    }
+    if (s === 1) {
+      if (priceCents == null) return "Indique um preço válido.";
+      if (compareEuros.trim() !== "" && compareCents == null)
+        return "Preço antes inválido.";
+      if (compareCents != null && priceCents != null && compareCents <= priceCents)
+        return "O 'preço antes' tem de ser maior que o preço actual.";
+      const st = Number(stock);
+      if (!Number.isInteger(st) || st < 0) return "Stock inválido.";
+    }
+    return null;
+  }
+
+  function goNext() {
+    const err = validateStep(step);
+    if (err) return toast.error(err);
+    setStep((s) => Math.min(s + 1, STEPS.length - 1));
+  }
+
+  function jumpTo(target: number) {
+    if (target <= step) return setStep(target);
+    for (let s = step; s < target; s++) {
+      const err = validateStep(s);
+      if (err) return toast.error(err);
+    }
+    setStep(target);
+  }
+
+  function submit() {
+    for (let s = 0; s < STEPS.length - 1; s++) {
+      const err = validateStep(s);
+      if (err) {
+        setStep(s);
+        return toast.error(err);
+      }
+    }
     startTransition(async () => {
       try {
         await saveProduct({
           id: initial?.id,
           unit_id: unitId,
           category_id: categoryId || null,
-          name,
-          slug: slug || slugify(name),
-          description: description || null,
-          price_cents: cents,
+          name: name.trim(),
+          slug: effSlug,
+          description: description.trim() || null,
+          price_cents: priceCents!,
+          compare_at_price_cents: compareCents,
+          stock: Number(stock),
+          out_of_stock: outOfStock,
+          featured,
           image_url: imageUrl || null,
-          seo_title: seoTitle || null,
-          seo_description: seoDescription || null,
+          seo_title: seoTitle.trim() || null,
+          seo_description: seoDescription.trim() || null,
           active,
         });
         toast.success("Produto guardado.");
-        if (onSuccess) {
-          onSuccess();
-        } else {
-          router.push("/admin/produtos");
-        }
+        if (onSuccess) onSuccess();
+        else router.push("/admin/produtos");
         router.refresh();
       } catch (e) {
         toast.error(e instanceof Error ? e.message : "Falhou.");
@@ -87,208 +161,276 @@ export function ProductForm({ initial, units, categories, onSuccess }: Props) {
     });
   }
 
-  return (
-    <form onSubmit={onSubmit} className="space-y-5">
-      {/* Classificação */}
-      <Section icon={<Tag className="h-4 w-4 text-brand" />} title="Classificação">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field id="unit" label="Unidade">
-            <Select
-              value={unitId}
-              onValueChange={(v) => {
-                setUnitId(v ?? "");
-                setCategoryId("");
-              }}
-            >
-              <SelectTrigger id="unit">
-                <SelectValue placeholder="Selecionar unidade" />
-              </SelectTrigger>
-              <SelectContent>
-                {units.map((u) => (
-                  <SelectItem key={u.id} value={u.id}>
-                    {u.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </Field>
-          <Field id="cat" label="Categoria">
-            <Select value={categoryId} onValueChange={(v) => setCategoryId(v ?? "")}>
-              <SelectTrigger id="cat">
-                <SelectValue placeholder="— Sem categoria —" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">— Sem categoria —</SelectItem>
-                {filteredCategories.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    {c.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </Field>
-        </div>
+  function onFormSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (step < STEPS.length - 1) goNext();
+    else submit();
+  }
 
-        <div className="grid gap-4 sm:grid-cols-2">
+  const isLast = step === STEPS.length - 1;
+
+  return (
+    <form onSubmit={onFormSubmit} className="space-y-5">
+      <Stepper steps={STEPS} current={step} onStepClick={jumpTo} />
+
+      {step === 0 && (
+        <Section icon={<Tag className="h-4 w-4 text-brand" />} title="Produto">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field id="unit" label="Unidade *">
+              <Select
+                value={unitId}
+                onValueChange={(v) => {
+                  setUnitId(v ?? "");
+                  setCategoryId("");
+                }}
+              >
+                <SelectTrigger id="unit">
+                  <SelectValue placeholder="Selecionar unidade" />
+                </SelectTrigger>
+                <SelectContent>
+                  {units.map((u) => (
+                    <SelectItem key={u.id} value={u.id}>
+                      {u.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field id="cat" label="Categoria">
+              <Select value={categoryId} onValueChange={(v) => setCategoryId(v ?? "")}>
+                <SelectTrigger id="cat">
+                  <SelectValue placeholder="— Sem categoria —" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">— Sem categoria —</SelectItem>
+                  {filteredCategories.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+          </div>
+
           <Field id="name" label="Nome *">
             <Input
               id="name"
-              required
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
           </Field>
-          <Field id="price" label="Preço (€) *">
-            <Input
-              id="price"
-              type="number"
-              step="0.01"
-              min="0"
-              required
-              value={priceEuros}
-              onChange={(e) => setPriceEuros(e.target.value)}
+
+          <Field id="description" label="Descrição">
+            <Textarea
+              id="description"
+              value={description}
+              rows={3}
+              onChange={(e) => setDescription(e.target.value)}
             />
           </Field>
-        </div>
 
-        <Field
-          id="slug"
-          label={
-            <>
-              Slug{" "}
-              <span className="font-normal text-muted-foreground">(auto)</span>
-            </>
-          }
-        >
-          <Input
-            id="slug"
-            value={slug}
-            placeholder={slugify(name) || "ex: pomada-classica"}
-            onChange={(e) => setSlug(slugify(e.target.value))}
-          />
-        </Field>
-
-        <Field id="description" label="Descrição">
-          <Textarea
-            id="description"
-            value={description}
-            rows={3}
-            onChange={(e) => setDescription(e.target.value)}
-          />
-        </Field>
-      </Section>
-
-      {/* Imagem */}
-      <Section icon={<ImageIcon className="h-4 w-4 text-brand" />} title="Imagem">
-        <ImageUpload
-          value={imageUrl}
-          onChange={setImageUrl}
-          bucket="products"
-          pathPrefix="images"
-          aspectRatio="wide"
-          label="Imagem do produto"
-        />
-      </Section>
-
-      {/* SEO */}
-      <Section icon={<Search className="h-4 w-4 text-brand" />} title="SEO">
-        <Field id="seo-title" label="Título SEO">
-          <Input
-            id="seo-title"
-            value={seoTitle}
-            onChange={(e) => setSeoTitle(e.target.value)}
-          />
-        </Field>
-        <Field id="seo-desc" label="Descrição SEO">
-          <Textarea
-            id="seo-desc"
-            value={seoDescription}
-            rows={3}
-            onChange={(e) => setSeoDescription(e.target.value)}
-          />
-        </Field>
-      </Section>
-
-      {/* Estado */}
-      <Section
-        icon={<SlidersHorizontal className="h-4 w-4 text-brand" />}
-        title="Estado"
-      >
-        <label className="inline-flex cursor-pointer items-center gap-3 text-sm">
-          <button
-            type="button"
-            role="switch"
-            aria-checked={active}
-            onClick={() => setActive((a) => !a)}
-            className={`relative h-5 w-9 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-brand focus:ring-offset-2 ${
-              active ? "bg-brand" : "bg-border"
-            }`}
-          >
-            <span
-              className={`absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${
-                active ? "translate-x-4" : "translate-x-0"
-              }`}
+          <Field label="Imagem do produto">
+            <ImageUpload
+              value={imageUrl}
+              onChange={setImageUrl}
+              bucket="products"
+              pathPrefix="images"
+              aspectRatio="wide"
             />
-          </button>
-          Activo (visível na loja)
-        </label>
-      </Section>
+          </Field>
+        </Section>
+      )}
 
-      <div className="flex gap-2 pt-1">
+      {step === 1 && (
+        <Section
+          icon={<Tag className="h-4 w-4 text-brand" />}
+          title="Preço & stock"
+        >
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field id="price" label="Preço (€) *">
+              <Input
+                id="price"
+                type="number"
+                step="0.01"
+                min="0"
+                inputMode="decimal"
+                value={priceEuros}
+                onChange={(e) => setPriceEuros(e.target.value)}
+              />
+            </Field>
+            <Field
+              id="compare"
+              label="Preço antes (€)"
+              hint={
+                discountPct != null
+                  ? `Mostra ${formatPrice(compareCents!)} riscado · desconto de ${discountPct}%`
+                  : "Opcional — preço original riscado na loja"
+              }
+            >
+              <Input
+                id="compare"
+                type="number"
+                step="0.01"
+                min="0"
+                inputMode="decimal"
+                value={compareEuros}
+                onChange={(e) => setCompareEuros(e.target.value)}
+              />
+            </Field>
+          </div>
+
+          <Field id="stock" label="Stock (quantidade)" hint="0 ou marca 'esgotado' → aparece como esgotado na loja.">
+            <Input
+              id="stock"
+              type="number"
+              step="1"
+              min="0"
+              inputMode="numeric"
+              value={stock}
+              onChange={(e) => setStock(e.target.value)}
+            />
+          </Field>
+
+          <div className="space-y-3 rounded-lg bg-bg-surface p-4">
+            <Toggle
+              checked={outOfStock}
+              onChange={setOutOfStock}
+              label="Esgotado"
+              description="Marca o produto como indisponível independentemente da quantidade."
+            />
+            <Toggle
+              checked={featured}
+              onChange={setFeatured}
+              label="Em destaque"
+              description="Aparece primeiro na loja e na secção de destaques da unidade."
+            />
+          </div>
+        </Section>
+      )}
+
+      {step === 2 && (
+        <Section icon={<Search className="h-4 w-4 text-brand" />} title="SEO">
+          <Field
+            id="slug"
+            label={
+              <>
+                Slug <span className="font-normal text-muted-foreground">(auto)</span>
+              </>
+            }
+            hint={`URL: ${SITE_URL}/${unit?.slug ?? "unidade"}/produtos/${effSlug || "…"}`}
+          >
+            <Input
+              id="slug"
+              value={slug}
+              placeholder={slugify(name) || "ex: pomada-classica"}
+              onChange={(e) => setSlug(slugify(e.target.value))}
+            />
+          </Field>
+
+          <Field
+            id="seo-title"
+            label="Título SEO"
+            hint={<CharCounter value={seoTitle} min={50} max={70} />}
+          >
+            <Input
+              id="seo-title"
+              value={seoTitle}
+              placeholder={`${name} | ${unit?.name ?? "Barbearia Of Brothers"}`}
+              onChange={(e) => setSeoTitle(e.target.value)}
+            />
+          </Field>
+          <Field
+            id="seo-desc"
+            label="Descrição SEO"
+            hint={<CharCounter value={seoDescription} min={120} max={160} />}
+          >
+            <Textarea
+              id="seo-desc"
+              value={seoDescription}
+              rows={3}
+              placeholder="Descrição que aparece nos resultados do Google…"
+              onChange={(e) => setSeoDescription(e.target.value)}
+            />
+          </Field>
+
+          <div>
+            <div className="mb-2 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+              <Search className="h-3.5 w-3.5" />
+              Pré-visualização Google
+            </div>
+            <GooglePreview
+              title={seoTitle || `${name || "Produto"} | ${unit?.name ?? "Barbearia Of Brothers"}`}
+              url={`${SITE_URL}/${unit?.slug ?? "unidade"}/produtos/${effSlug}`}
+              description={seoDescription}
+            />
+          </div>
+        </Section>
+      )}
+
+      {step === 3 && (
+        <Section
+          icon={<SlidersHorizontal className="h-4 w-4 text-brand" />}
+          title="Estado & revisão"
+        >
+          <Toggle
+            checked={active}
+            onChange={setActive}
+            label="Activo (visível na loja)"
+            description="Desactiva para esconder o produto sem o eliminar."
+          />
+
+          <dl className="grid gap-x-4 gap-y-2 rounded-lg bg-bg-surface p-4 text-sm sm:grid-cols-2">
+            <Summary label="Nome" value={name || "—"} />
+            <Summary label="Unidade" value={unit?.name ?? "—"} />
+            <Summary
+              label="Categoria"
+              value={filteredCategories.find((c) => c.id === categoryId)?.name ?? "Sem categoria"}
+            />
+            <Summary
+              label="Preço"
+              value={
+                priceCents != null
+                  ? compareCents != null
+                    ? `${formatPrice(priceCents)} (antes ${formatPrice(compareCents)} · −${discountPct}%)`
+                    : formatPrice(priceCents)
+                  : "—"
+              }
+            />
+            <Summary
+              label="Stock"
+              value={outOfStock || Number(stock) === 0 ? "Esgotado" : `${stock} un.`}
+            />
+            <Summary label="Destaque" value={featured ? "Sim" : "Não"} />
+          </dl>
+        </Section>
+      )}
+
+      <div className="flex items-center justify-between gap-2 pt-1">
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={() => (step === 0 ? (onSuccess ? onSuccess() : router.back()) : setStep((s) => s - 1))}
+        >
+          {step === 0 ? "Cancelar" : "← Anterior"}
+        </Button>
         <Button
           type="submit"
           disabled={pending}
           className="bg-brand text-primary-foreground hover:bg-brand-hover"
         >
-          {pending ? "A guardar…" : "Guardar produto"}
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => (onSuccess ? onSuccess() : router.back())}
-        >
-          Cancelar
+          {isLast ? (pending ? "A guardar…" : "Guardar produto") : "Seguinte →"}
         </Button>
       </div>
     </form>
   );
 }
 
-function Section({
-  icon,
-  title,
-  children,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  children: React.ReactNode;
-}) {
+function Summary({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl border border-border bg-white p-5">
-      <div className="mb-4 flex items-center gap-2">
-        {icon}
-        <h3 className="text-sm font-semibold text-foreground">{title}</h3>
-      </div>
-      <div className="space-y-4">{children}</div>
-    </div>
-  );
-}
-
-function Field({
-  id,
-  label,
-  children,
-}: {
-  id: string;
-  label: React.ReactNode;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="space-y-1.5">
-      <Label htmlFor={id} className="text-sm font-medium">
-        {label}
-      </Label>
-      {children}
+    <div>
+      <dt className="text-xs uppercase tracking-wide text-muted-foreground">{label}</dt>
+      <dd className="font-medium text-foreground">{value}</dd>
     </div>
   );
 }
