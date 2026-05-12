@@ -6,11 +6,11 @@ import { Plus } from "lucide-react";
 import type { ProductCategoryRow, ProductRow, UnitRow } from "@/types/database.types";
 import { Button } from "@/components/ui/button";
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { ProductsTable } from "./products-table";
 import { ProductForm } from "./product-form";
 
@@ -72,28 +72,22 @@ export function ProductsClient({
         onAdd={openNew}
       />
 
-      <Sheet open={open} onOpenChange={setOpen}>
-        <SheetContent
-          side="right"
-          className="overflow-y-auto"
-          style={{ width: "min(560px, 95vw)" }}
-        >
-          <SheetHeader className="px-4 pt-4 pb-2">
-            <SheetTitle>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent size="lg">
+          <DialogHeader>
+            <DialogTitle>
               {editing ? `Editar — ${editing.name}` : "Novo produto"}
-            </SheetTitle>
-          </SheetHeader>
-          <div className="px-4 pb-8">
-            <ProductForm
-              key={editing?.id ?? "new"}
-              initial={editing ?? undefined}
-              units={units}
-              categories={categories}
-              onSuccess={handleSuccess}
-            />
-          </div>
-        </SheetContent>
-      </Sheet>
+            </DialogTitle>
+          </DialogHeader>
+          <ProductForm
+            key={editing?.id ?? "new"}
+            initial={editing ?? undefined}
+            units={units}
+            categories={categories}
+            onSuccess={handleSuccess}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

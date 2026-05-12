@@ -79,6 +79,10 @@ export type ProductRow = {
   name: string;
   description: string | null;
   price_cents: number;
+  compare_at_price_cents: number | null;
+  stock: number;
+  out_of_stock: boolean;
+  featured: boolean;
   image_url: string | null;
   seo_title: string | null;
   seo_description: string | null;
