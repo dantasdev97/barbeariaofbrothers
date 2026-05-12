@@ -60,14 +60,14 @@ export default async function ProductDetail({
 
         <article className="grid gap-12 lg:grid-cols-2 lg:items-start">
           {/* Image */}
-          <div className="relative aspect-square overflow-hidden rounded-3xl border border-border/60 bg-bg-surface shadow-premium-lg">
+          <div className="group relative aspect-square overflow-hidden rounded-3xl bg-bg-surface shadow-premium-lg">
             {p.image_url ? (
               <Image
                 src={p.image_url}
                 alt={p.name}
                 fill
                 sizes="(min-width: 1024px) 50vw, 100vw"
-                className="object-contain p-4 transition duration-500 hover:scale-105 drop-shadow-[0_24px_48px_rgba(0,0,0,0.18)]"
+                className="object-cover transition duration-500 group-hover:scale-105"
                 priority
               />
             ) : (
@@ -150,7 +150,7 @@ export default async function ProductDetail({
                         alt={rp.name}
                         fill
                         sizes="25vw"
-                        className="object-contain p-2 transition group-hover:scale-105"
+                        className="object-cover transition group-hover:scale-105"
                       />
                     ) : (
                       <div className="flex h-full items-center justify-center">
