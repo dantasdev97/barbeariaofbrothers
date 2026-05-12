@@ -60,19 +60,19 @@ export default async function ProductDetail({
 
         <article className="grid gap-12 lg:grid-cols-2 lg:items-start">
           {/* Image */}
-          <div className="relative aspect-square overflow-hidden rounded-2xl border border-border bg-bg-surface">
+          <div className="relative aspect-square overflow-hidden rounded-3xl border border-border/60 bg-bg-surface shadow-premium-lg">
             {p.image_url ? (
               <Image
                 src={p.image_url}
                 alt={p.name}
                 fill
                 sizes="(min-width: 1024px) 50vw, 100vw"
-                className="object-contain p-10 drop-shadow-[0_20px_40px_rgba(0,0,0,0.4)]"
+                className="object-contain p-4 transition duration-500 hover:scale-105 drop-shadow-[0_24px_48px_rgba(0,0,0,0.18)]"
                 priority
               />
             ) : (
               <div className="flex h-full items-center justify-center">
-                <ShoppingBag className="h-24 w-24 text-white/10" />
+                <ShoppingBag className="h-24 w-24 text-muted-foreground/20" />
               </div>
             )}
           </div>
@@ -150,7 +150,7 @@ export default async function ProductDetail({
                         alt={rp.name}
                         fill
                         sizes="25vw"
-                        className="object-contain p-5 transition group-hover:scale-105"
+                        className="object-contain p-2 transition group-hover:scale-105"
                       />
                     ) : (
                       <div className="flex h-full items-center justify-center">
