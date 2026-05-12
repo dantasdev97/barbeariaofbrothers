@@ -20,11 +20,13 @@ export default async function AdminLayout({
     .eq("id", user.id)
     .maybeSingle();
 
+  if (!profile) redirect("/login");
+
   return (
     <div className="admin flex min-h-[100dvh] bg-background">
       <AdminSidebar
         email={user.email ?? ""}
-        role={profile?.role ?? "super_admin"}
+        role={profile.role}
       />
       <div className="flex flex-1 flex-col">
         <main className="flex-1 overflow-auto p-6 sm:p-8 lg:p-10">

@@ -34,8 +34,7 @@ export function LoginForm() {
       return;
     }
     toast.success("Sessão iniciada");
-    router.push(next);
-    router.refresh();
+    window.location.href = next;
   }
 
   return (
