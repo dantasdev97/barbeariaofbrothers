@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Globe, Search, Settings2 } from "lucide-react";
+import { Check, Copy, Globe, ImageIcon, Search, Settings2 } from "lucide-react";
 import { toast } from "sonner";
 import Image from "next/image";
 import type { UnitRow } from "@/types/database.types";
@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ImageUpload } from "@/components/admin/image-upload";
-import { saveUnit } from "@/lib/admin-actions";
+import { saveUnit, uploadImage } from "@/lib/admin-actions";
 
 type UnitState = {
   logoUrl: string | null;
@@ -33,12 +33,108 @@ function GooglePreview({
         <Globe className="h-3.5 w-3.5 shrink-0 text-[#4d5156]" />
         <span className="truncate text-xs text-[#4d5156]">{url}</span>
       </div>
-      <p className="text-base font-medium leading-snug text-[#1a0dab] line-clamp-1 hover:underline cursor-pointer">
+      <p className="cursor-pointer text-base font-medium leading-snug text-[#1a0dab] line-clamp-1 hover:underline">
         {title || "Título da página"}
       </p>
       <p className="mt-0.5 text-xs leading-relaxed text-[#4d5156] line-clamp-2">
         {description || "Descrição que aparece nos resultados de pesquisa do Google…"}
       </p>
+    </div>
+  );
+}
+
+function CopyButton({ value }: { value: string }) {
+  const [copied, setCopied] = useState(false);
+  function copy() {
+    navigator.clipboard.writeText(value).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
+  return (
+    <button
+      type="button"
+      onClick={copy}
+      className="inline-flex items-center gap-1 rounded-md border border-border bg-muted px-2 py-1 text-xs font-medium text-muted-foreground transition hover:bg-border"
+    >
+      {copied ? <Check className="h-3 w-3 text-green-600" /> : <Copy className="h-3 w-3" />}
+      {copied ? "Copiado" : "Copiar URL"}
+    </button>
+  );
+}
+
+function FaviconUpload() {
+  const [faviconUrl, setFaviconUrl] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const inputRef = useState<HTMLInputElement | null>(null);
+
+  async function handleFile(file: File) {
+    if (!file.type.startsWith("image/")) {
+      toast.error("Selecione uma imagem (PNG, ICO, SVG, WebP).");
+      return;
+    }
+    setUploading(true);
+    try {
+      const path = `global/favicon-${Date.now()}.webp`;
+      const url = await uploadImage("units", path, file);
+      setFaviconUrl(url);
+      toast.success("Favicon carregado — copie o URL abaixo.");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao carregar favicon.");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-3">
+        {/* Preview */}
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-dashed border-border bg-muted">
+          {faviconUrl ? (
+            <Image src={faviconUrl} alt="Favicon" width={32} height={32} className="h-8 w-8 object-contain" />
+          ) : (
+            <ImageIcon className="h-5 w-5 text-muted-foreground/50" />
+          )}
+        </div>
+        <div className="flex-1">
+          <label className="cursor-pointer">
+            <span className="inline-flex items-center gap-2 rounded-lg border border-border bg-white px-4 py-2 text-sm font-medium text-foreground transition hover:bg-muted">
+              {uploading ? "A carregar…" : "Escolher favicon"}
+            </span>
+            <input
+              type="file"
+              accept="image/*,.ico"
+              className="hidden"
+              disabled={uploading}
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) handleFile(f);
+                e.target.value = "";
+              }}
+            />
+          </label>
+          <p className="mt-1 text-xs text-muted-foreground">
+            PNG, ICO, SVG ou WebP · Recomendado 32×32 px
+          </p>
+        </div>
+      </div>
+
+      {faviconUrl && (
+        <div className="rounded-lg border border-border bg-muted/50 p-3">
+          <p className="mb-1.5 text-xs font-medium text-foreground">URL do favicon:</p>
+          <div className="flex items-center gap-2">
+            <code className="flex-1 truncate rounded bg-background px-2 py-1.5 font-mono text-[11px] text-brand">
+              {faviconUrl}
+            </code>
+            <CopyButton value={faviconUrl} />
+          </div>
+          <p className="mt-2 text-[11px] text-muted-foreground">
+            Cole este URL no campo <code className="rounded bg-background px-1 font-mono">icons.icon</code> em{" "}
+            <code className="rounded bg-background px-1 font-mono">src/app/layout.tsx</code> para activar o favicon.
+          </p>
+        </div>
+      )}
     </div>
   );
 }
@@ -96,7 +192,8 @@ export function ConfigClient({ units }: { units: UnitRow[] }) {
     });
   }
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://barbeariaofbrothers.pt";
+  const siteUrl =
+    process.env.NEXT_PUBLIC_SITE_URL ?? "https://barbeariaofbrothers.vercel.app";
 
   return (
     <div>
@@ -118,13 +215,19 @@ export function ConfigClient({ units }: { units: UnitRow[] }) {
           return (
             <div
               key={u.id}
-              className="rounded-2xl border border-border bg-white shadow-sm"
+              className="overflow-hidden rounded-2xl border border-border bg-white shadow-sm"
             >
               {/* Card header */}
-              <div className="flex items-center gap-4 border-b border-border px-6 py-4">
+              <div className="flex items-center gap-4 border-b border-border px-4 py-4 sm:px-6">
                 {s.logoUrl ? (
                   <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-border bg-muted">
-                    <Image src={s.logoUrl} alt={u.name} fill className="object-contain p-1" sizes="48px" />
+                    <Image
+                      src={s.logoUrl}
+                      alt={u.name}
+                      fill
+                      className="object-contain p-1"
+                      sizes="48px"
+                    />
                   </div>
                 ) : (
                   <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-dashed border-border bg-muted text-muted-foreground">
@@ -154,7 +257,7 @@ export function ConfigClient({ units }: { units: UnitRow[] }) {
               </div>
 
               {/* Card body */}
-              <div className="grid gap-8 p-6 sm:grid-cols-2">
+              <div className="grid gap-8 p-4 sm:grid-cols-2 sm:p-6">
                 {/* Logo upload */}
                 <div>
                   <div className="mb-3 flex items-center gap-2">
@@ -182,21 +285,29 @@ export function ConfigClient({ units }: { units: UnitRow[] }) {
                   </div>
                   <div className="space-y-3">
                     <div className="space-y-1.5">
-                      <Label htmlFor={`seo-title-${u.id}`} className="text-sm font-medium">
+                      <Label
+                        htmlFor={`seo-title-${u.id}`}
+                        className="text-sm font-medium"
+                      >
                         Título SEO
                       </Label>
                       <Input
                         id={`seo-title-${u.id}`}
                         value={s.seoTitle}
                         placeholder={u.name}
-                        onChange={(e) => update(u.id, { seoTitle: e.target.value })}
+                        onChange={(e) =>
+                          update(u.id, { seoTitle: e.target.value })
+                        }
                       />
                       <p className="text-right text-xs text-muted-foreground">
                         {s.seoTitle.length}/60
                       </p>
                     </div>
                     <div className="space-y-1.5">
-                      <Label htmlFor={`seo-desc-${u.id}`} className="text-sm font-medium">
+                      <Label
+                        htmlFor={`seo-desc-${u.id}`}
+                        className="text-sm font-medium"
+                      >
                         Descrição SEO
                       </Label>
                       <Textarea
@@ -204,7 +315,9 @@ export function ConfigClient({ units }: { units: UnitRow[] }) {
                         value={s.seoDescription}
                         rows={3}
                         placeholder="Uma breve descrição desta unidade…"
-                        onChange={(e) => update(u.id, { seoDescription: e.target.value })}
+                        onChange={(e) =>
+                          update(u.id, { seoDescription: e.target.value })
+                        }
                       />
                       <p className="text-right text-xs text-muted-foreground">
                         {s.seoDescription.length}/160
@@ -215,7 +328,7 @@ export function ConfigClient({ units }: { units: UnitRow[] }) {
               </div>
 
               {/* Google preview */}
-              <div className="border-t border-border px-6 pb-6 pt-4">
+              <div className="border-t border-border px-4 pb-6 pt-4 sm:px-6">
                 <div className="mb-2 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
                   <Globe className="h-3.5 w-3.5" />
                   Pré-visualização Google
@@ -228,7 +341,7 @@ export function ConfigClient({ units }: { units: UnitRow[] }) {
               </div>
 
               {/* Save button */}
-              <div className="flex justify-end border-t border-border px-6 py-4">
+              <div className="flex justify-end border-t border-border px-4 py-4 sm:px-6">
                 <Button
                   onClick={() => save(u)}
                   disabled={isSaving}
@@ -243,25 +356,34 @@ export function ConfigClient({ units }: { units: UnitRow[] }) {
       </div>
 
       {/* Global config */}
-      <div className="rounded-2xl border border-border bg-white p-8">
+      <div className="rounded-2xl border border-border bg-white p-6 sm:p-8">
         <div className="mb-6 flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand/10">
             <Settings2 className="h-5 w-5 text-brand" />
           </div>
           <div>
-            <h2 className="font-heading text-xl font-semibold">Configuração global</h2>
+            <h2 className="font-heading text-xl font-semibold">
+              Configuração global
+            </h2>
             <p className="text-sm text-muted-foreground">
-              Ficheiros partilhados por todas as unidades
+              Favicon e ficheiros partilhados
             </p>
           </div>
         </div>
+
+        {/* Favicon upload */}
+        <div className="mb-8 rounded-xl border border-border p-5">
+          <div className="mb-4 flex items-center gap-2">
+            <div className="flex h-6 w-6 items-center justify-center rounded-md bg-brand/10">
+              <ImageIcon className="h-3.5 w-3.5 text-brand" />
+            </div>
+            <span className="text-sm font-semibold">Favicon</span>
+          </div>
+          <FaviconUpload />
+        </div>
+
         <ul className="space-y-3 text-sm">
           {[
-            {
-              label: "Favicon",
-              path: "public/favicon.ico",
-              detail: "Substituir o ficheiro na pasta public/",
-            },
             {
               label: "Metadata global",
               path: "src/app/layout.tsx",

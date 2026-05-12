@@ -436,7 +436,7 @@ export default async function UnitHome({
       )}
 
       {/* ───────────────────────────── ABOUT ─────────────────────────────── */}
-      <section className="px-4 py-24 sm:px-6">
+      <section id="sobre" className="px-4 py-24 sm:px-6">
         <div className="mx-auto grid max-w-7xl gap-16 lg:grid-cols-2 lg:items-center">
           {/* Text */}
           <div>
@@ -458,7 +458,7 @@ export default async function UnitHome({
               {barbers.length > 0 ? `${barbers.length} barbeiros` : "a nossa equipa"} e horário
               das 09:30 às 19:30, segunda a sábado.
             </p>
-            <ul className="mt-8 grid gap-2.5 text-sm">
+            <ul className="mt-8 grid gap-2.5 text-sm sm:grid-cols-2">
               {[
                 "Profissionais certificados",
                 "Produtos importados (Turquia · Itália)",

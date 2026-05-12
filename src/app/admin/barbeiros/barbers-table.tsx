@@ -88,24 +88,26 @@ export function BarbersTable({
                     {b.active ? "Activo" : "Inactivo"}
                   </Badge>
                 </td>
-                <td className="px-5 py-4 text-right">
+                <td className="px-3 py-4 text-right sm:px-5">
                   <div className="flex justify-end gap-1">
                     <Button
                       size="sm"
                       variant="ghost"
                       onClick={() => onEdit?.(b)}
+                      aria-label="Editar"
                     >
-                      <Pencil className="mr-1 h-3.5 w-3.5" />
-                      Editar
+                      <Pencil className="h-3.5 w-3.5 sm:mr-1" />
+                      <span className="hidden sm:inline">Editar</span>
                     </Button>
                     <Button
                       size="sm"
                       variant="ghost"
                       onClick={() => setToDelete(b)}
                       className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                      aria-label="Eliminar"
                     >
-                      <Trash2 className="mr-1 h-3.5 w-3.5" />
-                      Eliminar
+                      <Trash2 className="h-3.5 w-3.5 sm:mr-1" />
+                      <span className="hidden sm:inline">Eliminar</span>
                     </Button>
                   </div>
                 </td>

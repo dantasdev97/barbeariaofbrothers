@@ -72,9 +72,9 @@ export default async function AdminDashboard() {
   return (
     <div>
       {/* ── Top bar ── */}
-      <div className="mb-7 flex items-end justify-between gap-6 border-b border-border pb-6">
+      <div className="mb-7 flex flex-wrap items-end justify-between gap-4 border-b border-border pb-6">
         <div>
-          <h1 className="font-heading text-[32px] font-semibold leading-none tracking-tight">
+          <h1 className="font-heading text-[28px] font-semibold leading-none tracking-tight sm:text-[32px]">
             Dashboard
           </h1>
           <p className="mt-1.5 text-sm text-muted-foreground">
@@ -82,12 +82,6 @@ export default async function AdminDashboard() {
           </p>
         </div>
         <div className="flex shrink-0 gap-2.5">
-          <button
-            type="button"
-            className="inline-flex items-center gap-2 rounded-[10px] border border-border bg-transparent px-4 py-2.5 text-[13px] font-medium text-muted-foreground transition hover:bg-background hover:text-foreground"
-          >
-            ↗ Exportar
-          </button>
           <Link
             href="/admin/barbeiros"
             className="inline-flex items-center gap-2 rounded-[10px] bg-brand px-4 py-2.5 text-[13px] font-medium text-[#0e0a07] transition hover:opacity-90"
@@ -130,10 +124,10 @@ export default async function AdminDashboard() {
       </div>
 
       {/* ── Content row ── */}
-      <div className="grid gap-4" style={{ gridTemplateColumns: "2fr 1fr" }}>
+      <div className="grid gap-4 lg:grid-cols-[2fr_1fr]">
         {/* Activity table */}
         <div className="overflow-hidden rounded-2xl border border-border bg-bg-surface">
-          <div className="flex items-start justify-between border-b border-border px-6 py-[22px]">
+          <div className="flex items-start justify-between border-b border-border px-4 py-[22px] sm:px-6">
             <div>
               <div className="font-heading text-base font-semibold tracking-tight">
                 Atividade recente
@@ -144,64 +138,66 @@ export default async function AdminDashboard() {
             </div>
           </div>
 
-          {/* Table head */}
-          <div
-            className="grid gap-3 px-6 py-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground"
-            style={{ gridTemplateColumns: "1.6fr 1.2fr 0.6fr 1fr" }}
-          >
-            <div>Tipo</div>
-            <div>Referência</div>
-            <div>Hora</div>
-            <div>Estado</div>
-          </div>
+          <div className="overflow-x-auto">
+            {/* Table head */}
+            <div
+              className="grid gap-3 px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground sm:px-6"
+              style={{ gridTemplateColumns: "1.6fr 1.2fr 0.6fr 1fr", minWidth: "420px" }}
+            >
+              <div>Tipo</div>
+              <div>Referência</div>
+              <div>Hora</div>
+              <div>Estado</div>
+            </div>
 
-          {(recentActivity ?? []).length === 0 ? (
-            <p className="px-6 py-10 text-sm text-muted-foreground">
-              Sem eventos recentes.
-            </p>
-          ) : (
-            (recentActivity ?? []).map((ev) => {
-              const d = new Date(ev.created_at as string);
-              const timeStr = d.toLocaleTimeString("pt-PT", {
-                hour: "2-digit",
-                minute: "2-digit",
-              });
-              const isBooking = ev.type === "booking_click";
-              return (
-                <div
-                  key={ev.id}
-                  className="grid gap-3 items-center border-t border-border px-6 py-3 text-sm transition hover:bg-background"
-                  style={{ gridTemplateColumns: "1.6fr 1.2fr 0.6fr 1fr" }}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-background text-xs">
-                      {eventIcon(ev.type as string)}
+            {(recentActivity ?? []).length === 0 ? (
+              <p className="px-4 py-10 text-sm text-muted-foreground sm:px-6">
+                Sem eventos recentes.
+              </p>
+            ) : (
+              (recentActivity ?? []).map((ev) => {
+                const d = new Date(ev.created_at as string);
+                const timeStr = d.toLocaleTimeString("pt-PT", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                });
+                const isBooking = ev.type === "booking_click";
+                return (
+                  <div
+                    key={ev.id}
+                    className="grid gap-3 items-center border-t border-border px-4 py-3 text-sm transition hover:bg-background sm:px-6"
+                    style={{ gridTemplateColumns: "1.6fr 1.2fr 0.6fr 1fr", minWidth: "420px" }}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-background text-xs">
+                        {eventIcon(ev.type as string)}
+                      </div>
+                      <span className="text-[13px] font-medium">
+                        {eventLabel(ev.type as string)}
+                      </span>
                     </div>
-                    <span className="text-[13px] font-medium">
-                      {eventLabel(ev.type as string)}
-                    </span>
+                    <div className="truncate font-mono text-[12.5px] text-muted-foreground">
+                      {ev.ref_id ? ev.ref_id.slice(0, 8) + "…" : "—"}
+                    </div>
+                    <div className="font-mono text-[12.5px] text-muted-foreground">
+                      {timeStr}
+                    </div>
+                    <div>
+                      <span
+                        className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                          isBooking
+                            ? "bg-green-500/10 text-green-400"
+                            : "bg-brand/10 text-brand"
+                        }`}
+                      >
+                        {isBooking ? "● Agendamento" : "◌ Visita"}
+                      </span>
+                    </div>
                   </div>
-                  <div className="truncate font-mono text-[12.5px] text-muted-foreground">
-                    {ev.ref_id ? ev.ref_id.slice(0, 8) + "…" : "—"}
-                  </div>
-                  <div className="font-mono text-[12.5px] text-muted-foreground">
-                    {timeStr}
-                  </div>
-                  <div>
-                    <span
-                      className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ${
-                        isBooking
-                          ? "bg-green-500/10 text-green-400"
-                          : "bg-brand/10 text-brand"
-                      }`}
-                    >
-                      {isBooking ? "● Agendamento" : "◌ Visita"}
-                    </span>
-                  </div>
-                </div>
-              );
-            })
-          )}
+                );
+              })
+            )}
+          </div>
         </div>
 
         {/* Top barbers */}
