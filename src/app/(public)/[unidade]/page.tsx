@@ -133,7 +133,7 @@ export default async function UnitHome({
             />
             <a
               href="#produtos"
-              className="inline-flex items-center gap-2 rounded-full border border-border bg-transparent px-7 py-3.5 text-[15px] font-medium text-foreground transition hover:bg-foreground hover:text-background"
+              className="inline-flex items-center gap-2 rounded-full border border-border bg-transparent px-7 py-3.5 text-[15px] font-medium text-foreground transition hover:bg-foreground hover:text-background active:scale-[0.96]"
             >
               <ShoppingBag className="h-4 w-4" />
               Ver produtos
@@ -203,7 +203,7 @@ export default async function UnitHome({
                 return (
                   <article
                     key={b.id}
-                    className="group overflow-hidden rounded-2xl border border-border bg-card transition-all duration-300 hover:-translate-y-1 hover:border-brand/40 hover:shadow-[0_24px_50px_-24px_rgba(26,20,16,0.2)]"
+                    className="group overflow-hidden rounded-2xl border border-border bg-card transition-all duration-300 hover:-translate-y-1 hover:border-brand/40 hover:shadow-[0_24px_50px_-24px_rgba(26,20,16,0.2)] active:scale-[0.98]"
                   >
                     <div
                       className="relative flex aspect-[4/5] items-center justify-center overflow-hidden"
@@ -321,7 +321,7 @@ export default async function UnitHome({
                   <Link
                     key={p.id}
                     href={`/${unit.slug}/produtos/${p.slug}`}
-                    className="group w-[200px] shrink-0 snap-start flex flex-col overflow-hidden rounded-2xl border border-border bg-card transition-all duration-200 hover:-translate-y-1 hover:border-brand/40 hover:shadow-[0_24px_50px_-24px_rgba(26,20,16,0.2)] sm:w-[230px]"
+                    className="group w-[200px] shrink-0 snap-start flex flex-col overflow-hidden rounded-2xl border border-border bg-card transition-all duration-200 hover:-translate-y-1 hover:border-brand/40 hover:shadow-[0_24px_50px_-24px_rgba(26,20,16,0.2)] active:scale-[0.97] sm:w-[230px]"
                   >
                     <div className="relative aspect-square overflow-hidden bg-bg-surface">
                       {p.image_url ? (

@@ -98,7 +98,7 @@ export function ProductActions({ unit, product, outOfStock = false, className }:
           <button
             type="button"
             onClick={() => setQty((q) => Math.max(1, q - 1))}
-            className="inline-flex h-10 w-10 items-center justify-center text-muted-foreground transition hover:text-foreground"
+            className="inline-flex h-10 w-10 items-center justify-center text-muted-foreground transition hover:text-foreground active:scale-90"
             aria-label="Diminuir"
           >
             <Minus className="h-4 w-4" />
@@ -107,7 +107,7 @@ export function ProductActions({ unit, product, outOfStock = false, className }:
           <button
             type="button"
             onClick={() => setQty((q) => q + 1)}
-            className="inline-flex h-10 w-10 items-center justify-center text-muted-foreground transition hover:text-foreground"
+            className="inline-flex h-10 w-10 items-center justify-center text-muted-foreground transition hover:text-foreground active:scale-90"
             aria-label="Aumentar"
           >
             <Plus className="h-4 w-4" />

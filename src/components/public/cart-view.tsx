@@ -120,7 +120,7 @@ export function CartView({ unit }: Props) {
                     <button
                       type="button"
                       onClick={() => remove(item.product_id)}
-                      className="text-muted-foreground hover:text-destructive"
+                      className="text-muted-foreground transition hover:text-destructive active:scale-90"
                       aria-label="Remover"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -137,7 +137,7 @@ export function CartView({ unit }: Props) {
                         onClick={() =>
                           setQuantity(item.product_id, item.quantity - 1)
                         }
-                        className="inline-flex h-9 w-9 items-center justify-center text-muted-foreground hover:text-foreground"
+                        className="inline-flex h-9 w-9 items-center justify-center text-muted-foreground transition hover:text-foreground active:scale-90"
                         aria-label="Diminuir"
                       >
                         <Minus className="h-3.5 w-3.5" />
@@ -150,7 +150,7 @@ export function CartView({ unit }: Props) {
                         onClick={() =>
                           setQuantity(item.product_id, item.quantity + 1)
                         }
-                        className="inline-flex h-9 w-9 items-center justify-center text-muted-foreground hover:text-foreground"
+                        className="inline-flex h-9 w-9 items-center justify-center text-muted-foreground transition hover:text-foreground active:scale-90"
                         aria-label="Aumentar"
                       >
                         <Plus className="h-3.5 w-3.5" />
