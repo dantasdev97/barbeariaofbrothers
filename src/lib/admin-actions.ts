@@ -181,6 +181,25 @@ export async function deleteCategory(id: string, _unitId?: string) {
   return { ok: true };
 }
 
+export async function getUploadSignedUrl(
+  bucket: "units" | "barbers" | "products",
+  path: string,
+): Promise<{ signedUrl: string; publicUrl: string }> {
+  await requireAdmin();
+  const sb = createAdminClient();
+
+  const { error: bucketError } = await sb.storage.getBucket(bucket);
+  if (bucketError && /not found/i.test(bucketError.message)) {
+    await sb.storage.createBucket(bucket, { public: true });
+  }
+
+  const { data, error } = await sb.storage.from(bucket).createSignedUploadUrl(path);
+  if (error) throw new Error(error.message);
+
+  const { data: urlData } = sb.storage.from(bucket).getPublicUrl(path);
+  return { signedUrl: data.signedUrl, publicUrl: urlData.publicUrl };
+}
+
 export async function uploadImage(
   bucket: "units" | "barbers" | "products",
   path: string,

@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { Loader2, Video, X } from "lucide-react";
 import { toast } from "sonner";
-import { uploadImage } from "@/lib/admin-actions";
+import { getUploadSignedUrl } from "@/lib/admin-actions";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -18,6 +18,7 @@ const ACCEPT = "video/mp4,video/webm,video/quicktime";
 export function VideoUpload({ value, onChange, pathPrefix, label }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState<number | null>(null);
   const [dragOver, setDragOver] = useState(false);
 
   async function handleFile(file: File) {
@@ -26,16 +27,37 @@ export function VideoUpload({ value, onChange, pathPrefix, label }: Props) {
       return;
     }
     setUploading(true);
+    setProgress(0);
     try {
       const ext = file.name.split(".").pop()?.toLowerCase() || "mp4";
       const path = `${pathPrefix}/${Date.now()}.${ext}`;
-      const url = await uploadImage("units", path, file);
-      onChange(url);
+
+      // Get a signed upload URL from the server (auth check happens there)
+      const { signedUrl, publicUrl } = await getUploadSignedUrl("units", path);
+
+      // Upload directly from the browser to Supabase — bypasses Next.js body limits
+      await new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("PUT", signedUrl);
+        xhr.setRequestHeader("Content-Type", file.type);
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) setProgress(Math.round((e.loaded / e.total) * 100));
+        };
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) resolve();
+          else reject(new Error(`Upload falhou: ${xhr.status}`));
+        };
+        xhr.onerror = () => reject(new Error("Erro de rede."));
+        xhr.send(file);
+      });
+
+      onChange(publicUrl);
       toast.success("Vídeo carregado.");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao carregar vídeo.");
     } finally {
       setUploading(false);
+      setProgress(null);
     }
   }
 
@@ -74,9 +96,21 @@ export function VideoUpload({ value, onChange, pathPrefix, label }: Props) {
         onDrop={onDrop}
       >
         {uploading ? (
-          <div className="flex h-full flex-col items-center justify-center gap-2 text-muted-foreground">
+          <div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-muted-foreground">
             <Loader2 className="h-6 w-6 animate-spin text-brand" />
-            <p className="text-xs">A carregar vídeo…</p>
+            {progress !== null && progress > 0 ? (
+              <>
+                <div className="w-full max-w-[180px] overflow-hidden rounded-full bg-border h-1.5">
+                  <div
+                    className="h-full rounded-full bg-brand transition-all duration-150"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+                <p className="text-xs">{progress}%</p>
+              </>
+            ) : (
+              <p className="text-xs">A preparar upload…</p>
+            )}
           </div>
         ) : value ? (
           <>
