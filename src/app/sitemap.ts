@@ -5,6 +5,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const entries: MetadataRoute.Sitemap = [
     { url: absoluteUrl("/"), priority: 1, changeFrequency: "weekly" },
+    { url: absoluteUrl("/privacidade"), lastModified: new Date(), changeFrequency: "yearly", priority: 0.2 },
+    { url: absoluteUrl("/termos"), lastModified: new Date(), changeFrequency: "yearly", priority: 0.2 },
   ];
 
   try {
