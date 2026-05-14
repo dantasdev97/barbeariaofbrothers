@@ -2,6 +2,8 @@ import type { MetadataRoute } from "next";
 import { absoluteUrl } from "@/lib/utils";
 import { createAdminClient } from "@/lib/supabase/admin";
 
+export const dynamic = "force-dynamic";
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const entries: MetadataRoute.Sitemap = [
     { url: absoluteUrl("/"), priority: 1, changeFrequency: "weekly" },
