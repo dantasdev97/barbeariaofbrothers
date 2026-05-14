@@ -181,11 +181,20 @@ export async function deleteCategory(id: string, _unitId?: string) {
   return { ok: true };
 }
 
+const ALLOWED_UPLOAD_EXTS = new Set([
+  ".jpg", ".jpeg", ".png", ".webp", ".gif", ".avif",
+  ".mp4", ".webm", ".mov",
+]);
+
 export async function getUploadSignedUrl(
   bucket: "units" | "barbers" | "products",
   path: string,
 ): Promise<{ signedUrl: string; publicUrl: string }> {
   await requireAdmin();
+
+  const ext = path.substring(path.lastIndexOf(".")).toLowerCase();
+  if (!ALLOWED_UPLOAD_EXTS.has(ext)) throw new Error("Tipo de ficheiro não permitido.");
+
   const sb = createAdminClient();
 
   const { error: bucketError } = await sb.storage.getBucket(bucket);
@@ -206,6 +215,10 @@ export async function uploadImage(
   file: File,
 ): Promise<string> {
   await requireAdmin();
+
+  const ext = path.substring(path.lastIndexOf(".")).toLowerCase();
+  if (!ALLOWED_UPLOAD_EXTS.has(ext)) throw new Error("Tipo de ficheiro não permitido.");
+
   const sb = createAdminClient();
   const arrayBuffer = await file.arrayBuffer();
   const opts = { contentType: file.type, upsert: true };
