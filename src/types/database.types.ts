@@ -37,6 +37,7 @@ export type UnitRow = {
   name: string;
   logo_url: string | null;
   banner_url: string | null;
+  hero_video_url: string | null;
   address: string | null;
   maps_url: string | null;
   whatsapp: string | null;

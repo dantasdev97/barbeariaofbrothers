@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Poppins, Space_Grotesk } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { Toaster } from "@/components/ui/sonner";
+import { CookieBanner } from "@/components/public/cookie-banner";
 import "./globals.css";
 
 const poppins = Poppins({
@@ -45,6 +46,9 @@ export const metadata: Metadata = {
   },
   twitter: { card: "summary_large_image" },
   robots: { index: true, follow: true },
+  verification: {
+    google: "TZ183FG2FT2d-HkatPtDFd5H088zq4ARLVsJJIeSeTU",
+  },
 };
 
 export const viewport: Viewport = {
@@ -75,6 +79,7 @@ export default function RootLayout({
           closeButton
         />
         <Analytics />
+        <CookieBanner />
       </body>
     </html>
   );

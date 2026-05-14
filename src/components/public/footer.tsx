@@ -142,7 +142,11 @@ export function Footer({ unit }: Props) {
       <div className="border-t border-white/8">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-4 py-6 text-[13px] text-white/40 sm:flex-row sm:px-6">
           <span>© {new Date().getFullYear()} Barbearia Brothers. Todos os direitos reservados.</span>
-          <span>Feito com ✂ em Leiria</span>
+          <div className="flex items-center gap-4">
+            <Link href="/privacidade" className="transition hover:text-white/60">Privacidade</Link>
+            <Link href="/termos" className="transition hover:text-white/60">Termos</Link>
+            <span>Feito com ✂ em Leiria</span>
+          </div>
         </div>
       </div>
     </footer>

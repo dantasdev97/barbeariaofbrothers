@@ -9,7 +9,7 @@ import {
 } from "@/lib/data";
 import { BookingButton } from "@/components/public/booking-button";
 import { TrackPageView } from "@/components/public/track-page-view";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice, formatPriceOrAsk } from "@/lib/utils";
 
 const MARQUEE_ITEMS = [
   "CORTE CLÁSSICO",
@@ -35,15 +35,6 @@ function getInitials(name: string): string {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
-function getProductTag(index: number, name: string): string | null {
-  const low = name.toLowerCase();
-  if (low.includes("voucher") || low.includes("vale") || low.includes("gift"))
-    return "GIFT";
-  if (index === 0) return "BESTSELLER";
-  if (index === 1) return "NOVIDADE";
-  return null;
-}
-
 const yearsOpen = new Date().getFullYear() - 2012;
 
 export default async function UnitHome({
@@ -61,17 +52,58 @@ export default async function UnitHome({
   ]);
 
   const featuredBarbers = barbers.slice(0, 3);
-  const featuredProducts = products.slice(0, 3);
+  const hasVideo = Boolean(unit.hero_video_url);
+  const heroImage = !hasVideo && unit.banner_url ? unit.banner_url : null;
+  const hasMedia = hasVideo || Boolean(heroImage);
 
   return (
     <>
       <TrackPageView unitId={unit.id} />
 
       {/* ───────────────────────────── HERO ──────────────────────────────── */}
-      <section className="px-4 pt-14 sm:px-6 lg:px-12">
-        <div className="mx-auto max-w-4xl">
+      <section
+        className={[
+          "relative overflow-hidden px-4 pt-14 pb-20 sm:px-6 lg:px-12",
+          hasMedia ? "min-h-[560px] sm:min-h-[640px] lg:min-h-[720px]" : "",
+        ].join(" ")}
+      >
+        {/* ── Media background (video, or banner image as fallback) ── */}
+        {hasVideo && (
+          <video
+            autoPlay
+            muted
+            loop
+            playsInline
+            src={unit.hero_video_url!}
+            className="absolute inset-0 h-full w-full object-cover"
+            aria-hidden="true"
+          />
+        )}
+        {heroImage && (
+          <Image
+            src={heroImage}
+            alt=""
+            fill
+            priority
+            sizes="100vw"
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+        )}
+        {hasMedia && (
+          <>
+            {/* Top-to-bottom: transparent at top → opaque background at bottom */}
+            <div className="absolute inset-0 bg-gradient-to-b from-background/20 via-background/60 to-background" />
+            {/* Side vignette for depth */}
+            <div className="absolute inset-0 bg-gradient-to-r from-background/50 via-transparent to-background/50" />
+            {/* Subtle top scrim so the eyebrow badge reads cleanly */}
+            <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-background/60 to-transparent" />
+          </>
+        )}
+
+        {/* ── Content ── */}
+        <div className="relative mx-auto max-w-4xl">
           {/* Eyebrow badge */}
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-bg-surface px-4 py-2 text-xs font-medium text-foreground/70">
+          <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-bg-surface/90 px-4 py-2 text-xs font-medium text-foreground/70 backdrop-blur-sm">
             <span className="h-1.5 w-1.5 rounded-full bg-green-500 shadow-[0_0_0_3px_rgba(34,197,94,0.2)]" />
             Aberto hoje · 09:30 — 19:30
           </div>
@@ -99,17 +131,17 @@ export default async function UnitHome({
               unit={unit}
               className="rounded-full px-7 py-3.5 text-[15px] font-medium"
             />
-            <Link
-              href={`/${unit.slug}/produtos`}
-              className="inline-flex items-center gap-2 rounded-full border border-border bg-transparent px-7 py-3.5 text-[15px] font-medium text-foreground transition hover:bg-foreground hover:text-background"
+            <a
+              href="#produtos"
+              className="inline-flex items-center gap-2 rounded-full border border-border bg-transparent px-7 py-3.5 text-[15px] font-medium text-foreground transition hover:bg-foreground hover:text-background active:scale-[0.96]"
             >
               <ShoppingBag className="h-4 w-4" />
               Ver produtos
-            </Link>
+            </a>
           </div>
 
           {/* Stats row */}
-          <div className="mt-10 grid w-max grid-cols-3 gap-12 border-t border-border pt-8">
+          <div className="mt-10 grid grid-cols-3 gap-4 border-t border-border pt-8 sm:w-max sm:gap-12">
             {[
               { num: `${yearsOpen}+`, label: "anos abertos" },
               { num: "350", label: "cortes / mês" },
@@ -126,23 +158,24 @@ export default async function UnitHome({
             ))}
           </div>
         </div>
-
-        <div className="relative mt-20 overflow-hidden bg-foreground py-5 -mx-4 sm:-mx-6 lg:-mx-12">
-          <div
-            className="flex w-max gap-12"
-            style={{ animation: "marquee 30s linear infinite" }}
-          >
-            {[...MARQUEE_ITEMS, ...MARQUEE_ITEMS].map((item, i) => (
-              <div key={i} className="flex items-center gap-12">
-                <span className="font-heading text-[22px] font-medium tracking-wide text-background">
-                  {item}
-                </span>
-                <span className="text-brand">●</span>
-              </div>
-            ))}
-          </div>
-        </div>
       </section>
+
+      {/* ── Marquee band — standalone full-width block ── */}
+      <div className="relative overflow-hidden bg-foreground py-5">
+        <div
+          className="flex w-max gap-12"
+          style={{ animation: "marquee 30s linear infinite" }}
+        >
+          {[...MARQUEE_ITEMS, ...MARQUEE_ITEMS].map((item, i) => (
+            <div key={i} className="flex items-center gap-12">
+              <span className="font-heading text-[22px] font-medium tracking-wide text-background">
+                {item}
+              </span>
+              <span className="text-brand">●</span>
+            </div>
+          ))}
+        </div>
+      </div>
 
       {/* ──────────────────────────── BARBERS ────────────────────────────── */}
       {featuredBarbers.length > 0 && (
@@ -170,9 +203,8 @@ export default async function UnitHome({
                 return (
                   <article
                     key={b.id}
-                    className="group overflow-hidden rounded-2xl border border-border bg-card transition-all duration-300 hover:-translate-y-1 hover:border-brand/40 hover:shadow-[0_24px_50px_-24px_rgba(26,20,16,0.2)]"
+                    className="group overflow-hidden rounded-2xl border border-border bg-card transition-all duration-300 hover:-translate-y-1 hover:border-brand/40 hover:shadow-[0_24px_50px_-24px_rgba(26,20,16,0.2)] active:scale-[0.98]"
                   >
-                    {/* Photo placeholder with initials */}
                     <div
                       className="relative flex aspect-[4/5] items-center justify-center overflow-hidden"
                       style={{ background: gradient }}
@@ -197,13 +229,11 @@ export default async function UnitHome({
                           {initials}
                         </span>
                       )}
-                      {/* Years badge */}
                       <div className="absolute right-4 top-4 rounded-full bg-card px-3 py-1.5 text-[12px] font-medium tracking-wide text-foreground">
                         {i < 3 ? [12, 8, 5][i] : 4} anos
                       </div>
                     </div>
 
-                    {/* Card body */}
                     <div className="p-6">
                       <div className="mb-3">
                         {b.speciality && (
@@ -258,8 +288,8 @@ export default async function UnitHome({
       )}
 
       {/* ──────────────────────────── PRODUCTS ───────────────────────────── */}
-      {featuredProducts.length > 0 && (
-        <section className="px-4 py-24 sm:px-6">
+      {products.length > 0 && (
+        <section id="produtos" className="scroll-mt-24 px-4 py-24 sm:px-6">
           <div className="mx-auto max-w-7xl">
             <div className="mx-auto mb-14 max-w-2xl text-center">
               <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-brand">
@@ -274,100 +304,73 @@ export default async function UnitHome({
               </p>
             </div>
 
-            {/* 3-col grid matching the model */}
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {featuredProducts.map((p, i) => {
-                const tag = getProductTag(i, p.name);
+            {/* Horizontal carousel */}
+            <div className="-mx-4 flex gap-4 overflow-x-auto snap-x snap-mandatory px-4 pb-4 sm:-mx-6 sm:px-6">
+              {products.map((p) => {
                 const out = p.out_of_stock || p.stock === 0;
                 const pct =
-                  p.compare_at_price_cents != null && p.compare_at_price_cents > p.price_cents
-                    ? Math.round(((p.compare_at_price_cents - p.price_cents) / p.compare_at_price_cents) * 100)
+                  p.compare_at_price_cents != null &&
+                  p.compare_at_price_cents > p.price_cents
+                    ? Math.round(
+                        ((p.compare_at_price_cents - p.price_cents) /
+                          p.compare_at_price_cents) *
+                          100,
+                      )
                     : null;
                 return (
                   <Link
                     key={p.id}
                     href={`/${unit.slug}/produtos/${p.slug}`}
-                    className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card transition-all duration-200 hover:-translate-y-1 hover:border-brand/40 hover:shadow-[0_24px_50px_-24px_rgba(26,20,16,0.2)]"
+                    className="group w-[200px] shrink-0 snap-start flex flex-col overflow-hidden rounded-2xl border border-border bg-card transition-all duration-200 hover:-translate-y-1 hover:border-brand/40 hover:shadow-[0_24px_50px_-24px_rgba(26,20,16,0.2)] active:scale-[0.97] sm:w-[230px]"
                   >
-                    {/* Product image */}
                     <div className="relative aspect-square overflow-hidden bg-bg-surface">
                       {p.image_url ? (
                         <Image
                           src={p.image_url}
                           alt={p.name}
                           fill
-                          sizes="(min-width: 1024px) 33vw, 50vw"
-                          className={`object-contain p-8 transition duration-300 group-hover:scale-105 drop-shadow-[0_12px_24px_rgba(0,0,0,0.15)] ${out ? "opacity-50 grayscale" : ""}`}
+                          sizes="230px"
+                          className={`object-cover transition duration-300 group-hover:scale-105 ${out ? "opacity-50 grayscale" : ""}`}
                         />
                       ) : (
                         <div className="flex h-full items-center justify-center">
-                          <ShoppingBag className="h-12 w-12 text-muted-foreground/30" />
-                        </div>
-                      )}
-                      {!out && tag && (
-                        <div className="absolute left-4 top-4 rounded-full bg-foreground px-3 py-1.5 text-[11px] font-semibold uppercase tracking-widest text-background">
-                          {tag}
+                          <ShoppingBag className="h-10 w-10 text-muted-foreground/30" />
                         </div>
                       )}
                       {pct != null && !out && (
-                        <div className="absolute right-4 top-4 rounded-full bg-brand px-3 py-1.5 text-[11px] font-semibold uppercase tracking-widest text-[#1a1410]">
+                        <div className="absolute right-2 top-2 rounded-full bg-brand px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-[#1a1410]">
                           −{pct}%
                         </div>
                       )}
                       {out && (
-                        <div className="absolute left-4 top-4 rounded-full bg-foreground px-3 py-1.5 text-[11px] font-semibold uppercase tracking-widest text-background">
+                        <div className="absolute left-2 top-2 rounded-full bg-foreground px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-background">
                           Esgotado
                         </div>
                       )}
                     </div>
 
-                    {/* Product body */}
-                    <div className="flex flex-1 flex-col p-5">
-                      <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                        {p.name.split(" ")[0].toUpperCase()}
-                      </p>
-                      <h3 className="font-heading text-[19px] font-medium leading-tight tracking-tight">
+                    <div className="flex flex-1 flex-col p-4">
+                      <h3 className="font-heading text-[15px] font-medium leading-tight tracking-tight line-clamp-2">
                         {p.name}
                       </h3>
-                      <div className="mt-auto flex items-center justify-between pt-4">
-                        <span className="flex items-baseline gap-2">
-                          {pct != null && (
-                            <s className="text-sm text-muted-foreground">{formatPrice(p.compare_at_price_cents!)}</s>
-                          )}
-                          <span className="font-heading text-[28px] font-semibold tracking-tight">
-                            {formatPrice(p.price_cents)}
-                          </span>
-                        </span>
-                        {out ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-muted px-4 py-1.5 text-sm font-medium text-muted-foreground">
-                            Esgotado
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-foreground px-4 py-1.5 text-sm font-medium text-background transition group-hover:bg-brand group-hover:text-[#1a1410]">
-                            Comprar →
-                          </span>
+                      <div className="mt-auto pt-3 flex flex-col gap-0.5">
+                        {pct != null && (
+                          <s className="text-xs text-muted-foreground">
+                            {formatPrice(p.compare_at_price_cents!)}
+                          </s>
                         )}
+                        <span className="font-heading text-[20px] font-semibold tracking-tight">
+                          {formatPriceOrAsk(p.price_cents)}
+                        </span>
                       </div>
                     </div>
                   </Link>
                 );
               })}
             </div>
-
-            {products.length > 3 && (
-              <div className="mt-10 text-center">
-                <Link
-                  href={`/${unit.slug}/produtos`}
-                  className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition hover:text-foreground"
-                >
-                  Ver todos os produtos →
-                </Link>
-              </div>
-            )}
           </div>
         </section>
       )}
-
     </>
   );
 }

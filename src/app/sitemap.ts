@@ -2,9 +2,13 @@ import type { MetadataRoute } from "next";
 import { absoluteUrl } from "@/lib/utils";
 import { createAdminClient } from "@/lib/supabase/admin";
 
+export const dynamic = "force-dynamic";
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const entries: MetadataRoute.Sitemap = [
     { url: absoluteUrl("/"), priority: 1, changeFrequency: "weekly" },
+    { url: absoluteUrl("/privacidade"), lastModified: new Date(), changeFrequency: "yearly", priority: 0.2 },
+    { url: absoluteUrl("/termos"), lastModified: new Date(), changeFrequency: "yearly", priority: 0.2 },
   ];
 
   try {
@@ -27,7 +31,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       entries.push(
         { url: absoluteUrl(base), priority: 0.9, changeFrequency: "weekly" },
         { url: absoluteUrl(`${base}/barbeiros`), priority: 0.8, changeFrequency: "weekly" },
-        { url: absoluteUrl(`${base}/produtos`), priority: 0.8, changeFrequency: "weekly" },
         { url: absoluteUrl(`${base}/contato`), priority: 0.5, changeFrequency: "monthly" },
       );
     }

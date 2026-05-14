@@ -7,7 +7,7 @@ import { getProductBySlug, getProductsByUnit, getUnitBySlug } from "@/lib/data";
 import { buildUnitMetadata } from "@/lib/seo";
 import { TrackPageView } from "@/components/public/track-page-view";
 import { ProductActions } from "@/components/public/product-actions";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice, formatPriceOrAsk } from "@/lib/utils";
 
 type Params = { unidade: string; slug: string };
 
@@ -51,8 +51,8 @@ export default async function ProductDetail({
 
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
         <Link
-          href={`/${unit.slug}/produtos`}
-          className="mb-10 inline-flex items-center gap-2 text-sm text-muted-foreground transition hover:text-brand"
+          href={`/${unit.slug}#produtos`}
+          className="mb-10 inline-flex items-center gap-2 text-sm text-muted-foreground transition hover:text-brand active:scale-[0.96]"
         >
           <ArrowLeft className="h-4 w-4" />
           Voltar aos produtos
@@ -60,19 +60,19 @@ export default async function ProductDetail({
 
         <article className="grid gap-12 lg:grid-cols-2 lg:items-start">
           {/* Image */}
-          <div className="relative aspect-square overflow-hidden rounded-2xl border border-border bg-bg-surface">
+          <div className="group relative aspect-square overflow-hidden rounded-3xl bg-bg-surface shadow-premium-lg">
             {p.image_url ? (
               <Image
                 src={p.image_url}
                 alt={p.name}
                 fill
                 sizes="(min-width: 1024px) 50vw, 100vw"
-                className="object-contain p-10 drop-shadow-[0_20px_40px_rgba(0,0,0,0.4)]"
+                className="object-cover transition duration-500 group-hover:scale-105"
                 priority
               />
             ) : (
               <div className="flex h-full items-center justify-center">
-                <ShoppingBag className="h-24 w-24 text-white/10" />
+                <ShoppingBag className="h-24 w-24 text-muted-foreground/20" />
               </div>
             )}
           </div>
@@ -90,7 +90,7 @@ export default async function ProductDetail({
                 <s className="text-2xl text-muted-foreground">{formatPrice(p.compare_at_price_cents)}</s>
               )}
               <p className="font-heading text-4xl font-semibold tracking-tight text-brand">
-                {formatPrice(p.price_cents)}
+                {formatPriceOrAsk(p.price_cents)}
               </p>
               {(p.out_of_stock || p.stock === 0) && (
                 <span className="rounded-full bg-foreground px-3 py-1 text-xs font-semibold uppercase tracking-widest text-background">
@@ -136,12 +136,12 @@ export default async function ProductDetail({
               </h2>
               <div className="flex-1 border-t border-white/8" />
             </div>
-            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="-mx-4 flex gap-4 overflow-x-auto snap-x snap-mandatory px-4 pb-4 sm:-mx-6 sm:px-6">
               {related.map((rp) => (
                 <Link
                   key={rp.id}
                   href={`/${unit.slug}/produtos/${rp.slug}`}
-                  className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card transition-all duration-200 hover:-translate-y-1 hover:border-brand/40 hover:shadow-[0_24px_50px_-24px_rgba(26,20,16,0.2)]"
+                  className="group w-[180px] shrink-0 snap-start flex flex-col overflow-hidden rounded-2xl border border-border bg-card transition-all duration-200 hover:-translate-y-1 hover:border-brand/40 hover:shadow-[0_24px_50px_-24px_rgba(26,20,16,0.2)] active:scale-[0.97] sm:w-[220px]"
                 >
                   <div className="relative aspect-square overflow-hidden bg-bg-surface">
                     {rp.image_url ? (
@@ -150,7 +150,7 @@ export default async function ProductDetail({
                         alt={rp.name}
                         fill
                         sizes="25vw"
-                        className="object-contain p-5 transition group-hover:scale-105"
+                        className="object-cover transition group-hover:scale-105"
                       />
                     ) : (
                       <div className="flex h-full items-center justify-center">
@@ -163,7 +163,7 @@ export default async function ProductDetail({
                       {rp.name}
                     </h3>
                     <span className="mt-auto pt-2 font-heading text-lg font-semibold text-brand">
-                      {formatPrice(rp.price_cents)}
+                      {formatPriceOrAsk(rp.price_cents)}
                     </span>
                   </div>
                 </Link>

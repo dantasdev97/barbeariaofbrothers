@@ -14,6 +14,10 @@ export function formatPrice(cents: number, currency: "EUR" | "BRL" = "EUR") {
   }).format(cents / 100);
 }
 
+export function formatPriceOrAsk(cents: number, currency: "EUR" | "BRL" = "EUR") {
+  return cents > 0 ? formatPrice(cents, currency) : "Sob consulta";
+}
+
 export function slugify(text: string) {
   return text
     .toString()
@@ -28,7 +32,9 @@ export function slugify(text: string) {
 
 export function absoluteUrl(path: string) {
   const base =
-    process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+    process.env.SITE_URL ??              // servidor — lida em runtime (não precisa rebuild)
+    process.env.NEXT_PUBLIC_SITE_URL ??  // cliente — injetada no build
+    "https://barbeariaofbrothers.pt";    // fallback de produção
   return `${base.replace(/\/$/, "")}${path.startsWith("/") ? path : `/${path}`}`;
 }
 
