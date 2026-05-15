@@ -10,7 +10,8 @@ import { createClient } from "@/lib/supabase/client";
 
 export function LoginForm() {
   const searchParams = useSearchParams();
-  const next = searchParams.get("next") ?? "/admin";
+  const raw = searchParams.get("next") ?? "/admin";
+  const next = raw.startsWith("/") && !raw.startsWith("//") ? raw : "/admin";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -27,7 +28,7 @@ export function LoginForm() {
     setPending(false);
     if (error) {
       toast.error("Falha ao iniciar sessão", {
-        description: error.message,
+        description: "Email ou palavra-passe incorretos.",
       });
       return;
     }

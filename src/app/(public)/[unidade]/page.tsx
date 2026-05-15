@@ -110,6 +110,9 @@ export default async function UnitHome({
 
           {/* Hero title */}
           <h1 className="font-heading text-[56px] font-semibold leading-[0.98] tracking-tight sm:text-[68px] lg:text-[84px]">
+            <span className="mb-3 block font-heading text-[22px] font-medium tracking-widest text-muted-foreground sm:text-[26px] lg:text-[30px]">
+              Barbearia em Leiria
+            </span>
             Cortes que ficam.
             <br />
             <em className="font-normal not-italic text-brand" style={{ fontStyle: "italic" }}>

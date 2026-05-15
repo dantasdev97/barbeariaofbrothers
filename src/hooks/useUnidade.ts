@@ -17,7 +17,8 @@ export const useUnidade = create<UnidadeState>()(
         // Mirror to a non-HttpOnly cookie so the proxy can pick it up
         if (typeof document !== "undefined") {
           const oneYear = 60 * 60 * 24 * 365;
-          document.cookie = `unit_slug=${slug}; path=/; max-age=${oneYear}; samesite=lax`;
+          const secure = location.protocol === "https:" ? "; secure" : "";
+          document.cookie = `unit_slug=${slug}; path=/; max-age=${oneYear}; samesite=lax${secure}`;
         }
         set({ slug });
       },
