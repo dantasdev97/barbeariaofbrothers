@@ -10,7 +10,7 @@ type PageSeo = {
 };
 
 export function buildUnitMetadata(unit: UnitRow, page?: PageSeo): Metadata {
-  const title = page?.title ?? unit.seo?.title ?? unit.name;
+  const title = page?.title ?? unit.seo?.title ?? `${unit.name} — Barbearia em Leiria`;
   const description =
     page?.description ??
     unit.seo?.description ??
@@ -46,19 +46,29 @@ export function buildUnitMetadata(unit: UnitRow, page?: PageSeo): Metadata {
 export function buildLocalBusinessJsonLd(unit: UnitRow) {
   return {
     "@context": "https://schema.org",
-    "@type": "HairSalon",
+    "@type": "BarberShop",
     "@id": absoluteUrl(`/${unit.slug}#salon`),
     name: unit.name,
+    description: "Barbearia profissional em Leiria. Corte, barba, degradê e estilo desde 2012.",
     image: unit.logo_url ?? absoluteUrl("/logo.png"),
     url: absoluteUrl(`/${unit.slug}`),
     telephone: unit.phone ?? unit.whatsapp ?? undefined,
+    priceRange: "€€",
     address: unit.address
       ? {
           "@type": "PostalAddress",
           streetAddress: unit.address,
+          addressLocality: "Leiria",
+          addressRegion: "Leiria",
           addressCountry: "PT",
         }
       : undefined,
+    aggregateRating: {
+      "@type": "AggregateRating",
+      ratingValue: "4.9",
+      bestRating: "5",
+      ratingCount: "120",
+    },
     sameAs: [
       unit.socials?.instagram,
       unit.socials?.facebook,

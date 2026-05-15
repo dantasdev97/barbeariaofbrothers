@@ -24,13 +24,14 @@ export const metadata: Metadata = {
     process.env.NEXT_PUBLIC_SITE_URL ?? "https://barbeariaofbrothers.pt",
   ),
   title: {
-    default: "Barbearia Of Brothers — Since 2012",
+    default: "Barbearia em Leiria | Of Brothers — Desde 2012",
     template: "%s · Barbearia Of Brothers",
   },
   description:
     "Barbearia Of Brothers — corte, barba e estilo desde 2012. Agende online com os nossos barbeiros e descubra os nossos produtos.",
   applicationName: "Barbearia Of Brothers",
   authors: [{ name: "Barbearia Of Brothers" }],
+  alternates: { canonical: "https://barbeariaofbrothers.pt" },
   icons: {
     icon: [
       { rel: "icon", url: "/favicon.ico?v=2" },
@@ -43,6 +44,8 @@ export const metadata: Metadata = {
     type: "website",
     locale: "pt_PT",
     siteName: "Barbearia Of Brothers",
+    url: "https://barbeariaofbrothers.pt",
+    images: [{ url: "https://barbeariaofbrothers.pt/og-image.png", width: 1200, height: 630 }],
   },
   twitter: { card: "summary_large_image" },
   robots: { index: true, follow: true },
