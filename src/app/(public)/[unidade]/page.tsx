@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import { ShoppingBag } from "lucide-react";
+import { Award, CalendarCheck, Package, Scissors, ShoppingBag } from "lucide-react";
 import {
   getBarbersByUnit,
   getProductsByUnit,
@@ -180,13 +180,71 @@ export default async function UnitHome({
         </div>
       </div>
 
+      {/* ──────────────────────── PORQUE NÓS ───────────────────────── */}
+      <section className="px-4 py-24 sm:px-6">
+        <div className="mx-auto max-w-7xl">
+          <div className="mx-auto mb-14 max-w-2xl text-center">
+            <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-brand">
+              02 — Porquê nós
+            </p>
+            <h2 className="font-heading text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
+              Mais do que um corte.<br />Uma experiência.
+            </h2>
+            <p className="mt-4 text-[17px] text-muted-foreground">
+              Desde 2012 que ajudamos os homens de Leiria a sentirem-se
+              bem na pele. Aqui não há pressa — há ritual.
+            </p>
+          </div>
+
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {[
+              {
+                icon: Award,
+                title: "Mais de 13 anos de experiência",
+                desc: "Abrimos em 2012 e nunca parámos. Milhares de clientes satisfeitos confirmam o que fazemos todos os dias.",
+              },
+              {
+                icon: Scissors,
+                title: "Equipa especializada",
+                desc: "Barbeiros certificados em cortes modernos, degradê, barba e acabamentos de precisão. Cada detalhe conta.",
+              },
+              {
+                icon: CalendarCheck,
+                title: "Marcação em 1 minuto",
+                desc: "Agenda online pelo Buk quando quiseres. Sem esperas ao telefone, sem surpresas — só o teu horário reservado.",
+              },
+              {
+                icon: Package,
+                title: "Produtos profissionais",
+                desc: "Usamos e vendemos as mesmas marcas de referência que os melhores salões de Portugal. Leva a experiência para casa.",
+              },
+            ].map(({ icon: Icon, title, desc }) => (
+              <div
+                key={title}
+                className="flex flex-col gap-4 rounded-2xl border border-border bg-bg-surface p-6 transition-all duration-200 hover:-translate-y-1 hover:border-brand/30 hover:shadow-[0_16px_40px_-16px_rgba(243,146,0,0.15)]"
+              >
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand/10">
+                  <Icon className="h-5 w-5 text-brand" />
+                </div>
+                <h3 className="font-heading text-lg font-semibold leading-snug">
+                  {title}
+                </h3>
+                <p className="text-sm leading-relaxed text-muted-foreground">
+                  {desc}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ──────────────────────────── BARBERS ────────────────────────────── */}
       {featuredBarbers.length > 0 && (
         <section className="bg-bg-surface px-4 py-24 sm:px-6">
           <div className="mx-auto max-w-7xl">
             <div className="mx-auto mb-14 max-w-2xl text-center">
               <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-brand">
-                02 — A equipa
+                03 — A equipa
               </p>
               <h2 className="font-heading text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
                 Os barbeiros desta unidade.
@@ -296,7 +354,7 @@ export default async function UnitHome({
           <div className="mx-auto max-w-7xl">
             <div className="mx-auto mb-14 max-w-2xl text-center">
               <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-brand">
-                03 — Loja
+                04 — Loja
               </p>
               <h2 className="font-heading text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
                 Produtos profissionais à venda.
