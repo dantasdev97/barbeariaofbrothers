@@ -7,7 +7,8 @@ import { getProductBySlug, getProductsByUnit, getUnitBySlug } from "@/lib/data";
 import { buildUnitMetadata } from "@/lib/seo";
 import { TrackPageView } from "@/components/public/track-page-view";
 import { ProductActions } from "@/components/public/product-actions";
-import { formatPrice, formatPriceOrAsk } from "@/lib/utils";
+import { formatPrice, formatPriceOrAsk, absoluteUrl } from "@/lib/utils";
+import { WhatsAppIcon, FacebookIcon, PinterestIcon } from "@/components/public/social-icons";
 
 type Params = { unidade: string; slug: string };
 
@@ -39,6 +40,12 @@ export default async function ProductDetail({
   if (!unit) notFound();
   const p = await getProductBySlug(unit.id, slug);
   if (!p) notFound();
+
+  const productUrl = absoluteUrl(`/${unit.slug}/produtos/${p.slug}`);
+  const shareText = encodeURIComponent(`${p.name} — Barbearia Of Brothers\n${productUrl}`);
+  const whatsappUrl = `https://wa.me/?text=${shareText}`;
+  const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(productUrl)}`;
+  const pinterestUrl = `https://pinterest.com/pin/create/button/?url=${encodeURIComponent(productUrl)}${p.image_url ? `&media=${encodeURIComponent(p.image_url)}` : ""}&description=${encodeURIComponent(p.name)}`;
 
   const allProducts = await getProductsByUnit(unit.id);
   const related = allProducts
@@ -117,6 +124,38 @@ export default async function ProductDetail({
               }}
               className="mt-8"
             />
+
+            {/* Share */}
+            <div className="mt-6 flex items-center gap-3">
+              <span className="text-sm text-muted-foreground">Partilhar:</span>
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Partilhar no WhatsApp"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border bg-bg-surface text-muted-foreground transition hover:border-[#25D366] hover:bg-[#25D366] hover:text-white active:scale-[0.96]"
+              >
+                <WhatsAppIcon className="h-4 w-4" />
+              </a>
+              <a
+                href={facebookUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Partilhar no Facebook"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border bg-bg-surface text-muted-foreground transition hover:border-[#1877F2] hover:bg-[#1877F2] hover:text-white active:scale-[0.96]"
+              >
+                <FacebookIcon className="h-4 w-4" />
+              </a>
+              <a
+                href={pinterestUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Partilhar no Pinterest"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border bg-bg-surface text-muted-foreground transition hover:border-[#E60023] hover:bg-[#E60023] hover:text-white active:scale-[0.96]"
+              >
+                <PinterestIcon className="h-4 w-4" />
+              </a>
+            </div>
 
             <div className="mt-6 rounded-xl border border-border bg-bg-surface p-4">
               <p className="text-sm text-muted-foreground">

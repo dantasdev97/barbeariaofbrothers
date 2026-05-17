@@ -13,6 +13,7 @@ const securityHeaders = [
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https:",
       "connect-src 'self' https://*.supabase.co https://www.google-analytics.com https://region1.google-analytics.com https://vitals.vercel-insights.com",
+      "media-src 'self' https://*.supabase.co",
       "font-src 'self'",
       "frame-src 'none'",
       "object-src 'none'",
