@@ -35,9 +35,10 @@ export async function requireAdminSession(): Promise<AdminSession> {
     .eq("id", user.id)
     .maybeSingle();
 
-  if (profileError) console.error("[admin-auth] profile query error:", profileError.message);
+  if (profileError) console.error("[admin-auth] profile query error:", JSON.stringify(profileError));
+  console.log("[admin-auth] lookup userId=" + user.id + " email=" + user.email + " supabaseUrl=" + (process.env.NEXT_PUBLIC_SUPABASE_URL ?? "MISSING") + " hasServiceKey=" + Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY) + " profileFound=" + Boolean(profile));
   if (!profile) {
-    console.error("[admin-auth] no profile for user:", user.id, user.email);
+    console.error("[admin-auth] no profile for userId=" + user.id);
     redirect("/login");
   }
   if (profile.role !== "super_admin" && profile.role !== "manager") {
