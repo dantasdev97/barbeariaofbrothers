@@ -46,7 +46,7 @@ export function buildUnitMetadata(unit: UnitRow, page?: PageSeo): Metadata {
 export function buildLocalBusinessJsonLd(unit: UnitRow) {
   return {
     "@context": "https://schema.org",
-    "@type": "BarberShop",
+    "@type": ["BarberShop", "LocalBusiness"],
     "@id": absoluteUrl(`/${unit.slug}#salon`),
     name: unit.name,
     description: "Barbearia profissional em Leiria. Corte, barba, degradê e estilo desde 2012.",
