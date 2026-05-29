@@ -107,6 +107,7 @@ export type ClientRow = {
   phone: string;
   email: string | null;
   qr_token: string;
+  public_slug: string;
   notes: string | null;
   created_at: string;
 };

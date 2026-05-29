@@ -5,6 +5,7 @@ import {
   getActiveRewards,
   getActiveServices,
   getClientBalance,
+  getClientByHandle,
   getRecentTransactions,
 } from "@/lib/loyalty/queries";
 import { OperacaoCliente } from "./operacao-cliente";
@@ -14,19 +15,15 @@ export const dynamic = "force-dynamic";
 export default async function ClienteOperacaoPage({
   params,
 }: {
-  params: Promise<{ qr_token: string }>;
+  params: Promise<{ handle: string }>;
 }) {
   const { profile } = await requireRole(["super_admin", "manager", "barbeiro"]);
-  const { qr_token } = await params;
+  const { handle } = await params;
+
+  const client = await getClientByHandle(handle);
+  if (!client) notFound();
 
   const sb = createAdminClient();
-  const { data: client } = await sb
-    .from("clients")
-    .select("*")
-    .eq("qr_token", qr_token)
-    .maybeSingle();
-
-  if (!client) notFound();
 
   // Unidade da operação:
   //  - super_admin sem unit_id → unidade de cadastro do cliente
