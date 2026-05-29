@@ -1,7 +1,11 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { requireAdminSession } from "@/lib/admin-auth";
 
 export default async function AdminDashboard() {
+  const { profile } = await requireAdminSession();
+  if (profile.role === "barbeiro") redirect("/admin/operacao");
   const sb = await createClient();
 
   const todayStr = new Date().toLocaleDateString("pt-PT", {

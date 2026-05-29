@@ -89,3 +89,30 @@ begin
     (u1, 'oleo-barba', 'Óleo de Barba', 'Hidratação e aroma amadeirado.', 1800, true)
   on conflict (unit_id, slug) do nothing;
 end $$;
+
+-- =====================================================================
+-- Loyalty seed (idempotente)
+-- =====================================================================
+do $$
+declare
+  u uuid;
+begin
+  for u in select id from public.units loop
+    insert into public.loyalty_services (unit_id, name, points_value, display_order, active)
+    values
+      (u, 'Corte',                 10, 1, true),
+      (u, 'Barba',                  6, 2, true),
+      (u, 'Corte + Barba',          15, 3, true),
+      (u, 'Pigmentação',            12, 4, true),
+      (u, 'Tratamento capilar',     8,  5, true)
+    on conflict do nothing;
+
+    insert into public.loyalty_rewards (unit_id, name, description, points_cost, active)
+    values
+      (u, 'Cera grátis',     'Aplicação de cera no final do serviço.',          100, true),
+      (u, 'Barba grátis',    'Próxima barba por nossa conta.',                  150, true),
+      (u, 'Corte grátis',    'Próximo corte completo por nossa conta.',         250, true),
+      (u, 'Combo grátis',    'Corte + barba grátis. Validade 30 dias.',         400, true)
+    on conflict do nothing;
+  end loop;
+end $$;
