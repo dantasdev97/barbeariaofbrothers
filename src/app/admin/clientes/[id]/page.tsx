@@ -36,7 +36,8 @@ export default async function ClienteDetailPage({
       sb.from("loyalty_rewards").select("id, name, unit_id"),
     ]);
 
-  const url = cardUrl(client.qr_token);
+  // Preferir o slug amigável (mais legível em SMS/partilha)
+  const url = cardUrl(client.public_slug ?? client.qr_token);
 
   return (
     <ClientDetail

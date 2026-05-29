@@ -33,15 +33,24 @@ export async function getClientBalancesAllUnits(clientId: string) {
   return (data ?? []) as Array<{ unit_id: string; balance: number }>;
 }
 
-export async function getClientByToken(token: string): Promise<ClientRow | null> {
+/**
+ * Lookup por handle: aceita public_slug (`augusto-dantas-J2VV`) ou qr_token
+ * (`J2VVQ5PZY3QSXH7V-Z46T`). Diferenciamos pelo formato: slug tem letras
+ * minúsculas; qr_token é só maiúsculas/dígitos.
+ */
+export async function getClientByHandle(handle: string): Promise<ClientRow | null> {
   const sb = createAdminClient();
+  const isToken = /^[A-Z0-9-]+$/.test(handle);
   const { data } = await sb
     .from("clients")
     .select("*")
-    .eq("qr_token", token)
+    .eq(isToken ? "qr_token" : "public_slug", handle)
     .maybeSingle();
   return (data as ClientRow) ?? null;
 }
+
+/** @deprecated use getClientByHandle */
+export const getClientByToken = getClientByHandle;
 
 export async function getClientById(id: string): Promise<ClientRow | null> {
   const sb = createAdminClient();

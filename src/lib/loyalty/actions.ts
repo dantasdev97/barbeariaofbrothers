@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdminSession } from "@/lib/admin-auth";
-import { generateQrToken } from "@/lib/loyalty/qr";
+import { generatePublicSlug, generateQrToken } from "@/lib/loyalty/qr";
 
 async function requireRole(roles: Array<"super_admin" | "manager" | "barbeiro">) {
   const { user, profile } = await requireAdminSession();
@@ -34,7 +34,9 @@ type ClientInput = {
   notes?: string | null;
 };
 
-export async function saveClient(input: ClientInput): Promise<{ id: string; qr_token: string }> {
+export async function saveClient(
+  input: ClientInput,
+): Promise<{ id: string; qr_token: string; public_slug: string }> {
   await requireRole(["super_admin", "manager"]);
   const sb = createAdminClient();
 
@@ -49,17 +51,18 @@ export async function saveClient(input: ClientInput): Promise<{ id: string; qr_t
         notes: input.notes?.trim() || null,
       })
       .eq("id", input.id)
-      .select("id, qr_token")
+      .select("id, qr_token, public_slug")
       .single();
     if (error) throw new Error(error.message);
     bust();
-    return { id: data.id, qr_token: data.qr_token };
+    return { id: data.id, qr_token: data.qr_token, public_slug: data.public_slug };
   }
 
-  // Insert: gera qr_token único (raríssimo colidir, mas validamos)
+  // Insert: gera qr_token + public_slug únicos (raríssimo colidir, mas validamos)
   let attempts = 0;
   while (attempts < 5) {
     const token = generateQrToken();
+    const slug = generatePublicSlug(input.name);
     const { data, error } = await sb
       .from("clients")
       .insert({
@@ -69,14 +72,19 @@ export async function saveClient(input: ClientInput): Promise<{ id: string; qr_t
         email: input.email?.trim() || null,
         notes: input.notes?.trim() || null,
         qr_token: token,
+        public_slug: slug,
       })
-      .select("id, qr_token")
+      .select("id, qr_token, public_slug")
       .single();
     if (!error && data) {
       bust();
-      return { id: data.id, qr_token: data.qr_token };
+      return {
+        id: data.id,
+        qr_token: data.qr_token,
+        public_slug: data.public_slug,
+      };
     }
-    if (error && !/qr_token/.test(error.message)) {
+    if (error && !/qr_token|public_slug/.test(error.message)) {
       throw new Error(error.message);
     }
     attempts++;
@@ -270,11 +278,11 @@ export async function loyaltyAdjust(
 // Navigation helper — usado pelo scan
 // ---------------------------------------------------------------------
 
-export async function gotoClientByToken(token: string) {
+export async function gotoClientByToken(handle: string) {
   await requireRole(["super_admin", "manager", "barbeiro"]);
-  const t = token.trim();
-  // Aceita URL completa ou só token
-  const match = t.match(/cliente\/([A-Z0-9-]+)/i);
-  const finalToken = match?.[1] ?? t;
-  redirect(`/admin/operacao/cliente/${finalToken}`);
+  const t = handle.trim();
+  // Aceita URL completa, qr_token (com hífen) ou public_slug (com letras minúsculas + hífen)
+  const match = t.match(/cliente\/([A-Za-z0-9-]+)/);
+  const finalHandle = match?.[1] ?? t;
+  redirect(`/admin/operacao/cliente/${finalHandle}`);
 }

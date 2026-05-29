@@ -1,116 +1,103 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
-import { ArrowLeft, Camera, KeyRound } from "lucide-react";
+import { ArrowLeft, Camera, KeyRound, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { gotoClientByToken } from "@/lib/loyalty/actions";
 
-type BarcodeDetectorInstance = {
-  detect(source: CanvasImageSource): Promise<Array<{ rawValue: string }>>;
-};
-type BarcodeDetectorCtor = new (opts: { formats: string[] }) => BarcodeDetectorInstance;
+// qr-scanner é um SSR-incompatível (usa Worker), por isso carregamos
+// dinamicamente no useEffect só no client.
+type QrScannerModule = typeof import("qr-scanner");
+type QrScannerInstance = InstanceType<QrScannerModule["default"]>;
 
-declare global {
-  interface Window {
-    BarcodeDetector?: BarcodeDetectorCtor;
-  }
-}
-
-function extractToken(value: string): string {
-  const m = value.match(/cliente\/([A-Z0-9-]+)/i);
+function extractHandle(value: string): string {
+  // Aceita URL completa ou só handle (slug minúsculo OU token maiúsculo)
+  const m = value.match(/cliente\/([A-Za-z0-9-]+)/);
   return (m?.[1] ?? value).trim();
 }
 
 export function Scanner() {
-  const router = useRouter();
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const [supported, setSupported] = useState<boolean | null>(null);
+  const scannerRef = useRef<QrScannerInstance | null>(null);
   const [running, setRunning] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [manual, setManual] = useState("");
   const [pending, startTransition] = useTransition();
 
-  useEffect(() => {
-    const ok = typeof window !== "undefined" && "BarcodeDetector" in window;
-    setSupported(ok);
-  }, []);
-
+  // Cleanup ao desmontar
   useEffect(() => {
     return () => {
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach((t) => t.stop());
-        streamRef.current = null;
+      if (scannerRef.current) {
+        scannerRef.current.stop();
+        scannerRef.current.destroy();
+        scannerRef.current = null;
       }
     };
   }, []);
 
   async function start() {
     if (!videoRef.current) return;
-    if (!window.BarcodeDetector) {
-      toast.error("Câmara/BarcodeDetector indisponível — usa entrada manual.");
-      return;
-    }
+    setLoading(true);
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: "environment" } },
-        audio: false,
-      });
-      streamRef.current = stream;
-      videoRef.current.srcObject = stream;
-      await videoRef.current.play();
-      setRunning(true);
+      const QrScannerMod = (await import("qr-scanner")).default;
 
-      const detector = new window.BarcodeDetector({ formats: ["qr_code"] });
-      const tick = async () => {
-        if (!streamRef.current || !videoRef.current) return;
-        try {
-          const codes = await detector.detect(videoRef.current);
-          if (codes.length > 0) {
-            const raw = codes[0].rawValue;
-            const token = extractToken(raw);
-            goTo(token);
-            return;
-          }
-        } catch {
-          // ignore frame failures
-        }
-        requestAnimationFrame(tick);
-      };
-      requestAnimationFrame(tick);
-    } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Falha ao iniciar câmara.",
+      // O worker do qr-scanner precisa ser servido. A v1.4 funciona via
+      // import direto (Next/webpack inlines o worker).
+      const scanner = new QrScannerMod(
+        videoRef.current,
+        (result) => {
+          const handle = extractHandle(result.data);
+          if (handle) goTo(handle);
+        },
+        {
+          preferredCamera: "environment",
+          highlightScanRegion: true,
+          highlightCodeOutline: true,
+          maxScansPerSecond: 5,
+        },
       );
+      await scanner.start();
+      scannerRef.current = scanner;
+      setRunning(true);
+    } catch (err) {
+      console.error("[scanner]", err);
+      toast.error(
+        err instanceof Error
+          ? `Falha ao iniciar câmara: ${err.message}`
+          : "Falha ao iniciar câmara.",
+      );
+    } finally {
+      setLoading(false);
     }
   }
 
   function stop() {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((t) => t.stop());
-      streamRef.current = null;
+    if (scannerRef.current) {
+      scannerRef.current.stop();
+      scannerRef.current.destroy();
+      scannerRef.current = null;
     }
     setRunning(false);
   }
 
-  function goTo(token: string) {
+  function goTo(handle: string) {
     stop();
     startTransition(async () => {
       try {
-        await gotoClientByToken(token);
+        await gotoClientByToken(handle);
       } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Token inválido.");
+        toast.error(err instanceof Error ? err.message : "Cartão inválido.");
       }
     });
   }
 
   function submitManual(e: React.FormEvent) {
     e.preventDefault();
-    const t = extractToken(manual);
-    if (!t) return toast.error("Cole o token ou URL do cartão.");
+    const t = extractHandle(manual);
+    if (!t) return toast.error("Cola o link ou o handle do cartão.");
     goTo(t);
   }
 
@@ -143,10 +130,18 @@ export function Scanner() {
         {!running ? (
           <Button
             onClick={start}
-            disabled={pending}
+            disabled={pending || loading}
             className="flex-1 bg-brand text-primary-foreground hover:bg-brand-hover"
           >
-            <Camera className="mr-2 h-4 w-4" /> Iniciar câmara
+            {loading ? (
+              <>
+                <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> A iniciar…
+              </>
+            ) : (
+              <>
+                <Camera className="mr-2 h-4 w-4" /> Iniciar câmara
+              </>
+            )}
           </Button>
         ) : (
           <Button variant="outline" onClick={stop} className="flex-1">
@@ -155,11 +150,10 @@ export function Scanner() {
         )}
       </div>
 
-      {supported === false && (
-        <p className="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-xs text-amber-300">
-          Este navegador não suporta BarcodeDetector. Usa a caixa abaixo para colar o link/token.
-        </p>
-      )}
+      <p className="mt-3 text-xs text-muted-foreground">
+        A câmara só funciona em HTTPS (ou localhost). Tem de permitir o acesso quando o
+        browser pedir.
+      </p>
 
       <form
         onSubmit={submitManual}
@@ -171,7 +165,7 @@ export function Scanner() {
         <Input
           value={manual}
           onChange={(e) => setManual(e.target.value)}
-          placeholder="Cola o link ou o token do cartão"
+          placeholder="Cola o link ou handle (ex: augusto-dantas-J2VV)"
           className="h-12 text-base"
         />
         <Button
