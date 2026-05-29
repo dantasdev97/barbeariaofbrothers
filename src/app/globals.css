@@ -214,3 +214,16 @@
     box-shadow: var(--shadow-premium-lg);
   }
 }
+
+/* ---- Capacitor (app nativa) ---- */
+/* A classe é adicionada a <html> pelo NativeProvider quando isNativePlatform. */
+.capacitor-native {
+  /* Permite que env(safe-area-inset-*) funcione com viewport-fit=cover. */
+  --safe-top: env(safe-area-inset-top);
+  --safe-bottom: env(safe-area-inset-bottom);
+}
+
+/* Conteúdo do admin não fica tapado pela bottom tab bar nativa. */
+.capacitor-native .admin main {
+  padding-bottom: calc(3.75rem + env(safe-area-inset-bottom));
+}

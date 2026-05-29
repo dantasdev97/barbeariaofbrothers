@@ -3,6 +3,7 @@ import { Poppins, Space_Grotesk } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { Toaster } from "@/components/ui/sonner";
 import { CookieBanner } from "@/components/public/cookie-banner";
+import { NativeProvider } from "@/components/native/native-provider";
 import "./globals.css";
 
 const poppins = Poppins({
@@ -60,6 +61,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
@@ -75,6 +77,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col bg-background text-foreground" suppressHydrationWarning>
         {children}
+        <NativeProvider />
         <Toaster
           theme="light"
           position="bottom-right"

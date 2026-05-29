@@ -1,5 +1,6 @@
 import { requireAdminSession } from "@/lib/admin-auth";
 import { AdminSidebar } from "@/components/admin/admin-sidebar";
+import { MobileTabBar } from "@/components/admin/mobile-tab-bar";
 
 export default async function AdminLayout({
   children,
@@ -20,6 +21,7 @@ export default async function AdminLayout({
           <div className="mx-auto w-full max-w-7xl">{children}</div>
         </main>
       </div>
+      <MobileTabBar role={profile.role} />
     </div>
   );
 }
