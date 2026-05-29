@@ -4,45 +4,12 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
-import {
-  Gift,
-  LayoutDashboard,
-  LogOut,
-  MapPin,
-  Menu,
-  Package,
-  QrCode,
-  Scissors,
-  Settings,
-  Tag,
-  Users,
-  X,
-} from "lucide-react";
+import { LogOut, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
-
-type Role = "super_admin" | "manager" | "barbeiro";
-
-type NavItem = {
-  href: string;
-  label: string;
-  icon: typeof LayoutDashboard;
-  exact?: boolean;
-  roles?: Role[];
-};
-
-const NAV: NavItem[] = [
-  { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true, roles: ["super_admin", "manager"] },
-  { href: "/admin/operacao", label: "Operação", icon: QrCode },
-  { href: "/admin/clientes", label: "Clientes", icon: Users, roles: ["super_admin", "manager"] },
-  { href: "/admin/fidelidade", label: "Fidelidade", icon: Gift, roles: ["super_admin", "manager"] },
-  { href: "/admin/barbeiros", label: "Barbeiros", icon: Scissors, roles: ["super_admin", "manager"] },
-  { href: "/admin/produtos", label: "Produtos", icon: Package, roles: ["super_admin", "manager"] },
-  { href: "/admin/categorias", label: "Categorias", icon: Tag, roles: ["super_admin", "manager"] },
-  { href: "/admin/unidades", label: "Unidades", icon: MapPin, roles: ["super_admin"] },
-  { href: "/admin/configuracoes", label: "Configurações", icon: Settings, roles: ["super_admin", "manager"] },
-];
+import { useIsNative } from "@/lib/native/platform";
+import { isNavActive, visibleNav as filterNav } from "@/components/admin/nav-items";
 
 type Props = { email: string; role: string };
 
@@ -50,6 +17,7 @@ export function AdminSidebar({ email, role }: Props) {
   const pathname = usePathname();
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const native = useIsNative();
 
   async function logout() {
     const sb = createClient();
@@ -58,12 +26,13 @@ export function AdminSidebar({ email, role }: Props) {
     router.refresh();
   }
 
-  const visibleNav = NAV.filter((item) => !item.roles || item.roles.includes(role as Role));
+  const visibleNav = filterNav(role);
 
   const navList = (onClick?: () => void) => (
     <nav className="flex flex-1 flex-col gap-1 px-4 py-6">
-      {visibleNav.map(({ href, label, icon: Icon, exact }) => {
-        const active = exact ? pathname === href : pathname?.startsWith(href);
+      {visibleNav.map((item) => {
+        const { href, label, icon: Icon } = item;
+        const active = isNavActive(item, pathname);
         return (
           <Link
             key={href}
@@ -87,7 +56,12 @@ export function AdminSidebar({ email, role }: Props) {
   return (
     <>
       {/* Top bar (mobile) */}
-      <div className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background/90 px-4 backdrop-blur md:hidden">
+      <div
+        className={cn(
+          "sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background/90 px-4 backdrop-blur md:hidden",
+          native && "pt-[env(safe-area-inset-top)] box-content",
+        )}
+      >
         <Link href="/admin" className="flex items-center gap-2">
           <Image src="/logo.png" alt="" width={28} height={28} />
           <span className="font-heading text-sm font-semibold">Admin</span>

@@ -6,10 +6,21 @@
     "dev": "next dev",
     "build": "next build --webpack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "cap:sync": "cap sync",
+    "cap:ios": "cap open ios",
+    "cap:android": "cap open android",
+    "cap:assets": "capacitor-assets generate"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",
+    "@capacitor-mlkit/barcode-scanning": "^7.5.0",
+    "@capacitor/app": "^7.1.2",
+    "@capacitor/core": "^7.6.5",
+    "@capacitor/keyboard": "^7.0.6",
+    "@capacitor/push-notifications": "^7.0.6",
+    "@capacitor/splash-screen": "^7.0.5",
+    "@capacitor/status-bar": "^7.0.6",
     "@radix-ui/react-slot": "^1.2.4",
     "@supabase/ssr": "^0.10.2",
     "@supabase/supabase-js": "^2.105.3",
@@ -34,6 +45,10 @@
     "zustand": "^5.0.13"
   },
   "devDependencies": {
+    "@capacitor/android": "^7.6.5",
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^7.6.5",
+    "@capacitor/ios": "^7.6.5",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/qrcode": "^1.5.5",

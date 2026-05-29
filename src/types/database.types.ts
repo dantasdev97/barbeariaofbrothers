@@ -97,6 +97,8 @@ export type ProfileRow = {
   id: string;
   role: ProfileRole;
   unit_id: string | null;
+  push_token: string | null;
+  push_platform: "ios" | "android" | null;
   created_at: string;
 };
 
@@ -202,6 +204,10 @@ export interface Database {
       loyalty_adjust: {
         Args: { p_client_id: string; p_unit_id: string; p_points: number; p_note: string };
         Returns: LoyaltyTransactionRow;
+      };
+      save_push_token: {
+        Args: { p_token: string; p_platform: string | null };
+        Returns: undefined;
       };
     };
     Enums: Record<string, never>;

@@ -7,6 +7,7 @@ import { ArrowLeft, Camera, KeyRound, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { gotoClientByToken } from "@/lib/loyalty/actions";
+import { useIsNative } from "@/lib/native/platform";
 
 // qr-scanner é um SSR-incompatível (usa Worker), por isso carregamos
 // dinamicamente no useEffect só no client.
@@ -26,6 +27,7 @@ export function Scanner() {
   const [loading, setLoading] = useState(false);
   const [manual, setManual] = useState("");
   const [pending, startTransition] = useTransition();
+  const native = useIsNative();
 
   // Cleanup ao desmontar
   useEffect(() => {
@@ -38,7 +40,38 @@ export function Scanner() {
     };
   }, []);
 
+  // App nativa (Capacitor): usa o scanner ML Kit nativo em vez do qr-scanner web.
+  async function startNative() {
+    setLoading(true);
+    try {
+      const { BarcodeScanner } = await import("@capacitor-mlkit/barcode-scanning");
+
+      const { camera } = await BarcodeScanner.requestPermissions();
+      if (camera !== "granted" && camera !== "limited") {
+        toast.error("Permissão de câmara recusada.");
+        return;
+      }
+
+      const { barcodes } = await BarcodeScanner.scan();
+      const raw = barcodes[0]?.rawValue;
+      if (!raw) {
+        toast.error("Nenhum QR detetado.");
+        return;
+      }
+      const handle = extractHandle(raw);
+      if (handle) goTo(handle);
+    } catch (err) {
+      console.error("[scanner:native]", err);
+      toast.error(
+        err instanceof Error ? `Falha no scanner: ${err.message}` : "Falha no scanner.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function start() {
+    if (native) return startNative();
     if (!videoRef.current) return;
     setLoading(true);
     try {
@@ -117,14 +150,16 @@ export function Scanner() {
         Aponta a câmara para o QR do cartão (físico ou no telemóvel do cliente).
       </p>
 
-      <div className="overflow-hidden rounded-2xl border border-border bg-black">
-        <video
-          ref={videoRef}
-          className="aspect-square w-full bg-black object-cover"
-          playsInline
-          muted
-        />
-      </div>
+      {!native && (
+        <div className="overflow-hidden rounded-2xl border border-border bg-black">
+          <video
+            ref={videoRef}
+            className="aspect-square w-full bg-black object-cover"
+            playsInline
+            muted
+          />
+        </div>
+      )}
 
       <div className="mt-4 flex gap-2">
         {!running ? (
@@ -151,8 +186,9 @@ export function Scanner() {
       </div>
 
       <p className="mt-3 text-xs text-muted-foreground">
-        A câmara só funciona em HTTPS (ou localhost). Tem de permitir o acesso quando o
-        browser pedir.
+        {native
+          ? "Toca em iniciar e aponta a câmara ao QR. Permite o acesso quando pedido."
+          : "A câmara só funciona em HTTPS (ou localhost). Tem de permitir o acesso quando o browser pedir."}
       </p>
 
       <form
