@@ -34,14 +34,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         { url: absoluteUrl(`${base}/contato`), priority: 0.5, changeFrequency: "monthly" },
       );
     }
-    for (const b of (barbers ?? []) as { slug: string; units: { slug: string } }[]) {
+    for (const b of (barbers ?? []) as unknown as { slug: string; units: { slug: string } }[]) {
       entries.push({
         url: absoluteUrl(`/${b.units.slug}/barbeiros/${b.slug}`),
         priority: 0.7,
         changeFrequency: "monthly",
       });
     }
-    for (const p of (products ?? []) as { slug: string; units: { slug: string } }[]) {
+    for (const p of (products ?? []) as unknown as { slug: string; units: { slug: string } }[]) {
       entries.push({
         url: absoluteUrl(`/${p.units.slug}/produtos/${p.slug}`),
         priority: 0.7,

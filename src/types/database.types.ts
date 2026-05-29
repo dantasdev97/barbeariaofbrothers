@@ -62,6 +62,7 @@ export type BarberRow = {
   buk_url: string | null;
   display_order: number;
   active: boolean;
+  auth_user_id: string | null;
 };
 
 export type ProductCategoryRow = {
@@ -90,11 +91,66 @@ export type ProductRow = {
   active: boolean;
 };
 
+export type ProfileRole = "super_admin" | "manager" | "barbeiro";
+
 export type ProfileRow = {
   id: string;
-  role: "super_admin" | "manager";
+  role: ProfileRole;
   unit_id: string | null;
   created_at: string;
+};
+
+export type ClientRow = {
+  id: string;
+  unit_id: string;
+  name: string;
+  phone: string;
+  email: string | null;
+  qr_token: string;
+  notes: string | null;
+  created_at: string;
+};
+
+export type LoyaltyServiceRow = {
+  id: string;
+  unit_id: string;
+  name: string;
+  points_value: number;
+  display_order: number;
+  active: boolean;
+  created_at: string;
+};
+
+export type LoyaltyRewardRow = {
+  id: string;
+  unit_id: string;
+  name: string;
+  description: string | null;
+  points_cost: number;
+  active: boolean;
+  created_at: string;
+};
+
+export type LoyaltyTxType = "earn" | "redeem" | "adjust";
+
+export type LoyaltyTransactionRow = {
+  id: string;
+  client_id: string;
+  unit_id: string;
+  barber_id: string | null;
+  actor_user_id: string | null;
+  type: LoyaltyTxType;
+  points: number;
+  service_id: string | null;
+  reward_id: string | null;
+  note: string | null;
+  created_at: string;
+};
+
+export type ClientUnitBalanceRow = {
+  client_id: string;
+  unit_id: string;
+  balance: number;
 };
 
 export type EventType =
@@ -125,9 +181,28 @@ export interface Database {
       products: { Row: ProductRow; Insert: Insert<ProductRow>; Update: Partial<ProductRow>; Relationships: [] };
       profiles: { Row: ProfileRow; Insert: Insert<ProfileRow>; Update: Partial<ProfileRow>; Relationships: [] };
       events: { Row: EventRow; Insert: Insert<EventRow>; Update: Partial<EventRow>; Relationships: [] };
+      clients: { Row: ClientRow; Insert: Insert<ClientRow>; Update: Partial<ClientRow>; Relationships: [] };
+      loyalty_services: { Row: LoyaltyServiceRow; Insert: Insert<LoyaltyServiceRow>; Update: Partial<LoyaltyServiceRow>; Relationships: [] };
+      loyalty_rewards: { Row: LoyaltyRewardRow; Insert: Insert<LoyaltyRewardRow>; Update: Partial<LoyaltyRewardRow>; Relationships: [] };
+      loyalty_transactions: { Row: LoyaltyTransactionRow; Insert: Insert<LoyaltyTransactionRow>; Update: Partial<LoyaltyTransactionRow>; Relationships: [] };
     };
-    Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Views: {
+      client_unit_balances: { Row: ClientUnitBalanceRow; Relationships: [] };
+    };
+    Functions: {
+      loyalty_earn: {
+        Args: { p_client_id: string; p_unit_id: string; p_service_id: string };
+        Returns: LoyaltyTransactionRow;
+      };
+      loyalty_redeem: {
+        Args: { p_client_id: string; p_unit_id: string; p_reward_id: string };
+        Returns: LoyaltyTransactionRow;
+      };
+      loyalty_adjust: {
+        Args: { p_client_id: string; p_unit_id: string; p_points: number; p_note: string };
+        Returns: LoyaltyTransactionRow;
+      };
+    };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
   };

@@ -5,27 +5,43 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import {
+  Gift,
   LayoutDashboard,
   LogOut,
   MapPin,
   Menu,
   Package,
+  QrCode,
   Scissors,
   Settings,
   Tag,
+  Users,
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 
-const NAV = [
-  { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
-  { href: "/admin/barbeiros", label: "Barbeiros", icon: Scissors },
-  { href: "/admin/produtos", label: "Produtos", icon: Package },
-  { href: "/admin/categorias", label: "Categorias", icon: Tag },
-  { href: "/admin/unidades", label: "Unidades", icon: MapPin },
-  { href: "/admin/configuracoes", label: "Configurações", icon: Settings },
+type Role = "super_admin" | "manager" | "barbeiro";
+
+type NavItem = {
+  href: string;
+  label: string;
+  icon: typeof LayoutDashboard;
+  exact?: boolean;
+  roles?: Role[];
+};
+
+const NAV: NavItem[] = [
+  { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true, roles: ["super_admin", "manager"] },
+  { href: "/admin/operacao", label: "Operação", icon: QrCode },
+  { href: "/admin/clientes", label: "Clientes", icon: Users, roles: ["super_admin", "manager"] },
+  { href: "/admin/fidelidade", label: "Fidelidade", icon: Gift, roles: ["super_admin", "manager"] },
+  { href: "/admin/barbeiros", label: "Barbeiros", icon: Scissors, roles: ["super_admin", "manager"] },
+  { href: "/admin/produtos", label: "Produtos", icon: Package, roles: ["super_admin", "manager"] },
+  { href: "/admin/categorias", label: "Categorias", icon: Tag, roles: ["super_admin", "manager"] },
+  { href: "/admin/unidades", label: "Unidades", icon: MapPin, roles: ["super_admin"] },
+  { href: "/admin/configuracoes", label: "Configurações", icon: Settings, roles: ["super_admin", "manager"] },
 ];
 
 type Props = { email: string; role: string };
@@ -42,9 +58,11 @@ export function AdminSidebar({ email, role }: Props) {
     router.refresh();
   }
 
+  const visibleNav = NAV.filter((item) => !item.roles || item.roles.includes(role as Role));
+
   const navList = (onClick?: () => void) => (
     <nav className="flex flex-1 flex-col gap-1 px-4 py-6">
-      {NAV.map(({ href, label, icon: Icon, exact }) => {
+      {visibleNav.map(({ href, label, icon: Icon, exact }) => {
         const active = exact ? pathname === href : pathname?.startsWith(href);
         return (
           <Link

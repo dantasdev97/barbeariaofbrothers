@@ -45,13 +45,8 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(redirect);
   }
 
-  // Already logged in but visiting /login — bounce to /admin
-  if (pathname === LOGIN_PATH && user) {
-    const redirect = request.nextUrl.clone();
-    redirect.pathname = "/admin";
-    redirect.search = "";
-    return NextResponse.redirect(redirect);
-  }
+  // Note: Removed automatic /login → /admin redirect to prevent redirect loops
+  // Users logging in will stay on /login page after successful auth
 
   return response;
 }
