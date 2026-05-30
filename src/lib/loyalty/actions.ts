@@ -275,7 +275,7 @@ export async function loyaltyAdjust(
 }
 
 // ---------------------------------------------------------------------
-// Navigation helper — usado pelo scan
+// Navigation helpers — usados pelo scan
 // ---------------------------------------------------------------------
 
 export async function gotoClientByToken(handle: string) {
@@ -285,4 +285,40 @@ export async function gotoClientByToken(handle: string) {
   const match = t.match(/cliente\/([A-Za-z0-9-]+)/);
   const finalHandle = match?.[1] ?? t;
   redirect(`/admin/operacao/cliente/${finalHandle}`);
+}
+
+/**
+ * Valida um handle (qr_token ou public_slug) e devolve o cliente.
+ * Usado pelo scanner para dar feedback verde/vermelho antes de navegar.
+ * Não faz redirect — o cliente decide quando navegar.
+ */
+export async function lookupClient(
+  handle: string,
+): Promise<
+  | { ok: true; handle: string; name: string }
+  | { ok: false; error: string }
+> {
+  await requireRole(["super_admin", "manager", "barbeiro"]);
+  const t = handle.trim();
+  if (!t) return { ok: false, error: "Handle vazio." };
+  const match = t.match(/cliente\/([A-Za-z0-9-]+)/);
+  const finalHandle = (match?.[1] ?? t).trim();
+  if (!finalHandle) return { ok: false, error: "Handle inválido." };
+
+  const sb = createAdminClient();
+  const { data, error } = await sb
+    .from("clients")
+    .select("id, name, public_slug, qr_token")
+    .or(`public_slug.eq.${finalHandle},qr_token.eq.${finalHandle}`)
+    .maybeSingle();
+
+  if (error) return { ok: false, error: "Erro a procurar cartão." };
+  if (!data) return { ok: false, error: "Cartão não encontrado." };
+
+  // Prefere public_slug (URL amigável) quando existe
+  return {
+    ok: true,
+    handle: data.public_slug ?? data.qr_token,
+    name: data.name,
+  };
 }

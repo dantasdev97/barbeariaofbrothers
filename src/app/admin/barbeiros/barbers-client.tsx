@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus } from "lucide-react";
+import { Plus, ShieldCheck } from "lucide-react";
 import type { BarberRow } from "@/types/database.types";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { BarbersTable } from "./barbers-table";
 import { BarberForm } from "./barber-form";
+import { AccessDialog, type AccessTarget } from "./access-dialog";
 
 type UnitLite = { id: string; name: string; slug: string };
 
@@ -26,6 +27,7 @@ export function BarbersClient({
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<BarberRow | null>(null);
+  const [access, setAccess] = useState<AccessTarget | null>(null);
 
   function openNew() {
     setEditing(null);
@@ -54,16 +56,30 @@ export function BarbersClient({
             {barbers.length} barbeiro{barbers.length !== 1 ? "s" : ""} · todas as unidades
           </p>
         </div>
-        <Button
-          onClick={openNew}
-          className="shrink-0 bg-brand text-primary-foreground hover:bg-brand-hover"
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          Novo barbeiro
-        </Button>
+        <div className="flex shrink-0 flex-wrap gap-2">
+          <Button variant="secondary" onClick={() => setAccess({ mode: "staff" })}>
+            <ShieldCheck className="mr-2 h-4 w-4" />
+            Criar acesso de gestão
+          </Button>
+          <Button
+            onClick={openNew}
+            className="bg-brand text-primary-foreground hover:bg-brand-hover"
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Novo barbeiro
+          </Button>
+        </div>
       </header>
 
-      <BarbersTable barbers={barbers} units={units} onEdit={openEdit} onAdd={openNew} />
+      <BarbersTable
+        barbers={barbers}
+        units={units}
+        onEdit={openEdit}
+        onAdd={openNew}
+        onCreateAccess={(b) =>
+          setAccess({ mode: "barber", barberId: b.id, barberName: b.name })
+        }
+      />
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent size="lg">
@@ -80,6 +96,13 @@ export function BarbersClient({
           />
         </DialogContent>
       </Dialog>
+
+      <AccessDialog
+        target={access}
+        units={units}
+        onClose={() => setAccess(null)}
+        onDone={() => setAccess(null)}
+      />
     </div>
   );
 }

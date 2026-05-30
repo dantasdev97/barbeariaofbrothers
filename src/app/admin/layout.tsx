@@ -1,6 +1,30 @@
+import type { Metadata, Viewport } from "next";
 import { requireAdminSession } from "@/lib/admin-auth";
 import { AdminSidebar } from "@/components/admin/admin-sidebar";
 import { MobileTabBar } from "@/components/admin/mobile-tab-bar";
+
+/**
+ * Metadata do admin: define o admin como PWA instalável
+ * ("Adicionar ao ecrã principal" em iOS / "Instalar app" em Android).
+ * O scope do manifest é /admin/, por isso só estas páginas são tratadas como app.
+ */
+export const metadata: Metadata = {
+  title: { default: "Of Brothers · Admin", template: "%s · OB Admin" },
+  manifest: "/manifest-admin.webmanifest",
+  appleWebApp: {
+    capable: true,
+    title: "OB Admin",
+    statusBarStyle: "black-translucent",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#F39200",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  viewportFit: "cover",
+};
 
 export default async function AdminLayout({
   children,

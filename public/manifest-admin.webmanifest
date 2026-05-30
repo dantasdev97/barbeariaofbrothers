@@ -1,0 +1,20 @@
+{
+  "name": "Of Brothers · Admin",
+  "short_name": "OB Admin",
+  "description": "Painel de gestão da Barbearia Of Brothers",
+  "id": "/admin",
+  "start_url": "/admin",
+  "scope": "/admin/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#F39200",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/favicon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

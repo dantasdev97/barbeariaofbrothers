@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Pencil, Scissors, Trash2 } from "lucide-react";
+import { KeyRound, Pencil, Scissors, ShieldCheck, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import type { BarberRow } from "@/types/database.types";
 import { Button } from "@/components/ui/button";
@@ -16,11 +16,13 @@ export function BarbersTable({
   units,
   onEdit,
   onAdd,
+  onCreateAccess,
 }: {
   barbers: BarberRow[];
   units: UnitLite[];
   onEdit?: (b: BarberRow) => void;
   onAdd?: () => void;
+  onCreateAccess?: (b: BarberRow) => void;
 }) {
   const [pending, startTransition] = useTransition();
   const [toDelete, setToDelete] = useState<BarberRow | null>(null);
@@ -84,7 +86,21 @@ export function BarbersTable({
             <p className="mt-3 text-sm text-muted-foreground">
               {b.speciality ?? "Sem especialidade definida"}
             </p>
-            <div className="mt-4 grid grid-cols-2 gap-2">
+            {b.auth_user_id ? (
+              <p className="mt-3 inline-flex items-center gap-1.5 rounded-md bg-brand/10 px-2 py-1 text-xs font-medium text-brand">
+                <ShieldCheck className="h-3.5 w-3.5" /> Acesso criado
+              </p>
+            ) : (
+              <Button
+                size="sm"
+                variant="secondary"
+                className="mt-3 w-full"
+                onClick={() => onCreateAccess?.(b)}
+              >
+                <KeyRound className="mr-1 h-3.5 w-3.5" /> Criar acesso (login)
+              </Button>
+            )}
+            <div className="mt-3 grid grid-cols-2 gap-2">
               <Button size="sm" variant="secondary" onClick={() => onEdit?.(b)}>
                 <Pencil className="mr-1 h-3.5 w-3.5" />
                 Editar
@@ -111,6 +127,7 @@ export function BarbersTable({
               <th className="px-5 py-4 text-left font-medium">Unidade</th>
               <th className="hidden px-5 py-4 text-left font-medium sm:table-cell">Especialidade</th>
               <th className="px-5 py-4 text-left font-medium">Estado</th>
+              <th className="px-5 py-4 text-left font-medium">Acesso</th>
               <th className="px-5 py-4" />
             </tr>
           </thead>
@@ -131,6 +148,22 @@ export function BarbersTable({
                   >
                     {b.active ? "Activo" : "Inactivo"}
                   </Badge>
+                </td>
+                <td className="px-5 py-4">
+                  {b.auth_user_id ? (
+                    <span className="inline-flex items-center gap-1 text-xs font-medium text-brand">
+                      <ShieldCheck className="h-3.5 w-3.5" /> Com login
+                    </span>
+                  ) : (
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => onCreateAccess?.(b)}
+                    >
+                      <KeyRound className="h-3.5 w-3.5 sm:mr-1" />
+                      <span className="hidden sm:inline">Criar acesso</span>
+                    </Button>
+                  )}
                 </td>
                 <td className="px-3 py-4 text-right sm:px-5">
                   <div className="flex justify-end gap-1">

@@ -1,13 +1,22 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { ArrowLeft, Camera, KeyRound, RefreshCw } from "lucide-react";
+import {
+  ArrowLeft,
+  Camera,
+  CheckCircle2,
+  KeyRound,
+  RefreshCw,
+  XCircle,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { gotoClientByToken } from "@/lib/loyalty/actions";
+import { lookupClient } from "@/lib/loyalty/actions";
 import { useIsNative } from "@/lib/native/platform";
+import { cn } from "@/lib/utils";
 
 // qr-scanner é um SSR-incompatível (usa Worker), por isso carregamos
 // dinamicamente no useEffect só no client.
@@ -20,13 +29,20 @@ function extractHandle(value: string): string {
   return (m?.[1] ?? value).trim();
 }
 
+type Feedback = {
+  kind: "success" | "error";
+  title: string;
+  sub?: string;
+};
+
 export function Scanner() {
+  const router = useRouter();
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const scannerRef = useRef<QrScannerInstance | null>(null);
   const [running, setRunning] = useState(false);
   const [loading, setLoading] = useState(false);
   const [manual, setManual] = useState("");
-  const [pending, startTransition] = useTransition();
+  const [feedback, setFeedback] = useState<Feedback | null>(null);
   const native = useIsNative();
 
   // Cleanup ao desmontar
@@ -116,15 +132,32 @@ export function Scanner() {
     setRunning(false);
   }
 
-  function goTo(handle: string) {
+  async function goTo(handle: string) {
     stop();
-    startTransition(async () => {
-      try {
-        await gotoClientByToken(handle);
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Cartão inválido.");
+    setLoading(true);
+    try {
+      const res = await lookupClient(handle);
+      if (res.ok) {
+        setFeedback({ kind: "success", title: "Cartão encontrado", sub: res.name });
+        // breve flash verde antes de navegar
+        setTimeout(() => {
+          router.push(`/admin/operacao/cliente/${res.handle}`);
+        }, 750);
+      } else {
+        setFeedback({ kind: "error", title: "Cartão inválido", sub: res.error });
+        // auto-dismiss ao fim de 2.5s para o operador poder voltar a tentar
+        setTimeout(() => setFeedback(null), 2500);
       }
-    });
+    } catch (err) {
+      setFeedback({
+        kind: "error",
+        title: "Erro",
+        sub: err instanceof Error ? err.message : "Falhou a validação.",
+      });
+      setTimeout(() => setFeedback(null), 2500);
+    } finally {
+      setLoading(false);
+    }
   }
 
   function submitManual(e: React.FormEvent) {
@@ -165,7 +198,7 @@ export function Scanner() {
         {!running ? (
           <Button
             onClick={start}
-            disabled={pending || loading}
+            disabled={loading}
             className="flex-1 bg-brand text-primary-foreground hover:bg-brand-hover"
           >
             {loading ? (
@@ -206,12 +239,48 @@ export function Scanner() {
         />
         <Button
           type="submit"
-          disabled={pending || !manual.trim()}
+          disabled={loading || !manual.trim()}
           className="w-full bg-brand text-primary-foreground hover:bg-brand-hover"
         >
           Abrir cartão
         </Button>
       </form>
+
+      {/* Overlay de feedback: verde (sucesso) ou vermelho (erro) */}
+      {feedback && (
+        <div
+          role="status"
+          aria-live="assertive"
+          onClick={
+            feedback.kind === "error" ? () => setFeedback(null) : undefined
+          }
+          className={cn(
+            "fixed inset-0 z-[100] flex items-center justify-center p-6 transition-opacity",
+            feedback.kind === "success"
+              ? "bg-emerald-500/95"
+              : "bg-red-500/95 cursor-pointer",
+          )}
+        >
+          <div className="flex flex-col items-center text-center text-white">
+            {feedback.kind === "success" ? (
+              <CheckCircle2 className="h-28 w-28 drop-shadow-md" strokeWidth={1.75} />
+            ) : (
+              <XCircle className="h-28 w-28 drop-shadow-md" strokeWidth={1.75} />
+            )}
+            <p className="mt-5 font-heading text-2xl font-semibold leading-tight">
+              {feedback.title}
+            </p>
+            {feedback.sub && (
+              <p className="mt-1.5 max-w-xs text-base opacity-95">{feedback.sub}</p>
+            )}
+            {feedback.kind === "error" && (
+              <p className="mt-6 text-xs uppercase tracking-[0.18em] opacity-80">
+                Toca para fechar
+              </p>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
