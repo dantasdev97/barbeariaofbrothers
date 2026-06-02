@@ -43,6 +43,8 @@ export function Scanner() {
     setLoading(true);
     try {
       const QrScannerMod = (await import("qr-scanner")).default;
+      // Set worker path before instantiation so production builds resolve it.
+      QrScannerMod.WORKER_PATH = "/qr-scanner-worker.min.js";
 
       const scanner = new QrScannerMod(
         videoRef.current,
@@ -55,7 +57,6 @@ export function Scanner() {
           highlightScanRegion: true,
           highlightCodeOutline: true,
           maxScansPerSecond: 5,
-          workerPath: "/qr-scanner-worker.min.js",
         },
       );
       await scanner.start();
