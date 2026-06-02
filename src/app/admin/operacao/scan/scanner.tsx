@@ -44,8 +44,6 @@ export function Scanner() {
     try {
       const QrScannerMod = (await import("qr-scanner")).default;
 
-      // O worker do qr-scanner precisa ser servido. A v1.4 funciona via
-      // import direto (Next/webpack inlines o worker).
       const scanner = new QrScannerMod(
         videoRef.current,
         (result) => {
@@ -57,6 +55,7 @@ export function Scanner() {
           highlightScanRegion: true,
           highlightCodeOutline: true,
           maxScansPerSecond: 5,
+          workerPath: "/qr-scanner-worker.min.js",
         },
       );
       await scanner.start();

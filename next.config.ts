@@ -4,7 +4,7 @@ const securityHeaders = [
   { key: "X-Frame-Options", value: "DENY" },
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+  { key: "Permissions-Policy", value: "camera=(self), microphone=(), geolocation=()" },
   {
     key: "Content-Security-Policy",
     value: [
@@ -13,8 +13,9 @@ const securityHeaders = [
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https:",
       "connect-src 'self' https://*.supabase.co https://www.google-analytics.com https://region1.google-analytics.com https://vitals.vercel-insights.com",
-      "media-src 'self' https://*.supabase.co",
+      "media-src 'self' https://*.supabase.co blob:",
       "font-src 'self'",
+      "worker-src 'self' blob:",
       "frame-src 'none'",
       "object-src 'none'",
       "base-uri 'self'",
