@@ -18,11 +18,6 @@ import { lookupClient } from "@/lib/loyalty/actions";
 import { useIsNative } from "@/lib/native/platform";
 import { cn } from "@/lib/utils";
 
-// qr-scanner é um SSR-incompatível (usa Worker), por isso carregamos
-// dinamicamente no useEffect só no client.
-type QrScannerModule = typeof import("qr-scanner");
-type QrScannerInstance = InstanceType<QrScannerModule["default"]>;
-
 function extractHandle(value: string): string {
   // Aceita URL completa ou só handle (slug minúsculo OU token maiúsculo)
   const m = value.match(/cliente\/([A-Za-z0-9-]+)/);
@@ -38,36 +33,45 @@ type Feedback = {
 export function Scanner() {
   const router = useRouter();
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const scannerRef = useRef<QrScannerInstance | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const rafRef = useRef<number | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const handledRef = useRef(false);
   const [running, setRunning] = useState(false);
   const [loading, setLoading] = useState(false);
   const [manual, setManual] = useState("");
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const native = useIsNative();
 
+  // Liberta câmara e loop sem mexer no estado (seguro em unmount).
+  function teardown() {
+    if (rafRef.current !== null) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+    }
+    if (videoRef.current) videoRef.current.srcObject = null;
+  }
+
   // Cleanup ao desmontar
   useEffect(() => {
-    return () => {
-      if (scannerRef.current) {
-        scannerRef.current.stop();
-        scannerRef.current.destroy();
-        scannerRef.current = null;
-      }
-    };
+    return () => teardown();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // App nativa (Capacitor): usa o scanner ML Kit nativo em vez do qr-scanner web.
+  // App nativa (Capacitor): usa o scanner ML Kit nativo.
   async function startNative() {
     setLoading(true);
     try {
       const { BarcodeScanner } = await import("@capacitor-mlkit/barcode-scanning");
-
       const { camera } = await BarcodeScanner.requestPermissions();
       if (camera !== "granted" && camera !== "limited") {
         toast.error("Permissão de câmara recusada.");
         return;
       }
-
       const { barcodes } = await BarcodeScanner.scan();
       const raw = barcodes[0]?.rawValue;
       if (!raw) {
@@ -86,33 +90,59 @@ export function Scanner() {
     }
   }
 
+  // Web: jsQR sobre os frames do vídeo (sem worker — fiável em iOS Safari).
   async function start() {
     if (native) return startNative();
-    if (!videoRef.current) return;
+    const video = videoRef.current;
+    if (!video) return;
     setLoading(true);
+    handledRef.current = false;
     try {
-      const QrScannerMod = (await import("qr-scanner")).default;
+      const jsQR = (await import("jsqr")).default;
 
-      // O worker do qr-scanner precisa ser servido. A v1.4 funciona via
-      // import direto (Next/webpack inlines o worker).
-      const scanner = new QrScannerMod(
-        videoRef.current,
-        (result) => {
-          const handle = extractHandle(result.data);
-          if (handle) goTo(handle);
-        },
-        {
-          preferredCamera: "environment",
-          highlightScanRegion: true,
-          highlightCodeOutline: true,
-          maxScansPerSecond: 5,
-        },
-      );
-      await scanner.start();
-      scannerRef.current = scanner;
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: "environment" } },
+        audio: false,
+      });
+      streamRef.current = stream;
+      video.srcObject = stream;
+      video.setAttribute("playsinline", "true");
+      await video.play();
+
+      if (!canvasRef.current) canvasRef.current = document.createElement("canvas");
+      const canvas = canvasRef.current;
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
       setRunning(true);
+
+      const tick = () => {
+        if (handledRef.current || !ctx) return;
+        const v = videoRef.current;
+        if (v && v.readyState >= 2 && v.videoWidth && v.videoHeight) {
+          // descodifica numa resolução reduzida para ser rápido
+          const scale = Math.min(1, 640 / Math.max(v.videoWidth, v.videoHeight));
+          const w = Math.round(v.videoWidth * scale);
+          const h = Math.round(v.videoHeight * scale);
+          canvas.width = w;
+          canvas.height = h;
+          ctx.drawImage(v, 0, 0, w, h);
+          const img = ctx.getImageData(0, 0, w, h);
+          const code = jsQR(img.data, w, h, { inversionAttempts: "attemptBoth" });
+          if (code?.data) {
+            const handle = extractHandle(code.data);
+            if (handle) {
+              handledRef.current = true;
+              goTo(handle);
+              return;
+            }
+          }
+        }
+        rafRef.current = requestAnimationFrame(tick);
+      };
+      rafRef.current = requestAnimationFrame(tick);
     } catch (err) {
       console.error("[scanner]", err);
+      teardown();
+      setRunning(false);
       toast.error(
         err instanceof Error
           ? `Falha ao iniciar câmara: ${err.message}`
@@ -124,11 +154,7 @@ export function Scanner() {
   }
 
   function stop() {
-    if (scannerRef.current) {
-      scannerRef.current.stop();
-      scannerRef.current.destroy();
-      scannerRef.current = null;
-    }
+    teardown();
     setRunning(false);
   }
 
@@ -139,13 +165,11 @@ export function Scanner() {
       const res = await lookupClient(handle);
       if (res.ok) {
         setFeedback({ kind: "success", title: "Cartão encontrado", sub: res.name });
-        // breve flash verde antes de navegar
         setTimeout(() => {
           router.push(`/admin/operacao/cliente/${res.handle}`);
         }, 750);
       } else {
         setFeedback({ kind: "error", title: "Cartão inválido", sub: res.error });
-        // auto-dismiss ao fim de 2.5s para o operador poder voltar a tentar
         setTimeout(() => setFeedback(null), 2500);
       }
     } catch (err) {
@@ -184,13 +208,18 @@ export function Scanner() {
       </p>
 
       {!native && (
-        <div className="overflow-hidden rounded-2xl border border-border bg-black">
+        <div className="relative overflow-hidden rounded-2xl border border-border bg-black">
           <video
             ref={videoRef}
             className="aspect-square w-full bg-black object-cover"
             playsInline
             muted
           />
+          {running && (
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+              <div className="h-3/5 w-3/5 rounded-2xl border-2 border-white/80 shadow-[0_0_0_9999px_rgba(0,0,0,0.35)]" />
+            </div>
+          )}
         </div>
       )}
 
@@ -221,7 +250,7 @@ export function Scanner() {
       <p className="mt-3 text-xs text-muted-foreground">
         {native
           ? "Toca em iniciar e aponta a câmara ao QR. Permite o acesso quando pedido."
-          : "A câmara só funciona em HTTPS (ou localhost). Tem de permitir o acesso quando o browser pedir."}
+          : "Aponta o QR ao centro do quadrado. A câmara só funciona em HTTPS e tens de permitir o acesso quando o browser pedir."}
       </p>
 
       <form
@@ -251,9 +280,7 @@ export function Scanner() {
         <div
           role="status"
           aria-live="assertive"
-          onClick={
-            feedback.kind === "error" ? () => setFeedback(null) : undefined
-          }
+          onClick={feedback.kind === "error" ? () => setFeedback(null) : undefined}
           className={cn(
             "fixed inset-0 z-[100] flex items-center justify-center p-6 transition-opacity",
             feedback.kind === "success"
