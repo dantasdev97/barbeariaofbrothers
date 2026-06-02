@@ -3,6 +3,7 @@ import { Plus, Search } from "lucide-react";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireRole } from "@/lib/admin-auth";
 import { Input } from "@/components/ui/input";
+import { ClientsTable, type ClientRow } from "./clients-table";
 
 type SearchParams = { q?: string; unit?: string };
 
@@ -13,7 +14,8 @@ export default async function ClientesPage({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
-  await requireRole(["super_admin", "manager"]);
+  const { profile } = await requireRole(["super_admin", "manager"]);
+  const canDelete = profile.role === "super_admin";
   const { q, unit } = await searchParams;
   const sb = createAdminClient();
 
@@ -56,6 +58,23 @@ export default async function ClientesPage({
       if (!lastVisitMap.has(t.client_id)) lastVisitMap.set(t.client_id, t.created_at as string);
     }
   }
+
+  const rows: ClientRow[] = (clients ?? []).map((c) => {
+    const last = lastVisitMap.get(c.id);
+    return {
+      id: c.id,
+      name: c.name,
+      phone: c.phone,
+      unitName: unitNameById.get(c.unit_id) ?? "—",
+      points: balances.get(c.id) ?? 0,
+      lastVisit: last
+        ? new Date(last).toLocaleDateString("pt-PT", {
+            day: "2-digit",
+            month: "short",
+          })
+        : null,
+    };
+  });
 
   return (
     <div>
@@ -120,50 +139,16 @@ export default async function ClientesPage({
       </form>
 
       <div className="overflow-hidden rounded-2xl border border-border bg-bg-surface">
-        <div className="hidden gap-3 px-6 py-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground md:grid md:grid-cols-[2fr_1.4fr_1fr_1fr_1fr]">
+        <div className="hidden gap-3 px-6 py-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground md:grid md:grid-cols-[2fr_1.4fr_1fr_1fr_1fr_auto]">
           <div>Nome</div>
           <div>Telefone</div>
           <div>Unidade</div>
           <div>Pontos</div>
           <div>Última visita</div>
+          <div className="text-right">Ações</div>
         </div>
 
-        {(clients ?? []).length === 0 ? (
-          <p className="px-6 py-12 text-center text-sm text-muted-foreground">
-            Nenhum cliente encontrado.{" "}
-            <Link href="/admin/clientes/novo" className="text-brand hover:underline">
-              Cadastrar primeiro cliente.
-            </Link>
-          </p>
-        ) : (
-          (clients ?? []).map((c) => {
-            const last = lastVisitMap.get(c.id);
-            return (
-              <Link
-                key={c.id}
-                href={`/admin/clientes/${c.id}`}
-                className="grid gap-2 border-t border-border px-4 py-4 text-sm transition hover:bg-background sm:px-6 md:grid-cols-[2fr_1.4fr_1fr_1fr_1fr] md:items-center md:gap-3"
-              >
-                <div className="font-medium">{c.name}</div>
-                <div className="font-mono text-[12.5px] text-muted-foreground">{c.phone}</div>
-                <div className="text-[13px] text-muted-foreground">
-                  {unitNameById.get(c.unit_id) ?? "—"}
-                </div>
-                <div className="font-mono text-[13px] font-semibold text-brand">
-                  {balances.get(c.id) ?? 0} pts
-                </div>
-                <div className="font-mono text-[12.5px] text-muted-foreground">
-                  {last
-                    ? new Date(last).toLocaleDateString("pt-PT", {
-                        day: "2-digit",
-                        month: "short",
-                      })
-                    : "—"}
-                </div>
-              </Link>
-            );
-          })
-        )}
+        <ClientsTable rows={rows} canDelete={canDelete} />
       </div>
     </div>
   );
