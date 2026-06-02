@@ -33,11 +33,11 @@ export const metadata: Metadata = {
   authors: [{ name: "Barbearia Of Brothers" }],
   icons: {
     icon: [
-      { rel: "icon", url: "/favicon.ico?v=2" },
-      { rel: "icon", url: "/favicon-32x32.png?v=2", sizes: "32x32", type: "image/png" },
-      { rel: "icon", url: "/favicon-192x192.png?v=2", sizes: "192x192", type: "image/png" },
+      { rel: "icon", url: "/favicon.ico?v=3" },
+      { rel: "icon", url: "/favicon-32x32.png?v=3", sizes: "32x32", type: "image/png" },
+      { rel: "icon", url: "/favicon-192x192.png?v=3", sizes: "192x192", type: "image/png" },
     ],
-    apple: "/favicon-192x192.png?v=2",
+    apple: { url: "/apple-touch-icon.png?v=3", sizes: "180x180", type: "image/png" },
   },
   openGraph: {
     type: "website",
