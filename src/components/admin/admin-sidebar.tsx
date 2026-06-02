@@ -87,7 +87,7 @@ export function AdminSidebar({ email, role }: Props) {
   return (
     <>
       {/* Top bar (mobile) */}
-      <div className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background/90 px-4 backdrop-blur md:hidden">
+      <div className="sticky top-0 z-30 flex min-h-16 items-center justify-between border-b border-border bg-background/90 px-4 pb-2 pt-[max(0.5rem,env(safe-area-inset-top))] backdrop-blur md:hidden">
         <Link href="/admin" className="flex items-center gap-2">
           <Image src="/logo.png" alt="" width={28} height={28} />
           <span className="font-heading text-sm font-semibold">Admin</span>
