@@ -65,9 +65,10 @@ export function buildLocalBusinessJsonLd(unit: UnitRow) {
       : undefined,
     aggregateRating: {
       "@type": "AggregateRating",
-      ratingValue: "4.9",
-      bestRating: "5",
-      ratingCount: "120",
+      ratingValue: 4.9,
+      bestRating: 5,
+      worstRating: 1,
+      ratingCount: 120,
     },
     sameAs: [
       unit.socials?.instagram,

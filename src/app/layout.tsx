@@ -31,7 +31,6 @@ export const metadata: Metadata = {
     "Barbearia Of Brothers — corte, barba e estilo desde 2012. Agende online com os nossos barbeiros e descubra os nossos produtos.",
   applicationName: "Barbearia Of Brothers",
   authors: [{ name: "Barbearia Of Brothers" }],
-  alternates: { canonical: "https://barbeariaofbrothers.pt" },
   icons: {
     icon: [
       { rel: "icon", url: "/favicon.ico?v=2" },
