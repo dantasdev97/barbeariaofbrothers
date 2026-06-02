@@ -110,7 +110,7 @@ export function AdminSidebar({ email, role }: Props) {
             onClick={() => setOpen(false)}
           />
           <aside className="absolute inset-y-0 left-0 flex w-72 flex-col border-r border-border bg-bg-surface">
-            <div className="flex h-16 items-center justify-between border-b border-border px-4">
+            <div className="flex min-h-16 items-center justify-between border-b border-border px-4 pb-2 pt-[max(0.5rem,env(safe-area-inset-top))]">
               <Link href="/admin" className="flex items-center gap-2">
                 <Image src="/logo.png" alt="" width={28} height={28} />
                 <span className="font-heading text-sm font-semibold">Admin</span>
@@ -163,7 +163,7 @@ function UserBlock({
   onLogout: () => void;
 }) {
   return (
-    <div className="mt-auto border-t border-border p-5">
+    <div className="mt-auto border-t border-border p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
       <div className="mb-4 rounded-lg bg-background p-4">
         <p className="truncate text-sm font-semibold">{email}</p>
         <p className="mt-1 text-[10px] font-semibold uppercase tracking-wider text-brand/70">

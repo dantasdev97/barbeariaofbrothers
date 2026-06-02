@@ -1,5 +1,10 @@
+import type { Viewport } from "next";
 import { requireAdminSession } from "@/lib/admin-auth";
 import { AdminSidebar } from "@/components/admin/admin-sidebar";
+
+export const viewport: Viewport = {
+  viewportFit: "cover",
+};
 
 export default async function AdminLayout({
   children,
