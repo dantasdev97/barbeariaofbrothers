@@ -14,15 +14,6 @@ import { getServerI18n } from "@/lib/i18n/server";
 import { interpolate } from "@/lib/i18n/dictionaries";
 import { buildBreadcrumbJsonLd } from "@/lib/seo";
 
-const MARQUEE_ITEMS = [
-  "CORTE CLÁSSICO",
-  "BARBA TERAPÊUTICA",
-  "SOBRANCELHA",
-  "DEGRADÊ",
-  "NAVALHA",
-  "PIGMENTAÇÃO",
-];
-
 const BARBER_GRADIENTS = [
   "linear-gradient(135deg, #1a1410, #3a302a)",
   "linear-gradient(135deg, #3a302a, #5a4a3e)",
@@ -126,26 +117,24 @@ export default async function UnitHome({
             <span className="mb-3 block font-heading text-[22px] font-medium tracking-widest text-muted-foreground sm:text-[26px] lg:text-[30px]">
               {t.hero.leadingLine}
             </span>
-            Cortes que ficam.
+            {t.hero.tagline1}
             <br />
             <em className="font-normal not-italic text-brand" style={{ fontStyle: "italic" }}>
-              Estilo que dura.
+              {t.hero.tagline2}
             </em>
           </h1>
 
           {/* Subtext */}
           <p className="mt-6 max-w-[540px] text-[17px] leading-relaxed text-muted-foreground">
-            Unidade <strong className="text-foreground">{unit.name}</strong>
+            {t.header.unitLabel} <strong className="text-foreground">{unit.name}</strong>
             {unit.address && <> · {unit.address}.</>}{" "}
-            {yearsOpen}+ anos de experiência, equipa premiada e produtos
-            profissionais.
+            {interpolate(t.hero.subtext, { years: yearsOpen })}
           </p>
 
           {/* CTA buttons */}
           <div className="mt-8 flex flex-wrap gap-3">
             <BookingButton
               unit={unit}
-              label={t.cta.book}
               className="rounded-full px-7 py-3.5 text-[15px] font-medium"
             />
             <a
@@ -160,9 +149,9 @@ export default async function UnitHome({
           {/* Stats row */}
           <div className="mt-10 grid grid-cols-3 gap-4 border-t border-border pt-8 sm:w-max sm:gap-12">
             {[
-              { num: `${yearsOpen}+`, label: "anos abertos" },
-              { num: "350", label: "cortes / mês" },
-              { num: "4.9", label: "★ Google" },
+              { num: `${yearsOpen}+`, label: t.stats.years },
+              { num: "350", label: t.stats.cutsMonth },
+              { num: "4.9", label: t.stats.googleRating },
             ].map((s) => (
               <div key={s.label}>
                 <div className="font-heading text-3xl font-semibold tracking-tight">
@@ -183,7 +172,7 @@ export default async function UnitHome({
           className="flex w-max gap-12"
           style={{ animation: "marquee 30s linear infinite" }}
         >
-          {[...MARQUEE_ITEMS, ...MARQUEE_ITEMS].map((item, i) => (
+          {[...t.marquee, ...t.marquee].map((item, i) => (
             <div key={i} className="flex items-center gap-12">
               <span className="font-heading text-[22px] font-medium tracking-wide text-background">
                 {item}
@@ -199,55 +188,36 @@ export default async function UnitHome({
         <div className="mx-auto max-w-7xl">
           <div className="mx-auto mb-14 max-w-2xl text-center">
             <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-brand">
-              02 — Porquê nós
+              {t.whyUs.eyebrow}
             </p>
             <h2 className="font-heading text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
-              Mais do que um corte.<br />Uma experiência.
+              {t.whyUs.titleLine1}<br />{t.whyUs.titleLine2}
             </h2>
             <p className="mt-4 text-[17px] text-muted-foreground">
-              Desde 2012 que ajudamos os homens de Leiria a sentirem-se
-              bem na pele. Aqui não há pressa — há ritual.
+              {t.whyUs.subtitle}
             </p>
           </div>
 
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {[
-              {
-                icon: Award,
-                title: "Mais de 13 anos de experiência",
-                desc: "Abrimos em 2012 e nunca parámos. Milhares de clientes satisfeitos confirmam o que fazemos todos os dias.",
-              },
-              {
-                icon: Scissors,
-                title: "Equipa especializada",
-                desc: "Barbeiros certificados em cortes modernos, degradê, barba e acabamentos de precisão. Cada detalhe conta.",
-              },
-              {
-                icon: CalendarCheck,
-                title: "Marcação em 1 minuto",
-                desc: "Agenda online pelo Buk quando quiseres. Sem esperas ao telefone, sem surpresas — só o teu horário reservado.",
-              },
-              {
-                icon: Package,
-                title: "Produtos profissionais",
-                desc: "Usamos e vendemos as mesmas marcas de referência que os melhores salões de Portugal. Leva a experiência para casa.",
-              },
-            ].map(({ icon: Icon, title, desc }) => (
-              <div
-                key={title}
-                className="flex flex-col gap-4 rounded-2xl border border-border bg-bg-surface p-6 transition-all duration-200 hover:-translate-y-1 hover:border-brand/30 hover:shadow-[0_16px_40px_-16px_rgba(243,146,0,0.15)]"
-              >
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand/10">
-                  <Icon className="h-5 w-5 text-brand" />
+            {[Award, Scissors, CalendarCheck, Package].map((Icon, i) => {
+              const { title, desc } = t.whyUs.features[i];
+              return (
+                <div
+                  key={title}
+                  className="flex flex-col gap-4 rounded-2xl border border-border bg-bg-surface p-6 transition-all duration-200 hover:-translate-y-1 hover:border-brand/30 hover:shadow-[0_16px_40px_-16px_rgba(243,146,0,0.15)]"
+                >
+                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand/10">
+                    <Icon className="h-5 w-5 text-brand" />
+                  </div>
+                  <h3 className="font-heading text-lg font-semibold leading-snug">
+                    {title}
+                  </h3>
+                  <p className="text-sm leading-relaxed text-muted-foreground">
+                    {desc}
+                  </p>
                 </div>
-                <h3 className="font-heading text-lg font-semibold leading-snug">
-                  {title}
-                </h3>
-                <p className="text-sm leading-relaxed text-muted-foreground">
-                  {desc}
-                </p>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>
@@ -258,14 +228,13 @@ export default async function UnitHome({
           <div className="mx-auto max-w-7xl">
             <div className="mx-auto mb-14 max-w-2xl text-center">
               <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-brand">
-                03 — A equipa
+                {t.team.eyebrow}
               </p>
               <h2 className="font-heading text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
-                Os barbeiros desta unidade.
+                {t.team.title}
               </h2>
               <p className="mt-4 text-[17px] text-muted-foreground">
-                Escolhe um profissional e agenda diretamente. Cada barbeiro tem
-                o seu estilo e a sua agenda.
+                {t.team.subtitle}
               </p>
             </div>
 
@@ -273,7 +242,6 @@ export default async function UnitHome({
               {featuredBarbers.map((b, i) => {
                 const gradient = BARBER_GRADIENTS[i % BARBER_GRADIENTS.length];
                 const initials = getInitials(b.name);
-                const firstName = b.name.split(" ")[0];
 
                 return (
                   <article
@@ -305,7 +273,7 @@ export default async function UnitHome({
                         </span>
                       )}
                       <div className="absolute right-4 top-4 rounded-full bg-card px-3 py-1.5 text-[12px] font-medium tracking-wide text-foreground">
-                        {i < 3 ? [12, 8, 5][i] : 4} anos
+                        {interpolate(t.team.yearsBadge, { n: i < 3 ? [12, 8, 5][i] : 4 })}
                       </div>
                     </div>
 
@@ -321,14 +289,12 @@ export default async function UnitHome({
                         {b.name}
                       </h3>
                       <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">
-                        Especialista em {b.speciality ?? "corte e barba"} com
-                        anos de experiência na unidade.
+                        {interpolate(t.team.specialistIn, { speciality: b.speciality ?? t.team.defaultSpeciality })}
                       </p>
                       <div className="mt-5 flex items-center justify-between gap-3">
                         <BookingButton
                           unit={unit}
                           barber={b}
-                          label={interpolate(t.hero.bookWith, { name: firstName })}
                           className="rounded-full px-4 py-2 text-sm"
                         />
                         {b.socials?.instagram && (
@@ -354,7 +320,7 @@ export default async function UnitHome({
                   href={`/${unit.slug}/barbeiros`}
                   className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground transition hover:text-foreground"
                 >
-                  Ver todos os barbeiros →
+                  {t.team.viewAll}
                 </Link>
               </div>
             )}
@@ -368,14 +334,13 @@ export default async function UnitHome({
           <div className="mx-auto max-w-7xl">
             <div className="mx-auto mb-14 max-w-2xl text-center">
               <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-brand">
-                04 — Loja
+                {t.shop.eyebrow}
               </p>
               <h2 className="font-heading text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
-                Produtos profissionais à venda.
+                {t.shop.title}
               </h2>
               <p className="mt-4 text-[17px] text-muted-foreground">
-                Os mesmos produtos que usamos no salão. Encomenda via WhatsApp e
-                levanta na unidade ou recebe em casa.
+                {t.shop.subtitle}
               </p>
             </div>
 
@@ -419,7 +384,7 @@ export default async function UnitHome({
                       )}
                       {out && (
                         <div className="absolute left-2 top-2 rounded-full bg-foreground px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-background">
-                          Esgotado
+                          {t.shop.soldOut}
                         </div>
                       )}
                     </div>

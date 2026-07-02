@@ -11,10 +11,12 @@ import { useCart } from "@/hooks/useCart";
 import { trackEvent } from "@/lib/analytics";
 import { buildCheckoutMessage, whatsappLink } from "@/lib/whatsapp";
 import { formatPrice } from "@/lib/utils";
+import { useT } from "@/components/public/locale-provider";
 
 type Props = { unit: UnitRow };
 
 export function CartView({ unit }: Props) {
+  const { t } = useT();
   // SSR-safe hydration check
   const hydrated = useSyncExternalStore(
     () => () => {},
@@ -49,7 +51,7 @@ export function CartView({ unit }: Props) {
 
   function checkout() {
     if (!unit.whatsapp) {
-      toast.error("WhatsApp não configurado para esta unidade.");
+      toast.error(t.cart.whatsappNotConfigured);
       return;
     }
     if (unitItems.length === 0) return;
@@ -68,21 +70,21 @@ export function CartView({ unit }: Props) {
   return (
     <section className="container-page py-12 sm:py-16">
       <header className="mb-8">
-        <span className="text-xs uppercase tracking-[0.2em] text-brand">Carrinho</span>
+        <span className="text-xs uppercase tracking-[0.2em] text-brand">{t.cart.eyebrow}</span>
         <h1 className="mt-2 font-heading text-4xl font-semibold sm:text-5xl">
-          O seu pedido
+          {t.cart.title}
         </h1>
       </header>
 
       {unitItems.length === 0 ? (
         <div className="rounded-2xl border border-border bg-bg-surface p-10 text-center">
           <ShoppingBag className="mx-auto mb-3 h-10 w-10 text-brand" />
-          <p className="text-muted-foreground">O seu carrinho está vazio.</p>
+          <p className="text-muted-foreground">{t.cart.empty}</p>
           <Button
             asChild
             className="mt-6 bg-brand text-primary-foreground hover:bg-brand-hover"
           >
-            <Link href={`/${unit.slug}#produtos`}>Ver produtos</Link>
+            <Link href={`/${unit.slug}#produtos`}>{t.cart.viewProducts}</Link>
           </Button>
         </div>
       ) : (
@@ -121,13 +123,13 @@ export function CartView({ unit }: Props) {
                       type="button"
                       onClick={() => remove(item.product_id)}
                       className="text-muted-foreground transition hover:text-destructive active:scale-90"
-                      aria-label="Remover"
+                      aria-label={t.cart.remove}
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
                   <span className="text-sm text-muted-foreground">
-                    {formatPrice(item.price_cents)} cada
+                    {formatPrice(item.price_cents)} {t.cart.each}
                   </span>
 
                   <div className="mt-auto flex items-center justify-between">
@@ -138,7 +140,7 @@ export function CartView({ unit }: Props) {
                           setQuantity(item.product_id, item.quantity - 1)
                         }
                         className="inline-flex h-9 w-9 items-center justify-center text-muted-foreground transition hover:text-foreground active:scale-90"
-                        aria-label="Diminuir"
+                        aria-label={t.cart.decrease}
                       >
                         <Minus className="h-3.5 w-3.5" />
                       </button>
@@ -151,7 +153,7 @@ export function CartView({ unit }: Props) {
                           setQuantity(item.product_id, item.quantity + 1)
                         }
                         className="inline-flex h-9 w-9 items-center justify-center text-muted-foreground transition hover:text-foreground active:scale-90"
-                        aria-label="Aumentar"
+                        aria-label={t.cart.increase}
                       >
                         <Plus className="h-3.5 w-3.5" />
                       </button>
@@ -166,14 +168,14 @@ export function CartView({ unit }: Props) {
           </ul>
 
           <aside className="h-fit rounded-2xl border border-border bg-bg-surface p-6">
-            <h2 className="font-heading text-lg font-semibold">Resumo</h2>
+            <h2 className="font-heading text-lg font-semibold">{t.cart.summary}</h2>
             <dl className="mt-4 space-y-2 text-sm">
               <div className="flex justify-between text-muted-foreground">
-                <dt>Subtotal</dt>
+                <dt>{t.cart.subtotal}</dt>
                 <dd>{formatPrice(total)}</dd>
               </div>
               <div className="flex justify-between border-t border-border pt-3 text-base font-semibold">
-                <dt>Total</dt>
+                <dt>{t.cart.total}</dt>
                 <dd className="text-brand">{formatPrice(total)}</dd>
               </div>
             </dl>
@@ -183,7 +185,7 @@ export function CartView({ unit }: Props) {
               size="lg"
               className="mt-6 w-full bg-brand text-primary-foreground shadow-premium hover:bg-brand-hover"
             >
-              Concluir via WhatsApp
+              {t.cart.checkout}
             </Button>
             <Button
               variant="ghost"
@@ -191,11 +193,10 @@ export function CartView({ unit }: Props) {
               onClick={clear}
               className="mt-2 w-full text-muted-foreground hover:text-foreground"
             >
-              Esvaziar carrinho
+              {t.cart.clearCart}
             </Button>
             <p className="mt-4 text-xs text-muted-foreground">
-              Confirmamos disponibilidade e o melhor método de levantamento por
-              WhatsApp.
+              {t.cart.confirmNote}
             </p>
           </aside>
         </div>

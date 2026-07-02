@@ -9,6 +9,7 @@ import { TrackPageView } from "@/components/public/track-page-view";
 import { ProductActions } from "@/components/public/product-actions";
 import { formatPrice, formatPriceOrAsk, absoluteUrl } from "@/lib/utils";
 import { WhatsAppIcon, FacebookIcon, PinterestIcon } from "@/components/public/social-icons";
+import { getServerI18n } from "@/lib/i18n/server";
 
 type Params = { unidade: string; slug: string };
 
@@ -43,6 +44,7 @@ export default async function ProductDetail({
   if (!unit) notFound();
   const p = await getProductBySlug(unit.id, slug);
   if (!p) notFound();
+  const { dict: t } = await getServerI18n();
 
   const productUrl = absoluteUrl(`/${unit.slug}/produtos/${p.slug}`);
   const shareText = encodeURIComponent(`${p.name} — Barbearia Of Brothers\n${productUrl}`);
@@ -75,7 +77,7 @@ export default async function ProductDetail({
           className="mb-10 inline-flex items-center gap-2 text-sm text-muted-foreground transition hover:text-brand active:scale-[0.96]"
         >
           <ArrowLeft className="h-4 w-4" />
-          Voltar aos produtos
+          {t.productDetail.back}
         </Link>
 
         <article className="grid gap-12 lg:grid-cols-2 lg:items-start">
@@ -114,7 +116,7 @@ export default async function ProductDetail({
               </p>
               {(p.out_of_stock || p.stock === 0) && (
                 <span className="rounded-full bg-foreground px-3 py-1 text-xs font-semibold uppercase tracking-widest text-background">
-                  Esgotado
+                  {t.shop.soldOut}
                 </span>
               )}
             </div>
@@ -140,12 +142,12 @@ export default async function ProductDetail({
 
             {/* Share */}
             <div className="mt-6 flex items-center gap-3">
-              <span className="text-sm text-muted-foreground">Partilhar:</span>
+              <span className="text-sm text-muted-foreground">{t.productDetail.share}</span>
               <a
                 href={whatsappUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label="Partilhar no WhatsApp"
+                aria-label={t.productDetail.shareWhatsapp}
                 className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border bg-bg-surface text-muted-foreground transition hover:border-[#25D366] hover:bg-[#25D366] hover:text-white active:scale-[0.96]"
               >
                 <WhatsAppIcon className="h-4 w-4" />
@@ -154,7 +156,7 @@ export default async function ProductDetail({
                 href={facebookUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label="Partilhar no Facebook"
+                aria-label={t.productDetail.shareFacebook}
                 className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border bg-bg-surface text-muted-foreground transition hover:border-[#1877F2] hover:bg-[#1877F2] hover:text-white active:scale-[0.96]"
               >
                 <FacebookIcon className="h-4 w-4" />
@@ -163,7 +165,7 @@ export default async function ProductDetail({
                 href={pinterestUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label="Partilhar no Pinterest"
+                aria-label={t.productDetail.sharePinterest}
                 className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border bg-bg-surface text-muted-foreground transition hover:border-[#E60023] hover:bg-[#E60023] hover:text-white active:scale-[0.96]"
               >
                 <PinterestIcon className="h-4 w-4" />
@@ -172,8 +174,7 @@ export default async function ProductDetail({
 
             <div className="mt-6 rounded-xl border border-border bg-bg-surface p-4">
               <p className="text-sm text-muted-foreground">
-                ✂ Encomendas confirmadas via WhatsApp. Levantamento na barbearia
-                ou envio para casa.
+                {t.productDetail.whatsappNote}
               </p>
             </div>
           </div>
@@ -184,7 +185,7 @@ export default async function ProductDetail({
           <section className="mt-20">
             <div className="mb-8 flex items-center gap-4">
               <h2 className="font-heading text-2xl font-semibold">
-                Outros produtos
+                {t.productDetail.otherProducts}
               </h2>
               <div className="flex-1 border-t border-white/8" />
             </div>

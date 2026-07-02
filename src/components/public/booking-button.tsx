@@ -5,6 +5,7 @@ import type { BarberRow, UnitRow } from "@/types/database.types";
 import { Button } from "@/components/ui/button";
 import { trackEvent } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
+import { useT } from "@/components/public/locale-provider";
 
 type Props = {
   unit: UnitRow;
@@ -14,11 +15,12 @@ type Props = {
 };
 
 export function BookingButton({ unit, barber, className, label }: Props) {
+  const { t, tr } = useT();
   const href = barber?.buk_url ?? unit.buk_url;
   if (!href) return null;
 
   const text =
-    label ?? (barber ? `Agendar com ${barber.name.split(" ")[0]}` : "Agendar agora");
+    label ?? (barber ? tr(t.hero.bookWith, { name: barber.name.split(" ")[0] }) : t.cta.book);
 
   return (
     <Button

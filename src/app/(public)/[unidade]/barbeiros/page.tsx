@@ -6,6 +6,7 @@ import { getBarbersByUnit, getUnitBySlug } from "@/lib/data";
 import { buildBreadcrumbJsonLd, buildUnitMetadata, buildUnitPageTitle } from "@/lib/seo";
 import { BookingButton } from "@/components/public/booking-button";
 import { TrackPageView } from "@/components/public/track-page-view";
+import { getServerI18n } from "@/lib/i18n/server";
 import {
   FacebookIcon,
   InstagramIcon,
@@ -51,7 +52,10 @@ export default async function BarbeirosPage({
   const { unidade } = await params;
   const unit = await getUnitBySlug(unidade);
   if (!unit) notFound();
-  const barbers = await getBarbersByUnit(unit.id);
+  const [barbers, { dict: t }] = await Promise.all([
+    getBarbersByUnit(unit.id),
+    getServerI18n(),
+  ]);
 
   const breadcrumbJsonLd = buildBreadcrumbJsonLd([
     { name: "Início", path: "/" },
@@ -71,16 +75,15 @@ export default async function BarbeirosPage({
       <section className="border-b border-border px-4 py-20 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-brand">
-            A equipa
+            {t.barbeirosPage.eyebrow}
           </p>
           <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h1 className="font-heading text-5xl font-semibold leading-tight tracking-tight sm:text-6xl">
-                Os nossos barbeiros.
+                {t.barbeirosPage.title}
               </h1>
               <p className="mt-4 max-w-xl text-[17px] text-muted-foreground">
-                Profissionais certificados com anos de experiência. Escolhe um e
-                agenda diretamente online.
+                {t.barbeirosPage.subtitle}
               </p>
             </div>
             <BookingButton
@@ -97,7 +100,7 @@ export default async function BarbeirosPage({
           {barbers.length === 0 ? (
             <div className="rounded-2xl border border-border bg-bg-surface p-16 text-center">
               <p className="text-lg text-muted-foreground">
-                Em breve a nossa equipa estará disponível aqui.
+                {t.barbeirosPage.comingSoon}
               </p>
             </div>
           ) : (
@@ -105,7 +108,6 @@ export default async function BarbeirosPage({
               {barbers.map((b, i) => {
                 const gradient = BARBER_GRADIENTS[i % BARBER_GRADIENTS.length];
                 const initials = getInitials(b.name);
-                const firstName = b.name.split(" ")[0];
 
                 return (
                   <article
@@ -159,7 +161,6 @@ export default async function BarbeirosPage({
                         <BookingButton
                           unit={unit}
                           barber={b}
-                          label={`Agendar com ${firstName}`}
                           className="rounded-full px-4 py-2 text-sm"
                         />
                         <div className="flex gap-2">

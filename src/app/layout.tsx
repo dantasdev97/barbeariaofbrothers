@@ -82,6 +82,7 @@ export default async function RootLayout({
       <body className="min-h-full flex flex-col bg-background text-foreground" suppressHydrationWarning>
         <LocaleProvider locale={locale} dict={dict}>
           {children}
+          <CookieBanner />
         </LocaleProvider>
         <NativeProvider />
         <Toaster
@@ -91,7 +92,6 @@ export default async function RootLayout({
           closeButton
         />
         <Analytics />
-        <CookieBanner />
       </body>
     </html>
   );

@@ -6,6 +6,8 @@ import { buildBreadcrumbJsonLd, buildUnitMetadata, buildUnitPageTitle } from "@/
 import { TrackPageView } from "@/components/public/track-page-view";
 import { BookingButton } from "@/components/public/booking-button";
 import { formatPhonePT } from "@/lib/utils";
+import { getServerI18n } from "@/lib/i18n/server";
+import { interpolate } from "@/lib/i18n/dictionaries";
 import {
   FacebookIcon,
   InstagramIcon,
@@ -14,15 +16,7 @@ import {
 
 type Params = { unidade: string };
 
-const DAYS = [
-  ["mon", "Segunda"],
-  ["tue", "Terça"],
-  ["wed", "Quarta"],
-  ["thu", "Quinta"],
-  ["fri", "Sexta"],
-  ["sat", "Sábado"],
-  ["sun", "Domingo"],
-] as const;
+const DAY_KEYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
 
 export async function generateMetadata({
   params,
@@ -47,6 +41,7 @@ export default async function ContatoPage({
   const { unidade } = await params;
   const unit = await getUnitBySlug(unidade);
   if (!unit) notFound();
+  const { dict: t } = await getServerI18n();
 
   const breadcrumbJsonLd = buildBreadcrumbJsonLd([
     { name: "Início", path: "/" },
@@ -66,15 +61,15 @@ export default async function ContatoPage({
       <section className="border-b border-border px-4 py-20 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-brand">
-            Contacto
+            {t.contato.eyebrow}
           </p>
           <h1 className="font-heading text-5xl font-semibold leading-tight tracking-tight sm:text-6xl">
-            Como nos encontrar.
+            {t.contato.title}
           </h1>
           <p className="mt-4 max-w-xl text-[17px] text-muted-foreground">
             {unit.address
-              ? `Estamos em ${unit.address}. Agende online ou fale connosco diretamente.`
-              : "Agende online ou fale connosco diretamente."}
+              ? interpolate(t.contato.subtitleWithAddress, { address: unit.address })
+              : t.contato.subtitleNoAddress}
           </p>
         </div>
       </section>
@@ -91,14 +86,14 @@ export default async function ContatoPage({
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-brand">
                   <MapPin className="h-3.5 w-3.5" />
-                  Morada
+                  {t.contato.address}
                 </div>
                 {unit.address ? (
                   <p className="text-[15px] text-muted-foreground leading-relaxed">
                     {unit.address}
                   </p>
                 ) : (
-                  <p className="text-sm text-muted-foreground">A definir.</p>
+                  <p className="text-sm text-muted-foreground">{t.contato.notSet}</p>
                 )}
                 {unit.maps_url && (
                   <a
@@ -107,7 +102,7 @@ export default async function ContatoPage({
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1 text-sm font-medium text-brand transition hover:text-brand-hover"
                   >
-                    Ver no Google Maps →
+                    {t.contato.mapsLink}
                   </a>
                 )}
               </div>
@@ -116,7 +111,7 @@ export default async function ContatoPage({
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-brand">
                   <Phone className="h-3.5 w-3.5" />
-                  Telefone
+                  {t.contato.phone}
                 </div>
                 {unit.phone ? (
                   <a
@@ -134,7 +129,7 @@ export default async function ContatoPage({
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-brand">
                   <MessageCircle className="h-3.5 w-3.5" />
-                  WhatsApp
+                  {t.contato.whatsapp}
                 </div>
                 {unit.whatsapp ? (
                   <a
@@ -143,7 +138,7 @@ export default async function ContatoPage({
                     rel="noopener noreferrer"
                     className="block text-[15px] text-muted-foreground transition hover:text-brand"
                   >
-                    Falar no WhatsApp →
+                    {t.contato.whatsappLink}
                   </a>
                 ) : (
                   <p className="text-sm text-muted-foreground">—</p>
@@ -156,7 +151,7 @@ export default async function ContatoPage({
                 unit.socials?.tiktok) && (
                 <div className="space-y-3">
                   <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-brand">
-                    Social
+                    {t.contato.social}
                   </div>
                   <div className="flex gap-2">
                     {unit.socials?.instagram && (
@@ -210,10 +205,10 @@ export default async function ContatoPage({
           <div className="rounded-2xl border border-border bg-bg-surface p-8">
             <div className="mb-6 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-brand">
               <Clock className="h-3.5 w-3.5" />
-              Horário
+              {t.contato.hoursTitle}
             </div>
             <ul className="divide-y divide-border">
-              {DAYS.map(([key, label]) => {
+              {DAY_KEYS.map((key) => {
                 const slot = unit.hours?.[key];
                 const isOpen = slot?.open && slot?.close;
                 return (
@@ -221,7 +216,7 @@ export default async function ContatoPage({
                     key={key}
                     className="flex items-center justify-between py-3"
                   >
-                    <span className="text-sm font-medium">{label}</span>
+                    <span className="text-sm font-medium">{t.contato.days[key]}</span>
                     <span
                       className={
                         isOpen
@@ -229,7 +224,7 @@ export default async function ContatoPage({
                           : "text-sm text-muted-foreground/40"
                       }
                     >
-                      {isOpen ? `${slot.open} – ${slot.close}` : "Fechado"}
+                      {isOpen ? `${slot.open} – ${slot.close}` : t.contato.closed}
                     </span>
                   </li>
                 );
