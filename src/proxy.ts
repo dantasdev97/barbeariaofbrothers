@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { LOCALE_COOKIE, isLocale, localeFromAcceptLanguage } from "@/lib/i18n/config";
 
 const ADMIN_PREFIX = "/admin";
 const LOGIN_PATH = "/login";
@@ -47,6 +48,18 @@ export async function proxy(request: NextRequest) {
 
   // Note: Removed automatic /login → /admin redirect to prevent redirect loops
   // Users logging in will stay on /login page after successful auth
+
+  // Locale cookie — first visit only. Googlebot never sends it, so it always
+  // falls back to `pt`: the indexed version stays the Portuguese one.
+  const currentLocale = request.cookies.get(LOCALE_COOKIE)?.value;
+  if (!isLocale(currentLocale)) {
+    const guessed = localeFromAcceptLanguage(request.headers.get("accept-language"));
+    response.cookies.set(LOCALE_COOKIE, guessed, {
+      path: "/",
+      maxAge: 60 * 60 * 24 * 365,
+      sameSite: "lax",
+    });
+  }
 
   return response;
 }

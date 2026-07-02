@@ -3,6 +3,7 @@ import Link from "next/link";
 import { MapPin, MessageCircle, Phone } from "lucide-react";
 import type { UnitRow } from "@/types/database.types";
 import { formatPhonePT } from "@/lib/utils";
+import { getServerI18n } from "@/lib/i18n/server";
 import {
   FacebookIcon,
   InstagramIcon,
@@ -11,7 +12,8 @@ import {
 
 type Props = { unit: UnitRow };
 
-export function Footer({ unit }: Props) {
+export async function Footer({ unit }: Props) {
+  const { dict: t } = await getServerI18n();
   const base = `/${unit.slug}`;
   const unitNum =
     unit.name.replace(/\D/g, "") || unit.slug.replace(/\D/g, "") || "1";
@@ -30,14 +32,14 @@ export function Footer({ unit }: Props) {
             className="h-14 w-auto brightness-0 invert"
           />
           <p className="mt-4 text-[13px] text-white/60">
-            Barbearia Brothers · Desde 2012
+            {t.footer.since}
           </p>
         </div>
 
         {/* Unit info */}
         <div>
           <h4 className="mb-3 font-heading text-[14px] font-semibold uppercase tracking-wider text-white">
-            Unidade {unitNum}
+            {t.footer.unitLabel} {unitNum}
           </h4>
           <ul className="space-y-2 text-sm text-white/70">
             {unit.address && (
@@ -70,18 +72,18 @@ export function Footer({ unit }: Props) {
                 </a>
               </li>
             )}
-            <li className="pt-1 text-white/50">Seg — Sáb · 09:30 — 19:30</li>
+            <li className="pt-1 text-white/50">{t.footer.hours}</li>
           </ul>
         </div>
 
         {/* Navigation */}
         <div>
           <h4 className="mb-3 font-heading text-[14px] font-semibold uppercase tracking-wider text-white">
-            Navegar
+            {t.footer.navigate}
           </h4>
           <ul className="space-y-2 text-sm text-white/70">
             {[
-              { href: base, label: "Início" },
+              { href: base, label: t.footer.home },
             ].map((l) => (
               <li key={l.href}>
                 <Link
@@ -98,7 +100,7 @@ export function Footer({ unit }: Props) {
         {/* Social */}
         <div>
           <h4 className="mb-3 font-heading text-[14px] font-semibold uppercase tracking-wider text-white">
-            Social
+            {t.footer.social}
           </h4>
           <div className="flex gap-2">
             {unit.socials?.instagram && (
@@ -141,11 +143,13 @@ export function Footer({ unit }: Props) {
       {/* ── Bottom bar ── */}
       <div className="border-t border-white/8">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-4 py-6 text-[13px] text-white/40 sm:flex-row sm:px-6">
-          <span>© {new Date().getFullYear()} Barbearia Brothers. Todos os direitos reservados.</span>
+          <span>
+            {t.footer.rights.replace("{year}", String(new Date().getFullYear()))}
+          </span>
           <div className="flex items-center gap-4">
-            <Link href="/privacidade" className="transition hover:text-white/60">Privacidade</Link>
-            <Link href="/termos" className="transition hover:text-white/60">Termos</Link>
-            <span>Feito com ✂ em Leiria</span>
+            <Link href="/privacidade" className="transition hover:text-white/60">{t.footer.privacy}</Link>
+            <Link href="/termos" className="transition hover:text-white/60">{t.footer.terms}</Link>
+            <span>{t.footer.madeIn}</span>
           </div>
         </div>
       </div>

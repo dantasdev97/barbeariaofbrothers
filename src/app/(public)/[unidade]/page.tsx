@@ -10,6 +10,8 @@ import {
 import { BookingButton } from "@/components/public/booking-button";
 import { TrackPageView } from "@/components/public/track-page-view";
 import { formatPrice, formatPriceOrAsk } from "@/lib/utils";
+import { getServerI18n } from "@/lib/i18n/server";
+import { interpolate } from "@/lib/i18n/dictionaries";
 
 const MARQUEE_ITEMS = [
   "CORTE CLÁSSICO",
@@ -46,9 +48,10 @@ export default async function UnitHome({
   const unit = await getUnitBySlug(unidade);
   if (!unit) notFound();
 
-  const [barbers, products] = await Promise.all([
+  const [barbers, products, { dict: t }] = await Promise.all([
     getBarbersByUnit(unit.id),
     getProductsByUnit(unit.id),
+    getServerI18n(),
   ]);
 
   const featuredBarbers = barbers.slice(0, 3);
@@ -105,13 +108,13 @@ export default async function UnitHome({
           {/* Eyebrow badge */}
           <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-bg-surface/90 px-4 py-2 text-xs font-medium text-foreground/70 backdrop-blur-sm">
             <span className="h-1.5 w-1.5 rounded-full bg-green-500 shadow-[0_0_0_3px_rgba(34,197,94,0.2)]" />
-            Aberto hoje · 09:30 — 19:30
+            {t.hero.openBadge}
           </div>
 
           {/* Hero title */}
           <h1 className="font-heading text-[56px] font-semibold leading-[0.98] tracking-tight sm:text-[68px] lg:text-[84px]">
             <span className="mb-3 block font-heading text-[22px] font-medium tracking-widest text-muted-foreground sm:text-[26px] lg:text-[30px]">
-              Barbearia em Leiria
+              {t.hero.leadingLine}
             </span>
             Cortes que ficam.
             <br />
@@ -132,6 +135,7 @@ export default async function UnitHome({
           <div className="mt-8 flex flex-wrap gap-3">
             <BookingButton
               unit={unit}
+              label={t.cta.book}
               className="rounded-full px-7 py-3.5 text-[15px] font-medium"
             />
             <a
@@ -139,7 +143,7 @@ export default async function UnitHome({
               className="inline-flex items-center gap-2 rounded-full border border-border bg-transparent px-7 py-3.5 text-[15px] font-medium text-foreground transition hover:bg-foreground hover:text-background active:scale-[0.96]"
             >
               <ShoppingBag className="h-4 w-4" />
-              Ver produtos
+              {t.hero.viewProducts}
             </a>
           </div>
 
@@ -314,7 +318,7 @@ export default async function UnitHome({
                         <BookingButton
                           unit={unit}
                           barber={b}
-                          label={`Agendar com ${firstName}`}
+                          label={interpolate(t.hero.bookWith, { name: firstName })}
                           className="rounded-full px-4 py-2 text-sm"
                         />
                         {b.socials?.instagram && (

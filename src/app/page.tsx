@@ -1,17 +1,14 @@
-import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, MapPin, Scissors } from "lucide-react";
 import { getAllUnits } from "@/lib/data";
+import { homeMetadata } from "@/lib/seo";
+import { getServerI18n } from "@/lib/i18n/server";
 
-export const metadata: Metadata = {
-  title: "Barbearia Of Brothers",
-  description:
-    "Escolha a sua unidade da Barbearia Of Brothers em Leiria para agendar, conhecer a equipa e ver produtos.",
-};
+export const metadata = homeMetadata();
 
 export default async function HomePage() {
-  const units = await getAllUnits();
+  const [units, { dict: t }] = await Promise.all([getAllUnits(), getServerI18n()]);
 
   return (
     <main className="min-h-[100dvh] bg-background text-foreground">
@@ -31,7 +28,7 @@ export default async function HomePage() {
                 Barbearia Of Brothers
               </p>
               <p className="text-xs uppercase tracking-[0.14em] text-brand">
-                Since 2012
+                {t.home.tagline}
               </p>
             </div>
           </Link>
@@ -44,11 +41,10 @@ export default async function HomePage() {
               Leiria
             </div>
             <h1 className="font-heading text-5xl font-semibold leading-[0.98] tracking-tight sm:text-6xl lg:text-7xl">
-              Escolha a sua unidade.
+              {t.home.title}
             </h1>
             <p className="mt-6 max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-              Agende online, conheca a equipa e veja os produtos disponiveis na
-              unidade mais conveniente para si.
+              {t.home.subtitle}
             </p>
           </div>
 
@@ -56,11 +52,10 @@ export default async function HomePage() {
             {units.length === 0 ? (
               <div className="rounded-2xl border border-border bg-bg-surface p-6 sm:p-8">
                 <h2 className="font-heading text-2xl font-semibold">
-                  Nenhuma unidade ativa
+                  {t.home.noUnitsTitle}
                 </h2>
                 <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-                  Ainda nao ha unidades publicas disponiveis. Entre no painel
-                  administrativo para ativar ou criar uma unidade.
+                  {t.home.noUnitsDesc}
                 </p>
               </div>
             ) : (
