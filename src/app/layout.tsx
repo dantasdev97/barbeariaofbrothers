@@ -4,6 +4,8 @@ import { Analytics } from "@vercel/analytics/next";
 import { Toaster } from "@/components/ui/sonner";
 import { CookieBanner } from "@/components/public/cookie-banner";
 import { NativeProvider } from "@/components/native/native-provider";
+import { LocaleProvider } from "@/components/public/locale-provider";
+import { getServerI18n } from "@/lib/i18n/server";
 import "./globals.css";
 
 const poppins = Poppins({
@@ -64,19 +66,23 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const { locale, dict } = await getServerI18n();
+
   return (
     <html
-      lang="pt-PT"
+      lang={locale}
       className={`${poppins.variable} ${spaceGrotesk.variable} h-full`}
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col bg-background text-foreground" suppressHydrationWarning>
-        {children}
+        <LocaleProvider locale={locale} dict={dict}>
+          {children}
+        </LocaleProvider>
         <NativeProvider />
         <Toaster
           theme="light"

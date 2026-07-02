@@ -8,6 +8,8 @@ import type { UnitRow } from "@/types/database.types";
 import { useCart } from "@/hooks/useCart";
 import { useUnidade } from "@/hooks/useUnidade";
 import { trackEvent } from "@/lib/analytics";
+import { useT } from "@/components/public/locale-provider";
+import { LanguageSwitcher } from "@/components/public/language-switcher";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -21,6 +23,7 @@ export function Header({ unit, units }: Props) {
   const router = useRouter();
   const setSlug = useUnidade((s) => s.setSlug);
   const totalItems = useCart((s) => s.totalItems());
+  const { t } = useT();
 
   const base = `/${unit.slug}`;
 
@@ -49,7 +52,7 @@ export function Header({ unit, units }: Props) {
               Barbearia Brothers
             </div>
             <div className="mt-0.5 text-[11px] leading-none text-muted-foreground">
-              Unidade {unitNum}
+              {t.header.unitLabel} {unitNum}
             </div>
           </div>
         </Link>
@@ -62,7 +65,7 @@ export function Header({ unit, units }: Props) {
           <DropdownMenu>
             <DropdownMenuTrigger className="inline-flex items-center gap-2 rounded-full border border-border px-3.5 py-2 text-[13px] font-medium transition hover:border-foreground">
               <span className="h-2 w-2 rounded-full bg-brand shadow-[0_0_0_3px_rgba(243,146,0,0.2)]" />
-              Unidade {unitNum}
+              {t.header.unitLabel} {unitNum}
               <ChevronDown className="h-4 w-4 text-muted-foreground" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
@@ -96,15 +99,18 @@ export function Header({ unit, units }: Props) {
               }
               className="hidden rounded-full bg-foreground px-4 py-2 text-sm font-semibold text-background transition hover:bg-brand hover:text-[#1a1410] sm:inline-flex"
             >
-              Agendar agora
+              {t.header.bookNow}
             </a>
           )}
+
+          {/* Language switcher */}
+          <LanguageSwitcher />
 
           {/* Cart */}
           <Link
             href={`${base}/carrinho`}
             className="relative inline-flex h-10 w-10 items-center justify-center rounded-full bg-bg-surface text-foreground transition hover:bg-border"
-            aria-label="Carrinho"
+            aria-label={t.header.cart}
           >
             <ShoppingBag className="h-4 w-4" />
             {totalItems > 0 && (

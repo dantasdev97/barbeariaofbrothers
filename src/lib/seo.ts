@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { UnitRow } from "@/types/database.types";
 import { absoluteUrl } from "@/lib/utils";
+import { LOCALES } from "@/lib/i18n/config";
 
 type PageSeo = {
   title?: string;
@@ -9,12 +10,45 @@ type PageSeo = {
   ogImage?: string;
 };
 
+/** Ordered by real Search Console ranking — "barbearia leiria" leads every page. */
+export const KEYWORDS = [
+  "barbearia leiria",
+  "barbeiro leiria",
+  "corte de cabelo leiria",
+  "barba leiria",
+  "degradê leiria",
+  "barbearia of brothers",
+];
+
+export function homeMetadata(): Metadata {
+  const title = "Barbearia em Leiria | Of Brothers — Desde 2012";
+  const description =
+    "Barbearia em Leiria desde 2012. Escolha a sua unidade Of Brothers para agendar, conhecer a equipa e ver produtos.";
+
+  return {
+    title: { absolute: title },
+    description,
+    keywords: KEYWORDS,
+    alternates: { canonical: absoluteUrl("/") },
+    openGraph: {
+      title,
+      description,
+      url: absoluteUrl("/"),
+      siteName: "Barbearia Of Brothers",
+      locale: "pt_PT",
+      type: "website",
+    },
+    twitter: { card: "summary_large_image", title, description },
+  };
+}
+
 export function buildUnitMetadata(unit: UnitRow, page?: PageSeo): Metadata {
-  const title = page?.title ?? unit.seo?.title ?? `${unit.name} — Barbearia em Leiria`;
+  const title =
+    page?.title ?? unit.seo?.title ?? `Barbearia em Leiria — ${unit.name}`;
   const description =
     page?.description ??
     unit.seo?.description ??
-    `${unit.name} — corte, barba e estilo. Agende online ou descubra os nossos produtos.`;
+    `Barbearia em Leiria · ${unit.name} — corte, barba e estilo. Agende online ou descubra os nossos produtos.`;
   const path = page?.path ?? `/${unit.slug}`;
   const ogImage =
     page?.ogImage ??
@@ -24,6 +58,7 @@ export function buildUnitMetadata(unit: UnitRow, page?: PageSeo): Metadata {
   return {
     title,
     description,
+    keywords: KEYWORDS,
     alternates: { canonical: absoluteUrl(path) },
     openGraph: {
       title,
@@ -43,10 +78,21 @@ export function buildUnitMetadata(unit: UnitRow, page?: PageSeo): Metadata {
   };
 }
 
+const JSON_LD_LOCALES = LOCALES.map((l) => (l === "pt" ? "pt-PT" : l));
+
+const SERVICES = [
+  "Corte de cabelo",
+  "Barba",
+  "Degradê",
+  "Sobrancelha",
+  "Navalha",
+  "Pigmentação",
+];
+
 export function buildLocalBusinessJsonLd(unit: UnitRow) {
   return {
     "@context": "https://schema.org",
-    "@type": "BarberShop",
+    "@type": ["BarberShop", "HairSalon"],
     "@id": absoluteUrl(`/${unit.slug}#salon`),
     name: unit.name,
     description: "Barbearia profissional em Leiria. Corte, barba, degradê e estilo desde 2012.",
@@ -54,6 +100,8 @@ export function buildLocalBusinessJsonLd(unit: UnitRow) {
     url: absoluteUrl(`/${unit.slug}`),
     telephone: unit.phone ?? unit.whatsapp ?? undefined,
     priceRange: "€€",
+    areaServed: { "@type": "City", name: "Leiria" },
+    availableLanguage: JSON_LD_LOCALES,
     address: unit.address
       ? {
           "@type": "PostalAddress",
@@ -75,6 +123,10 @@ export function buildLocalBusinessJsonLd(unit: UnitRow) {
       unit.socials?.tiktok,
     ].filter(Boolean),
     openingHours: hoursToOpeningHours(unit.hours ?? null),
+    makesOffer: SERVICES.map((name) => ({
+      "@type": "Offer",
+      itemOffered: { "@type": "Service", name },
+    })),
   };
 }
 
