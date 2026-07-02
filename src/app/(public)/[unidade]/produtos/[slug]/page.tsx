@@ -4,7 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, ShoppingBag } from "lucide-react";
 import { getProductBySlug, getProductsByUnit, getUnitBySlug } from "@/lib/data";
-import { buildUnitMetadata } from "@/lib/seo";
+import { buildBreadcrumbJsonLd, buildUnitMetadata, buildUnitPageTitle } from "@/lib/seo";
 import { TrackPageView } from "@/components/public/track-page-view";
 import { ProductActions } from "@/components/public/product-actions";
 import { formatPrice, formatPriceOrAsk, absoluteUrl } from "@/lib/utils";
@@ -23,8 +23,11 @@ export async function generateMetadata({
   const p = await getProductBySlug(unit.id, slug);
   if (!p) return {};
   return buildUnitMetadata(unit, {
-    title: p.seo_title ?? `${p.name} — ${unit.name}`,
-    description: p.seo_description ?? p.description ?? p.name,
+    title: p.seo_title ?? buildUnitPageTitle(p.name, unit),
+    description:
+      p.seo_description ??
+      p.description ??
+      `${p.name} — à venda na Barbearia Of Brothers em Leiria.`,
     path: `/${unit.slug}/produtos/${p.slug}`,
     ogImage: p.image_url ?? undefined,
   });
@@ -52,8 +55,18 @@ export default async function ProductDetail({
     .filter((x) => x.id !== p.id && x.category_id === p.category_id)
     .slice(0, 4);
 
+  const breadcrumbJsonLd = buildBreadcrumbJsonLd([
+    { name: "Início", path: "/" },
+    { name: unit.name, path: `/${unit.slug}` },
+    { name: p.name, path: `/${unit.slug}/produtos/${p.slug}` },
+  ]);
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
       <TrackPageView unitId={unit.id} type="product_view" refId={p.id} />
 
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">

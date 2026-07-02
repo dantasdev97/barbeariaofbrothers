@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Clock, MapPin, MessageCircle, Phone } from "lucide-react";
 import { getUnitBySlug } from "@/lib/data";
-import { buildUnitMetadata } from "@/lib/seo";
+import { buildBreadcrumbJsonLd, buildUnitMetadata, buildUnitPageTitle } from "@/lib/seo";
 import { TrackPageView } from "@/components/public/track-page-view";
 import { BookingButton } from "@/components/public/booking-button";
 import { formatPhonePT } from "@/lib/utils";
@@ -33,8 +33,8 @@ export async function generateMetadata({
   const unit = await getUnitBySlug(unidade);
   if (!unit) return {};
   return buildUnitMetadata(unit, {
-    title: `Contacto — ${unit.name}`,
-    description: `Morada, horários e contactos de ${unit.name}.`,
+    title: buildUnitPageTitle("Contacto", unit),
+    description: `Morada, horários e contactos de ${unit.name}, em Leiria.`,
     path: `/${unit.slug}/contato`,
   });
 }
@@ -48,8 +48,18 @@ export default async function ContatoPage({
   const unit = await getUnitBySlug(unidade);
   if (!unit) notFound();
 
+  const breadcrumbJsonLd = buildBreadcrumbJsonLd([
+    { name: "Início", path: "/" },
+    { name: unit.name, path: `/${unit.slug}` },
+    { name: "Contacto", path: `/${unit.slug}/contato` },
+  ]);
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
       <TrackPageView unitId={unit.id} />
 
       {/* ── Page header ── */}

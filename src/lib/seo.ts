@@ -42,6 +42,11 @@ export function homeMetadata(): Metadata {
   };
 }
 
+/** Keeps the "Barbearia em Leiria" keyword on inner pages, not just the unit home. */
+export function buildUnitPageTitle(label: string, unit: UnitRow): string {
+  return `${label} — Barbearia em Leiria (${unit.name})`;
+}
+
 export function buildUnitMetadata(unit: UnitRow, page?: PageSeo): Metadata {
   const title =
     page?.title ?? unit.seo?.title ?? `Barbearia em Leiria — ${unit.name}`;
@@ -126,6 +131,21 @@ export function buildLocalBusinessJsonLd(unit: UnitRow) {
     makesOffer: SERVICES.map((name) => ({
       "@type": "Offer",
       itemOffered: { "@type": "Service", name },
+    })),
+  };
+}
+
+export type BreadcrumbItem = { name: string; path: string };
+
+export function buildBreadcrumbJsonLd(items: BreadcrumbItem[]) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: items.map((item, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      name: item.name,
+      item: absoluteUrl(item.path),
     })),
   };
 }

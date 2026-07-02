@@ -9,7 +9,7 @@ import {
   TikTokIcon,
 } from "@/components/public/social-icons";
 import { getBarberBySlug, getUnitBySlug } from "@/lib/data";
-import { buildUnitMetadata } from "@/lib/seo";
+import { buildBreadcrumbJsonLd, buildUnitMetadata, buildUnitPageTitle } from "@/lib/seo";
 import { BookingButton } from "@/components/public/booking-button";
 import { TrackPageView } from "@/components/public/track-page-view";
 
@@ -26,8 +26,9 @@ export async function generateMetadata({
   const b = await getBarberBySlug(unit.id, slug);
   if (!b) return {};
   return buildUnitMetadata(unit, {
-    title: `${b.name} — ${unit.name}`,
-    description: b.description ?? b.speciality ?? `Agende com ${b.name} na ${unit.name}.`,
+    title: buildUnitPageTitle(b.name, unit),
+    description:
+      b.description ?? b.speciality ?? `Agende com ${b.name} na ${unit.name}, em Leiria.`,
     path: `/${unit.slug}/barbeiros/${b.slug}`,
     ogImage: b.photo_url ?? undefined,
   });
@@ -44,8 +45,19 @@ export default async function BarberDetail({
   const b = await getBarberBySlug(unit.id, slug);
   if (!b) notFound();
 
+  const breadcrumbJsonLd = buildBreadcrumbJsonLd([
+    { name: "Início", path: "/" },
+    { name: unit.name, path: `/${unit.slug}` },
+    { name: "Barbeiros", path: `/${unit.slug}/barbeiros` },
+    { name: b.name, path: `/${unit.slug}/barbeiros/${b.slug}` },
+  ]);
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
       <TrackPageView unitId={unit.id} type="barber_view" refId={b.id} />
 
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">

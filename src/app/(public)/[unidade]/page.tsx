@@ -12,6 +12,7 @@ import { TrackPageView } from "@/components/public/track-page-view";
 import { formatPrice, formatPriceOrAsk } from "@/lib/utils";
 import { getServerI18n } from "@/lib/i18n/server";
 import { interpolate } from "@/lib/i18n/dictionaries";
+import { buildBreadcrumbJsonLd } from "@/lib/seo";
 
 const MARQUEE_ITEMS = [
   "CORTE CLÁSSICO",
@@ -59,8 +60,17 @@ export default async function UnitHome({
   const heroImage = !hasVideo && unit.banner_url ? unit.banner_url : null;
   const hasMedia = hasVideo || Boolean(heroImage);
 
+  const breadcrumbJsonLd = buildBreadcrumbJsonLd([
+    { name: "Início", path: "/" },
+    { name: unit.name, path: `/${unit.slug}` },
+  ]);
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
       <TrackPageView unitId={unit.id} />
 
       {/* ───────────────────────────── HERO ──────────────────────────────── */}
