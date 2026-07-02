@@ -12,6 +12,8 @@ import { getBarberBySlug, getUnitBySlug } from "@/lib/data";
 import { buildBreadcrumbJsonLd, buildUnitMetadata, buildUnitPageTitle } from "@/lib/seo";
 import { BookingButton } from "@/components/public/booking-button";
 import { TrackPageView } from "@/components/public/track-page-view";
+import { getServerI18n } from "@/lib/i18n/server";
+import { interpolate } from "@/lib/i18n/dictionaries";
 
 type Params = { unidade: string; slug: string };
 
@@ -44,6 +46,7 @@ export default async function BarberDetail({
   if (!unit) notFound();
   const b = await getBarberBySlug(unit.id, slug);
   if (!b) notFound();
+  const { dict: t } = await getServerI18n();
 
   const breadcrumbJsonLd = buildBreadcrumbJsonLd([
     { name: "Início", path: "/" },
@@ -66,7 +69,7 @@ export default async function BarberDetail({
           className="mb-10 inline-flex items-center gap-2 text-sm text-muted-foreground transition hover:text-brand"
         >
           <ArrowLeft className="h-4 w-4" />
-          Voltar aos barbeiros
+          {t.barberDetail.back}
         </Link>
 
         <article className="grid gap-12 lg:grid-cols-[1fr_1.2fr] lg:items-start">
@@ -156,13 +159,12 @@ export default async function BarberDetail({
             {/* Booking CTA */}
             <div className="mt-10 rounded-2xl border border-border bg-bg-surface p-6">
               <p className="mb-4 text-sm text-muted-foreground">
-                Agenda diretamente com {b.name.split(" ")[0]} e escolhe o dia e
-                hora que preferes.
+                {interpolate(t.barberDetail.bookIntro, { name: b.name.split(" ")[0] })}
               </p>
               <BookingButton
                 unit={unit}
                 barber={b}
-                label={`Agendar com ${b.name.split(" ")[0]} →`}
+                label={`${interpolate(t.hero.bookWith, { name: b.name.split(" ")[0] })} →`}
                 className="w-full rounded-xl py-3.5 text-base font-semibold"
               />
             </div>

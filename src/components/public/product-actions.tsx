@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { useCart } from "@/hooks/useCart";
 import { trackEvent } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
+import { useT } from "@/components/public/locale-provider";
 
 type ProductLite = {
   id: string;
@@ -29,6 +30,7 @@ export function ProductActions({ unit, product, outOfStock = false, className }:
   const [qty, setQty] = useState(1);
   const router = useRouter();
   const add = useCart((s) => s.add);
+  const { t } = useT();
 
   function addToCart() {
     add(
@@ -48,10 +50,10 @@ export function ProductActions({ unit, product, outOfStock = false, className }:
       ref_id: product.id,
       meta: { qty },
     });
-    toast.success("Adicionado ao carrinho", {
+    toast.success(t.productActions.addedToCart, {
       description: `${qty}× ${product.name}`,
       action: {
-        label: "Ver carrinho",
+        label: t.productActions.viewCart,
         onClick: () => router.push(`/${unit.slug}/carrinho`),
       },
     });
@@ -77,7 +79,7 @@ export function ProductActions({ unit, product, outOfStock = false, className }:
           className="bg-bg-surface text-muted-foreground"
         >
           <ShoppingBag className="mr-2 h-4 w-4" />
-          Esgotado
+          {t.shop.soldOut}
         </Button>
         <Button
           type="button"
@@ -85,7 +87,7 @@ export function ProductActions({ unit, product, outOfStock = false, className }:
           onClick={buyNow}
           className="bg-brand text-primary-foreground shadow-premium hover:bg-brand-hover"
         >
-          Agendar agora
+          {t.cta.book}
         </Button>
       </div>
     );
@@ -99,7 +101,7 @@ export function ProductActions({ unit, product, outOfStock = false, className }:
             type="button"
             onClick={() => setQty((q) => Math.max(1, q - 1))}
             className="inline-flex h-10 w-10 items-center justify-center text-muted-foreground transition hover:text-foreground active:scale-90"
-            aria-label="Diminuir"
+            aria-label={t.productActions.decrease}
           >
             <Minus className="h-4 w-4" />
           </button>
@@ -108,7 +110,7 @@ export function ProductActions({ unit, product, outOfStock = false, className }:
             type="button"
             onClick={() => setQty((q) => q + 1)}
             className="inline-flex h-10 w-10 items-center justify-center text-muted-foreground transition hover:text-foreground active:scale-90"
-            aria-label="Aumentar"
+            aria-label={t.productActions.increase}
           >
             <Plus className="h-4 w-4" />
           </button>
@@ -121,7 +123,7 @@ export function ProductActions({ unit, product, outOfStock = false, className }:
           className="flex-1 bg-bg-surface text-foreground hover:bg-secondary"
         >
           <ShoppingBag className="mr-2 h-4 w-4" />
-          Adicionar ao carrinho
+          {t.productActions.addToCart}
         </Button>
       </div>
 
@@ -131,7 +133,7 @@ export function ProductActions({ unit, product, outOfStock = false, className }:
         onClick={buyNow}
         className="bg-brand text-primary-foreground shadow-premium hover:bg-brand-hover"
       >
-        Agendar agora
+        {t.cta.book}
       </Button>
     </div>
   );
