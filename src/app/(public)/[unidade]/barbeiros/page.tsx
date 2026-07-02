@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getBarbersByUnit, getUnitBySlug } from "@/lib/data";
-import { buildUnitMetadata } from "@/lib/seo";
+import { buildBreadcrumbJsonLd, buildUnitMetadata, buildUnitPageTitle } from "@/lib/seo";
 import { BookingButton } from "@/components/public/booking-button";
 import { TrackPageView } from "@/components/public/track-page-view";
 import {
@@ -37,8 +37,8 @@ export async function generateMetadata({
   const unit = await getUnitBySlug(unidade);
   if (!unit) return {};
   return buildUnitMetadata(unit, {
-    title: `Barbeiros — ${unit.name}`,
-    description: `Conheça a equipa de ${unit.name}. Profissionais certificados, prontos para o atender.`,
+    title: buildUnitPageTitle("Barbeiros", unit),
+    description: `Conheça a equipa de ${unit.name}, em Leiria. Profissionais certificados, prontos para o atender.`,
     path: `/${unit.slug}/barbeiros`,
   });
 }
@@ -53,8 +53,18 @@ export default async function BarbeirosPage({
   if (!unit) notFound();
   const barbers = await getBarbersByUnit(unit.id);
 
+  const breadcrumbJsonLd = buildBreadcrumbJsonLd([
+    { name: "Início", path: "/" },
+    { name: unit.name, path: `/${unit.slug}` },
+    { name: "Barbeiros", path: `/${unit.slug}/barbeiros` },
+  ]);
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
       <TrackPageView unitId={unit.id} />
 
       {/* ── Page header ── */}
