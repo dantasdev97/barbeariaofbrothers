@@ -41,7 +41,9 @@ export default async function AdminLayout({
         role={profile.role}
       />
       <div className="flex min-w-0 flex-1 flex-col">
-        <main className="flex-1 overflow-auto px-4 py-5 sm:p-8 lg:p-10">
+        {/* O padding inferior abre espaço para a bottom tab bar (mobile) e
+         * respeita o home indicator do iOS. No desktop não há barra. */}
+        <main className="flex-1 overflow-auto px-4 py-5 pb-[calc(4.5rem+env(safe-area-inset-bottom))] sm:p-8 md:pb-8 lg:p-10 lg:pb-10">
           <div className="mx-auto w-full max-w-7xl">{children}</div>
         </main>
       </div>

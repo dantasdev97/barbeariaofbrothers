@@ -13,6 +13,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Field } from "@/components/admin/form-bits";
+import { PageHeader } from "@/components/admin/page-header";
+import { staggerIndex } from "@/lib/motion";
 import {
   deleteLoyaltyService,
   saveLoyaltyService,
@@ -101,24 +103,20 @@ export function ServicesManager({
 
   return (
     <div>
-      <header className="mb-7 flex flex-wrap items-end justify-between gap-4 border-b border-border pb-6">
-        <div>
-          <h1 className="font-heading text-[28px] font-semibold leading-none tracking-tight sm:text-[32px]">
-            Serviços pontuáveis
-          </h1>
-          <p className="mt-1.5 text-sm text-muted-foreground">
-            Configura quantos pontos cada serviço atribui — por unidade.
-          </p>
-        </div>
-        <Button
-          onClick={openNew}
-          className="shrink-0 bg-brand text-primary-foreground hover:bg-brand-hover"
-        >
-          <Plus className="mr-2 h-4 w-4" /> Novo serviço
-        </Button>
-      </header>
+      <PageHeader
+        title="Serviços pontuáveis"
+        description="Configura quantos pontos cada serviço atribui — por unidade."
+        actions={
+          <Button
+            onClick={openNew}
+            className="bg-brand text-primary-foreground hover:bg-brand-hover"
+          >
+            <Plus className="mr-2 h-4 w-4" /> Novo serviço
+          </Button>
+        }
+      />
 
-      <div className="overflow-hidden rounded-2xl border border-border bg-bg-surface">
+      <div className="stagger overflow-hidden rounded-2xl border border-border bg-bg-surface">
         <div className="hidden gap-3 px-6 py-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground md:grid md:grid-cols-[2fr_1.4fr_1fr_0.7fr_auto]">
           <div>Nome</div>
           <div>Unidade</div>
@@ -131,14 +129,15 @@ export function ServicesManager({
             Sem serviços.
           </p>
         ) : (
-          services.map((s) => (
+          services.map((s, i) => (
             <div
               key={s.id}
-              className="grid gap-2 border-t border-border px-4 py-3 text-sm sm:px-6 md:grid-cols-[2fr_1.4fr_1fr_0.7fr_auto] md:items-center md:gap-3"
+              {...staggerIndex(i)}
+              className="grid gap-2 border-t border-border px-4 py-3 text-sm transition-colors duration-150 hover-fine:hover:bg-background sm:px-6 md:grid-cols-[2fr_1.4fr_1fr_0.7fr_auto] md:items-center md:gap-3"
             >
               <button
                 onClick={() => openEdit(s)}
-                className="text-left font-medium hover:text-brand"
+                className="text-left font-medium transition-colors duration-150 hover:text-brand"
               >
                 {s.name}
               </button>

@@ -3,6 +3,7 @@ import { Plus, Search } from "lucide-react";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireRole } from "@/lib/admin-auth";
 import { Input } from "@/components/ui/input";
+import { PageHeader } from "@/components/admin/page-header";
 import { ClientsTable, type ClientRow } from "./clients-table";
 
 type SearchParams = { q?: string; unit?: string };
@@ -78,31 +79,28 @@ export default async function ClientesPage({
 
   return (
     <div>
-      <header className="mb-7 flex flex-wrap items-end justify-between gap-4 border-b border-border pb-6">
-        <div>
-          <h1 className="font-heading text-[28px] font-semibold leading-none tracking-tight sm:text-[32px]">
-            Clientes
-          </h1>
-          <p className="mt-1.5 text-sm text-muted-foreground">
-            {(clients ?? []).length} cliente{(clients ?? []).length !== 1 ? "s" : ""} ·
-            cartão fidelidade digital
-          </p>
-        </div>
-        <div className="flex shrink-0 gap-2">
-          <Link
-            href="/admin/clientes/cartoes"
-            className="inline-flex items-center gap-2 rounded-[10px] border border-border bg-transparent px-4 py-2.5 text-[13px] font-medium text-muted-foreground transition hover:bg-background hover:text-foreground"
-          >
-            Exportar cartões
-          </Link>
-          <Link
-            href="/admin/clientes/novo"
-            className="inline-flex items-center gap-2 rounded-[10px] bg-brand px-4 py-2.5 text-[13px] font-medium text-[#0e0a07] transition hover:opacity-90"
-          >
-            <Plus className="h-4 w-4" /> Novo cliente
-          </Link>
-        </div>
-      </header>
+      <PageHeader
+        title="Clientes"
+        description={`${(clients ?? []).length} cliente${
+          (clients ?? []).length !== 1 ? "s" : ""
+        } · cartão fidelidade digital`}
+        actions={
+          <>
+            <Link
+              href="/admin/clientes/cartoes"
+              className="inline-flex items-center gap-2 rounded-[10px] border border-border bg-transparent px-4 py-2.5 text-[13px] font-medium text-muted-foreground transition-[background-color,color,transform] duration-150 ease-out-strong hover:bg-background hover:text-foreground active:scale-[0.97]"
+            >
+              Exportar cartões
+            </Link>
+            <Link
+              href="/admin/clientes/novo"
+              className="inline-flex items-center gap-2 rounded-[10px] bg-brand px-4 py-2.5 text-[13px] font-medium text-[#0e0a07] transition-[opacity,transform] duration-150 ease-out-strong hover:opacity-90 active:scale-[0.97]"
+            >
+              <Plus className="h-4 w-4" /> Novo cliente
+            </Link>
+          </>
+        }
+      />
 
       <form
         action="/admin/clientes"

@@ -1,7 +1,10 @@
 import Link from "next/link";
-import { Gift, ScrollText } from "lucide-react";
+import { Coins, Gift, ScrollText, Sparkles, Users } from "lucide-react";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireRole } from "@/lib/admin-auth";
+import { PageHeader } from "@/components/admin/page-header";
+import { MetricCard } from "@/components/admin/metric-card";
+import { staggerIndex } from "@/lib/motion";
 
 export const dynamic = "force-dynamic";
 
@@ -72,48 +75,66 @@ export default async function FidelidadePage() {
 
   return (
     <div>
-      <header className="mb-7 flex flex-wrap items-end justify-between gap-4 border-b border-border pb-6">
-        <div>
-          <h1 className="font-heading text-[28px] font-semibold leading-none tracking-tight sm:text-[32px]">
-            Fidelidade
-          </h1>
-          <p className="mt-1.5 text-sm text-muted-foreground">
-            Programa de pontos · visão geral
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Link
-            href="/admin/fidelidade/servicos"
-            className="inline-flex items-center gap-2 rounded-[10px] border border-border bg-transparent px-4 py-2.5 text-[13px] font-medium text-muted-foreground transition hover:bg-background hover:text-foreground"
-          >
-            <ScrollText className="h-4 w-4" /> Serviços
-          </Link>
-          <Link
-            href="/admin/fidelidade/recompensas"
-            className="inline-flex items-center gap-2 rounded-[10px] bg-brand px-4 py-2.5 text-[13px] font-medium text-[#0e0a07] transition hover:opacity-90"
-          >
-            <Gift className="h-4 w-4" /> Recompensas
-          </Link>
-        </div>
-      </header>
+      <PageHeader
+        title="Fidelidade"
+        description="Programa de pontos · visão geral"
+        actions={
+          <>
+            <Link
+              href="/admin/fidelidade/servicos"
+              className="inline-flex items-center gap-2 rounded-[10px] border border-border bg-transparent px-4 py-2.5 text-[13px] font-medium text-muted-foreground transition-[background-color,color,transform] duration-150 ease-out-strong hover:bg-background hover:text-foreground active:scale-[0.97]"
+            >
+              <ScrollText className="h-4 w-4" /> Serviços
+            </Link>
+            <Link
+              href="/admin/fidelidade/recompensas"
+              className="inline-flex items-center gap-2 rounded-[10px] bg-brand px-4 py-2.5 text-[13px] font-medium text-[#0e0a07] transition-[opacity,transform] duration-150 ease-out-strong hover:opacity-90 active:scale-[0.97]"
+            >
+              <Gift className="h-4 w-4" /> Recompensas
+            </Link>
+          </>
+        }
+      />
 
-      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Stat label="Clientes cadastrados" value={String(clientsCount ?? 0)} />
-        <Stat
-          label="Pontos emitidos · mês"
-          value={String(totalPointsThisMonth)}
-          delta={`${earnsMonth ?? 0} lançamentos`}
-        />
-        <Stat label="Resgates · mês" value={String(redeemsMonth ?? 0)} />
-        <Stat
-          label="Saldo médio (mês)"
-          value={
-            earnsMonth && earnsMonth > 0
-              ? Math.round(totalPointsThisMonth / earnsMonth).toString()
-              : "0"
-          }
-          delta="pts / cliente"
-        />
+      <div className="stagger mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div {...staggerIndex(0)}>
+          <MetricCard
+            label="Clientes cadastrados"
+            value={clientsCount ?? 0}
+            tone="blue"
+            icon={<Users className="h-4 w-4" />}
+          />
+        </div>
+        <div {...staggerIndex(1)}>
+          <MetricCard
+            label="Pontos emitidos · mês"
+            value={totalPointsThisMonth}
+            hint={`${earnsMonth ?? 0} lançamentos`}
+            tone="brand"
+            icon={<Sparkles className="h-4 w-4" />}
+          />
+        </div>
+        <div {...staggerIndex(2)}>
+          <MetricCard
+            label="Resgates · mês"
+            value={redeemsMonth ?? 0}
+            tone="green"
+            icon={<Gift className="h-4 w-4" />}
+          />
+        </div>
+        <div {...staggerIndex(3)}>
+          <MetricCard
+            label="Saldo médio (mês)"
+            value={
+              earnsMonth && earnsMonth > 0
+                ? Math.round(totalPointsThisMonth / earnsMonth)
+                : 0
+            }
+            hint="pts / cliente"
+            tone="mute"
+            icon={<Coins className="h-4 w-4" />}
+          />
+        </div>
       </div>
 
       <div className="overflow-hidden rounded-2xl border border-border bg-bg-surface">
@@ -148,22 +169,3 @@ export default async function FidelidadePage() {
   );
 }
 
-function Stat({ label, value, delta }: { label: string; value: string; delta?: string }) {
-  return (
-    <div className="rounded-2xl border border-border bg-bg-surface p-5">
-      <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-        {label}
-      </div>
-      <div className="my-2 flex items-baseline gap-3">
-        <div className="font-heading text-[32px] font-semibold leading-none tracking-tight">
-          {value}
-        </div>
-        {delta && (
-          <div className="rounded-full bg-brand/15 px-2 py-0.5 text-[12px] font-semibold text-brand">
-            {delta}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
