@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, ScrollText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -13,6 +13,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Field } from "@/components/admin/form-bits";
+import { PageHeader } from "@/components/admin/page-header";
+import { staggerIndex } from "@/lib/motion";
+import { EmptyState } from "@/components/admin/empty-state";
+import { ConfirmDialog } from "@/components/admin/confirm-dialog";
+import { DeleteAction, RowActions } from "@/components/admin/row-actions";
 import {
   deleteLoyaltyService,
   saveLoyaltyService,
@@ -31,6 +36,7 @@ export function ServicesManager({
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<LoyaltyServiceRow | null>(null);
+  const [toDelete, setToDelete] = useState<LoyaltyServiceRow | null>(null);
   const [pending, startTransition] = useTransition();
 
   const [unitId, setUnitId] = useState(units[0]?.id ?? "");
@@ -84,12 +90,13 @@ export function ServicesManager({
     });
   }
 
-  function remove(id: string) {
-    if (!confirm("Eliminar serviço?")) return;
+  function confirmRemove() {
+    if (!toDelete) return;
     startTransition(async () => {
       try {
-        await deleteLoyaltyService(id);
+        await deleteLoyaltyService(toDelete.id);
         toast.success("Eliminado.");
+        setToDelete(null);
         router.refresh();
       } catch (err) {
         toast.error(err instanceof Error ? err.message : "Falhou.");
@@ -101,24 +108,20 @@ export function ServicesManager({
 
   return (
     <div>
-      <header className="mb-7 flex flex-wrap items-end justify-between gap-4 border-b border-border pb-6">
-        <div>
-          <h1 className="font-heading text-[28px] font-semibold leading-none tracking-tight sm:text-[32px]">
-            Serviços pontuáveis
-          </h1>
-          <p className="mt-1.5 text-sm text-muted-foreground">
-            Configura quantos pontos cada serviço atribui — por unidade.
-          </p>
-        </div>
-        <Button
-          onClick={openNew}
-          className="shrink-0 bg-brand text-primary-foreground hover:bg-brand-hover"
-        >
-          <Plus className="mr-2 h-4 w-4" /> Novo serviço
-        </Button>
-      </header>
+      <PageHeader
+        title="Serviços pontuáveis"
+        description="Configura quantos pontos cada serviço atribui — por unidade."
+        actions={
+          <Button
+            onClick={openNew}
+            className="bg-brand text-primary-foreground hover:bg-brand-hover"
+          >
+            <Plus className="mr-2 h-4 w-4" /> Novo serviço
+          </Button>
+        }
+      />
 
-      <div className="overflow-hidden rounded-2xl border border-border bg-bg-surface">
+      <div className="stagger overflow-hidden rounded-2xl border border-border bg-bg-surface">
         <div className="hidden gap-3 px-6 py-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground md:grid md:grid-cols-[2fr_1.4fr_1fr_0.7fr_auto]">
           <div>Nome</div>
           <div>Unidade</div>
@@ -127,18 +130,30 @@ export function ServicesManager({
           <div></div>
         </div>
         {services.length === 0 ? (
-          <p className="px-6 py-12 text-center text-sm text-muted-foreground">
-            Sem serviços.
-          </p>
+          <EmptyState
+            className="border-0"
+            icon={<ScrollText className="h-6 w-6" />}
+            title="Sem serviços pontuáveis"
+            description="Defina que serviços dão pontos e quantos, para o barbeiro poder lançá-los."
+            action={
+              <Button
+                onClick={openNew}
+                className="bg-brand text-primary-foreground hover:bg-brand-hover"
+              >
+                <Plus className="mr-2 h-4 w-4" /> Novo serviço
+              </Button>
+            }
+          />
         ) : (
-          services.map((s) => (
+          services.map((s, i) => (
             <div
               key={s.id}
-              className="grid gap-2 border-t border-border px-4 py-3 text-sm sm:px-6 md:grid-cols-[2fr_1.4fr_1fr_0.7fr_auto] md:items-center md:gap-3"
+              {...staggerIndex(i)}
+              className="grid gap-2 border-t border-border px-4 py-3 text-sm transition-colors duration-150 hover-fine:hover:bg-background sm:px-6 md:grid-cols-[2fr_1.4fr_1fr_0.7fr_auto] md:items-center md:gap-3"
             >
               <button
                 onClick={() => openEdit(s)}
-                className="text-left font-medium hover:text-brand"
+                className="text-left font-medium transition-colors duration-150 hover:text-brand"
               >
                 {s.name}
               </button>
@@ -152,24 +167,29 @@ export function ServicesManager({
                 <span
                   className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${
                     s.active
-                      ? "bg-green-500/10 text-green-400"
+                      ? "bg-emerald-500/15 text-emerald-600"
                       : "bg-muted text-muted-foreground"
                   }`}
                 >
                   {s.active ? "Activo" : "Inactivo"}
                 </span>
               </div>
-              <button
-                onClick={() => remove(s.id)}
-                className="text-muted-foreground hover:text-red-400"
-                aria-label="Eliminar"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
+              <RowActions>
+                <DeleteAction onClick={() => setToDelete(s)} label={s.name} />
+              </RowActions>
             </div>
           ))
         )}
       </div>
+
+      <ConfirmDialog
+        open={!!toDelete}
+        onOpenChange={(o) => { if (!o) setToDelete(null); }}
+        title="Eliminar serviço"
+        description={`Eliminar "${toDelete?.name}"? Os pontos já atribuídos mantêm-se no histórico dos clientes.`}
+        onConfirm={confirmRemove}
+        loading={pending}
+      />
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>

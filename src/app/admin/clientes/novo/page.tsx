@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireRole } from "@/lib/admin-auth";
+import { PageHeader } from "@/components/admin/page-header";
 import { ClientForm } from "../client-form";
 
 export default async function NovoClientePage() {
@@ -11,14 +12,10 @@ export default async function NovoClientePage() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <header className="mb-7 border-b border-border pb-6">
-        <h1 className="font-heading text-[28px] font-semibold leading-none tracking-tight">
-          Novo cliente
-        </h1>
-        <p className="mt-1.5 text-sm text-muted-foreground">
-          Cadastra o cliente e gera o QR Code do cartão fidelidade.
-        </p>
-      </header>
+      <PageHeader
+        title="Novo cliente"
+        description="Cadastra o cliente e gera o QR Code do cartão fidelidade."
+      />
       <ClientForm units={units ?? []} defaultUnitId={defaultUnitId} />
     </div>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -19,6 +19,10 @@ type Props = {
   onConfirm: () => void;
   loading?: boolean;
   variant?: "destructive" | "default";
+  /** Texto do botão de confirmação. */
+  confirmLabel?: string;
+  /** Texto enquanto a acção corre. Por omissão segue a variante. */
+  loadingLabel?: string;
 };
 
 export function ConfirmDialog({
@@ -29,7 +33,13 @@ export function ConfirmDialog({
   onConfirm,
   loading = false,
   variant = "destructive",
+  confirmLabel = "Confirmar",
+  loadingLabel,
 }: Props) {
+  // "A eliminar…" estava fixo, mesmo em confirmações que não eliminam nada
+  // (um resgate de pontos, por exemplo).
+  const busyLabel =
+    loadingLabel ?? (variant === "destructive" ? "A eliminar…" : "A processar…");
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent showCloseButton={false} className="sm:max-w-md">
@@ -58,7 +68,14 @@ export function ConfirmDialog({
             disabled={loading}
             className={variant === "default" ? "bg-brand text-primary-foreground hover:bg-brand-hover" : ""}
           >
-            {loading ? "A eliminar…" : "Confirmar"}
+            {loading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {busyLabel}
+              </>
+            ) : (
+              confirmLabel
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -4,6 +4,14 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Hover só onde há ponteiro a sério. Em ecrã táctil, o toque dispara :hover
+ * e o estado fica "colado" depois do utilizador levantar o dedo. */
+@custom-variant hover-fine {
+  @media (hover: hover) and (pointer: fine) {
+    @slot;
+  }
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -57,6 +65,17 @@
 
   --shadow-premium: 0 10px 40px rgba(0, 0, 0, 0.12);
   --shadow-premium-lg: 0 20px 60px rgba(0, 0, 0, 0.18);
+
+  /* ── Motion ──
+   * As curvas nativas do CSS são fracas demais para parecer intencional.
+   * Estas geram utilitários Tailwind: ease-out-strong, ease-in-out-strong, ease-drawer.
+   * Regra geral: animação de UI abaixo de 300ms; nunca ease-in (parece lento). */
+  --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out-strong: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+
+  --animate-enter-up: enter-up 260ms var(--ease-out-strong) both;
+  --animate-enter-fade: enter-fade 200ms var(--ease-out-strong) both;
 }
 
 /* ── Light / cream theme (public site) ── */
@@ -191,6 +210,18 @@
   50%       { opacity: 0.6; transform: scale(0.93); }
 }
 
+/* Entrada de conteúdo. Nada surge do nada: começa em translateY pequeno,
+ * nunca em scale(0). Usado por page-enter e pelo stagger das listas. */
+@keyframes enter-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes enter-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
 @layer utilities {
   .container-page {
     @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
@@ -213,6 +244,36 @@
   .shadow-premium-lg {
     box-shadow: var(--shadow-premium-lg);
   }
+
+  /* Entrada em cascata para listas/grelhas. O pai marca .stagger e cada filho
+   * herda um atraso pelo seu índice. Delays curtos (34ms) — atrasos longos
+   * fazem a interface parecer lenta. Teto no 12º item para listas grandes. */
+  .stagger > * {
+    animation: enter-up 260ms var(--ease-out-strong) both;
+    animation-delay: calc(var(--stagger-index, 0) * 34ms);
+  }
+  .page-enter {
+    animation: enter-up 240ms var(--ease-out-strong) both;
+  }
+}
+
+/* ---- Movimento reduzido ----
+ * Reduzir não é remover: mantemos opacidade (ajuda a compreender o que mudou)
+ * e cortamos deslocamento/escala, que são o que causa enjoo. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .stagger > *,
+  .page-enter {
+    animation: enter-fade 160ms ease both !important;
+    animation-delay: 0ms !important;
+  }
 }
 
 /* ---- Capacitor (app nativa) ---- */
@@ -223,7 +284,6 @@
   --safe-bottom: env(safe-area-inset-bottom);
 }
 
-/* Conteúdo do admin não fica tapado pela bottom tab bar nativa. */
-.capacitor-native .admin main {
-  padding-bottom: calc(3.75rem + env(safe-area-inset-bottom));
-}
+/* O espaço para a bottom tab bar do admin é dado pela classe do <main>
+ * em src/app/admin/layout.tsx — a barra agora existe em todo o mobile
+ * (web e app), não só no Capacitor, por isso não há regra aqui. */

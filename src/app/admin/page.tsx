@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { CalendarCheck, Eye, Package, Scissors } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdminSession } from "@/lib/admin-auth";
+import { PageHeader } from "@/components/admin/page-header";
+import { MetricCard } from "@/components/admin/metric-card";
+import { staggerIndex } from "@/lib/motion";
 
 export default async function AdminDashboard() {
   const { profile } = await requireAdminSession();
@@ -23,6 +27,7 @@ export default async function AdminDashboard() {
     { data: recentActivity },
     { data: topBarberEvents },
     { data: barbers },
+    { data: trendEvents },
   ] = await Promise.all([
     sb.from("barbers").select("*", { count: "exact", head: true }),
     sb.from("products").select("*", { count: "exact", head: true }),
@@ -53,7 +58,18 @@ export default async function AdminDashboard() {
       .gte("created_at", daysAgoISO(7))
       .limit(500),
     sb.from("barbers").select("id, name").eq("active", true).limit(20),
+    // Série para os sparklines. Um registo por evento — agregamos por dia
+    // no servidor porque a API REST do Supabase não faz group by.
+    sb
+      .from("events")
+      .select("type, created_at")
+      .in("type", ["booking_click", "page_view"])
+      .gte("created_at", daysAgoISO(30))
+      .limit(5000),
   ]);
+
+  const bookingSeries = dailySeries(trendEvents, "booking_click", 30);
+  const pageViewSeries = dailySeries(trendEvents, "page_view", 30);
 
   // Build top barbers ranking
   const barberViewMap = new Map<string, number>();
@@ -75,62 +91,59 @@ export default async function AdminDashboard() {
 
   return (
     <div>
-      {/* ── Top bar ── */}
-      <div className="mb-7 flex flex-col items-stretch gap-5 border-b border-border pb-6 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="font-heading text-[32px] font-semibold leading-none tracking-tight">
-            Dashboard
-          </h1>
-          <p className="mt-1.5 text-sm text-muted-foreground">
-            Visão geral das duas unidades · {todayStr}
-          </p>
-        </div>
-      <div className="grid shrink-0 grid-cols-2 gap-2.5 sm:flex">
-          <button
-            type="button"
-            className="inline-flex items-center gap-2 rounded-[10px] border border-border bg-transparent px-4 py-2.5 text-[13px] font-medium text-muted-foreground transition hover:bg-background hover:text-foreground"
-          >
-            ↗ Exportar
-          </button>
+      <PageHeader
+        title="Dashboard"
+        description={`Visão geral das duas unidades · ${todayStr}`}
+        actions={
           <Link
             href="/admin/barbeiros"
-            className="inline-flex items-center gap-2 rounded-[10px] bg-brand px-4 py-2.5 text-[13px] font-medium text-[#0e0a07] transition hover:opacity-90"
+            className="inline-flex items-center gap-2 rounded-[10px] bg-brand px-4 py-2.5 text-[13px] font-medium text-[#0e0a07] transition-[opacity,transform] duration-150 ease-out-strong hover:opacity-90 active:scale-[0.97]"
           >
             + Novo barbeiro
           </Link>
-        </div>
-      </div>
+        }
+      />
 
       {/* ── Stat cards ── */}
-      <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard
-          label="Agendamentos · hoje"
-          value={String(bookingsTodayCount ?? 0)}
-          delta={`${bookings30dCount ?? 0} este mês`}
-          color="orange"
-          idx={0}
-        />
-        <StatCard
-          label="Visualizações · 30d"
-          value={String(pageViews30d ?? 0)}
-          delta="page views"
-          color="green"
-          idx={1}
-        />
-        <StatCard
-          label="Produtos"
-          value={String(productsCount ?? 0)}
-          delta="no catálogo"
-          color="blue"
-          idx={2}
-        />
-        <StatCard
-          label="Barbeiros activos"
-          value={String(barbersCount ?? 0)}
-          delta="2 unidades"
-          color="mute"
-          idx={3}
-        />
+      <div className="stagger mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div {...staggerIndex(0)}>
+          <MetricCard
+            label="Agendamentos · hoje"
+            value={bookingsTodayCount ?? 0}
+            hint={`${bookings30dCount ?? 0} este mês`}
+            tone="brand"
+            icon={<CalendarCheck className="h-4 w-4" />}
+            series={bookingSeries}
+          />
+        </div>
+        <div {...staggerIndex(1)}>
+          <MetricCard
+            label="Visualizações · 30d"
+            value={pageViews30d ?? 0}
+            hint="page views"
+            tone="green"
+            icon={<Eye className="h-4 w-4" />}
+            series={pageViewSeries}
+          />
+        </div>
+        <div {...staggerIndex(2)}>
+          <MetricCard
+            label="Produtos"
+            value={productsCount ?? 0}
+            hint="no catálogo"
+            tone="blue"
+            icon={<Package className="h-4 w-4" />}
+          />
+        </div>
+        <div {...staggerIndex(3)}>
+          <MetricCard
+            label="Barbeiros activos"
+            value={barbersCount ?? 0}
+            hint="2 unidades"
+            tone="mute"
+            icon={<Scissors className="h-4 w-4" />}
+          />
+        </div>
       </div>
 
       {/* ── Content row ── */}
@@ -161,46 +174,49 @@ export default async function AdminDashboard() {
               Sem eventos recentes.
             </p>
           ) : (
-            (recentActivity ?? []).map((ev) => {
-              const d = new Date(ev.created_at as string);
-              const timeStr = d.toLocaleTimeString("pt-PT", {
-                hour: "2-digit",
-                minute: "2-digit",
-              });
-              const isBooking = ev.type === "booking_click";
-              return (
-                <div
-                  key={ev.id}
-                  className="grid gap-2 border-t border-border px-4 py-4 text-sm transition hover:bg-background sm:px-6 md:grid-cols-[1.6fr_1.2fr_0.6fr_1fr] md:items-center md:gap-3 md:py-3"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-background text-xs">
-                      {eventIcon(ev.type as string)}
+            <div className="stagger">
+              {(recentActivity ?? []).map((ev, i) => {
+                const d = new Date(ev.created_at as string);
+                const timeStr = d.toLocaleTimeString("pt-PT", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                });
+                const isBooking = ev.type === "booking_click";
+                return (
+                  <div
+                    key={ev.id}
+                    {...staggerIndex(i)}
+                    className="grid gap-2 border-t border-border px-4 py-4 text-sm transition-colors duration-150 hover-fine:hover:bg-background sm:px-6 md:grid-cols-[1.6fr_1.2fr_0.6fr_1fr] md:items-center md:gap-3 md:py-3"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-background text-xs">
+                        {eventIcon(ev.type as string)}
+                      </div>
+                      <span className="text-[13px] font-medium">
+                        {eventLabel(ev.type as string)}
+                      </span>
                     </div>
-                    <span className="text-[13px] font-medium">
-                      {eventLabel(ev.type as string)}
-                    </span>
+                    <div className="truncate font-mono text-[12.5px] text-muted-foreground">
+                      {ev.ref_id ? ev.ref_id.slice(0, 8) + "…" : "—"}
+                    </div>
+                    <div className="font-mono text-[12.5px] text-muted-foreground tabular-nums">
+                      {timeStr}
+                    </div>
+                    <div>
+                      <span
+                        className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                          isBooking
+                            ? "bg-emerald-500/10 text-emerald-600"
+                            : "bg-brand/10 text-brand"
+                        }`}
+                      >
+                        {isBooking ? "● Agendamento" : "◌ Visita"}
+                      </span>
+                    </div>
                   </div>
-                  <div className="truncate font-mono text-[12.5px] text-muted-foreground">
-                    {ev.ref_id ? ev.ref_id.slice(0, 8) + "…" : "—"}
-                  </div>
-                  <div className="font-mono text-[12.5px] text-muted-foreground">
-                    {timeStr}
-                  </div>
-                  <div>
-                    <span
-                      className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ${
-                        isBooking
-                          ? "bg-green-500/10 text-green-400"
-                          : "bg-brand/10 text-brand"
-                      }`}
-                    >
-                      {isBooking ? "● Agendamento" : "◌ Visita"}
-                    </span>
-                  </div>
-                </div>
-              );
-            })
+                );
+              })}
+            </div>
           )}
         </div>
 
@@ -220,38 +236,41 @@ export default async function AdminDashboard() {
                 Sem dados esta semana.
               </p>
             ) : (
-              topBarbers.map((b, i) => (
-                <div
-                  key={b.name}
-                  className={`flex gap-3.5 py-3.5 ${
-                    i < topBarbers.length - 1 ? "border-b border-border" : ""
-                  }`}
-                >
+              <div className="stagger">
+                {topBarbers.map((b, i) => (
                   <div
-                    className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg font-heading text-[13px] font-bold ${
-                      i === 0
-                        ? "bg-brand text-[#0e0a07]"
-                        : "bg-background text-muted-foreground"
+                    key={b.name}
+                    {...staggerIndex(i)}
+                    className={`flex gap-3.5 py-3.5 ${
+                      i < topBarbers.length - 1 ? "border-b border-border" : ""
                     }`}
                   >
-                    {i + 1}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[13.5px] font-medium">{b.name}</div>
-                    <div className="mb-2 mt-0.5 text-[11.5px] text-muted-foreground">
-                      {b.views} visualizações
+                    <div
+                      className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg font-heading text-[13px] font-bold ${
+                        i === 0
+                          ? "bg-brand text-[#0e0a07]"
+                          : "bg-background text-muted-foreground"
+                      }`}
+                    >
+                      {i + 1}
                     </div>
-                    <div className="h-1 overflow-hidden rounded-full bg-background">
-                      <div
-                        className="h-full rounded-full bg-brand"
-                        style={{
-                          width: `${Math.round((b.views / maxViews) * 100)}%`,
-                        }}
-                      />
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[13.5px] font-medium">{b.name}</div>
+                      <div className="mb-2 mt-0.5 text-[11.5px] text-muted-foreground">
+                        {b.views} visualizações
+                      </div>
+                      <div className="h-1 overflow-hidden rounded-full bg-background">
+                        <div
+                          className="h-full rounded-full bg-brand transition-[width] duration-500 ease-out-strong"
+                          style={{
+                            width: `${Math.round((b.views / maxViews) * 100)}%`,
+                          }}
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))
+                ))}
+              </div>
             )}
           </div>
         </div>
@@ -260,61 +279,35 @@ export default async function AdminDashboard() {
   );
 }
 
-function StatCard({
-  label,
-  value,
-  delta,
-  color,
-  idx,
-}: {
-  label: string;
-  value: string;
-  delta: string;
-  color: "orange" | "green" | "blue" | "mute";
-  idx: number;
-}) {
-  const deltaClass = {
-    orange: "bg-brand/15 text-brand",
-    green: "bg-green-500/15 text-green-400",
-    blue: "bg-blue-500/15 text-blue-400",
-    mute: "bg-background text-muted-foreground",
-  }[color];
+/**
+ * Agrega eventos de um tipo em contagens diárias, do dia mais antigo ao mais
+ * recente. Devolve sempre `days` pontos — dias sem eventos entram a zero,
+ * senão o sparkline comprimia os intervalos e distorcia a leitura.
+ */
+function dailySeries(
+  events: Array<{ type: string | null; created_at: string }> | null,
+  type: string,
+  days: number,
+): number[] {
+  const buckets = new Array<number>(days).fill(0);
+  if (!events) return buckets;
 
-  const barClass = {
-    orange: "bg-brand/50",
-    green: "bg-green-500/50",
-    blue: "bg-blue-500/50",
-    mute: "bg-border",
-  }[color];
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+  const dayMs = 86_400_000;
 
-  const bars = Array.from({ length: 20 }, (_, j) => ({
-    height: `${20 + Math.abs(Math.sin(idx * 3 + j) * 80)}%`,
-  }));
-
-  return (
-    <div className="relative overflow-hidden rounded-2xl border border-border bg-bg-surface p-5">
-      <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-        {label}
-      </div>
-      <div className="my-3 flex items-baseline gap-3">
-        <div className="font-heading text-[32px] font-semibold leading-none tracking-tight">
-          {value}
-        </div>
-        <div className={`rounded-full px-2 py-0.5 text-[12px] font-semibold ${deltaClass}`}>
-          {delta}
-        </div>
-      </div>
-      <div className="flex h-8 items-end gap-0.5">
-        {bars.map((b, j) => (
-          <div
-            key={j}
-            className={`flex-1 rounded-[1px] ${barClass}`}
-            style={{ height: b.height }}
-          />
-        ))}
-      </div>
-    </div>
-  );
+  for (const ev of events) {
+    if (ev.type !== type) continue;
+    // Normalizar ao início do dia do evento antes de comparar: sem isto, um
+    // evento de hoje dá uma diferença negativa e cai fora do array.
+    const evDay = new Date(ev.created_at);
+    evDay.setHours(0, 0, 0, 0);
+    // 0 = hoje, 1 = ontem, … Índice no array conta ao contrário (antigo → novo).
+    const daysAgo = Math.round((startOfToday.getTime() - evDay.getTime()) / dayMs);
+    const index = days - 1 - daysAgo;
+    if (index >= 0 && index < days) buckets[index] += 1;
+  }
+  return buckets;
 }
 
 function eventLabel(type: string) {

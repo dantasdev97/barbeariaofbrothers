@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdminSession } from "@/lib/admin-auth";
+import { PageHeader } from "@/components/admin/page-header";
 import { CategoriesManager } from "./categories-manager";
 
 

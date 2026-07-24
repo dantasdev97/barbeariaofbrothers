@@ -4,8 +4,16 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Pencil, Trash2 } from "lucide-react";
+import { Users } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/admin/confirm-dialog";
+import { EmptyState } from "@/components/admin/empty-state";
+import {
+  DeleteAction,
+  EditAction,
+  RowActions,
+} from "@/components/admin/row-actions";
+import { staggerIndex } from "@/lib/motion";
 import { deleteClient } from "@/lib/loyalty/actions";
 
 export type ClientRow = {
@@ -44,59 +52,131 @@ export function ClientsTable({
 
   if (rows.length === 0) {
     return (
-      <p className="px-6 py-12 text-center text-sm text-muted-foreground">
-        Nenhum cliente encontrado.{" "}
-        <Link href="/admin/clientes/novo" className="text-brand hover:underline">
-          Cadastrar primeiro cliente.
-        </Link>
-      </p>
+      <EmptyState
+        icon={<Users className="h-6 w-6" />}
+        title="Nenhum cliente encontrado"
+        description="Cadastre o primeiro cliente para começar a atribuir pontos no cartão fidelidade."
+        action={
+          <Button
+            asChild
+            className="bg-brand text-primary-foreground hover:bg-brand-hover"
+          >
+            <Link href="/admin/clientes/novo">Cadastrar cliente</Link>
+          </Button>
+        }
+      />
     );
   }
 
   return (
     <>
-      {rows.map((c) => (
-        <div
-          key={c.id}
-          className="grid grid-cols-2 gap-2 border-t border-border px-4 py-4 text-sm transition hover:bg-background sm:px-6 md:grid-cols-[2fr_1.4fr_1fr_1fr_1fr_auto] md:items-center md:gap-3"
-        >
-          <Link href={`/admin/clientes/${c.id}`} className="contents">
-            <div className="font-medium">{c.name}</div>
-            <div className="text-right font-mono text-[12.5px] text-muted-foreground md:text-left">
-              {c.phone}
-            </div>
-            <div className="text-[13px] text-muted-foreground">{c.unitName}</div>
-            <div className="font-mono text-[13px] font-semibold text-brand">
-              {c.points} pts
-            </div>
-            <div className="font-mono text-[12.5px] text-muted-foreground">
-              {c.lastVisit ?? "—"}
-            </div>
-          </Link>
-
-          <div className="col-span-2 flex justify-end gap-1 md:col-span-1">
-            <Link
-              href={`/admin/clientes/${c.id}`}
-              aria-label={`Editar ${c.name}`}
-              title="Editar"
-              className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition hover:bg-background hover:text-foreground"
-            >
-              <Pencil className="h-4 w-4" />
-            </Link>
-            {canDelete && (
-              <button
-                type="button"
-                aria-label={`Eliminar ${c.name}`}
-                title="Eliminar"
-                onClick={() => setToDelete(c)}
-                className="inline-flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive"
+      {/* Mobile: um cartão por cliente.
+       * Antes era o mesmo `grid grid-cols-2` do desktop, que no telemóvel
+       * empilhava nome/telefone/unidade/pontos/visita sem rótulo nenhum —
+       * ficava impossível saber que número era qual. */}
+      <div className="stagger space-y-3 md:hidden">
+        {rows.map((c, i) => (
+          <article
+            key={c.id}
+            {...staggerIndex(i)}
+            className="rounded-xl border border-border bg-bg-surface p-4"
+          >
+            <div className="flex items-start justify-between gap-3">
+              {/* Só o bloco de identificação é link. Antes a linha inteira
+               * era um `<Link className="contents">` com as acções lá
+               * dentro — aninhamento frágil e alvo de toque imprevisível. */}
+              <Link
+                href={`/admin/clientes/${c.id}`}
+                className="min-w-0 flex-1 rounded-md transition-opacity duration-150 ease-out-strong active:opacity-70"
               >
-                <Trash2 className="h-4 w-4" />
-              </button>
-            )}
-          </div>
-        </div>
-      ))}
+                <h2 className="truncate font-heading text-lg font-semibold">
+                  {c.name}
+                </h2>
+                <p className="mt-0.5 truncate font-mono text-xs text-muted-foreground">
+                  {c.phone}
+                </p>
+              </Link>
+              <span className="shrink-0 rounded-full bg-brand/15 px-2.5 py-1 font-mono text-[12px] font-bold tabular-nums text-brand">
+                {c.points} pts
+              </span>
+            </div>
+
+            <dl className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-[12.5px]">
+              <div className="flex gap-1.5">
+                <dt className="text-muted-foreground">Unidade</dt>
+                <dd className="font-medium">{c.unitName}</dd>
+              </div>
+              <div className="flex gap-1.5">
+                <dt className="text-muted-foreground">Última visita</dt>
+                <dd className="font-mono">{c.lastVisit ?? "—"}</dd>
+              </div>
+            </dl>
+
+            <div className="mt-3 flex justify-end border-t border-border pt-3">
+              <RowActions>
+                <EditAction href={`/admin/clientes/${c.id}`} label={c.name} />
+                {canDelete && (
+                  <DeleteAction onClick={() => setToDelete(c)} label={c.name} />
+                )}
+              </RowActions>
+            </div>
+          </article>
+        ))}
+      </div>
+
+      {/* Desktop: tabela */}
+      <div className="hidden overflow-hidden rounded-2xl border border-border bg-bg-surface md:block">
+        <table className="w-full text-sm">
+          <thead className="border-b border-border text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
+            <tr>
+              <th className="px-6 py-3 text-left font-semibold">Nome</th>
+              <th className="px-6 py-3 text-left font-semibold">Telefone</th>
+              <th className="px-6 py-3 text-left font-semibold">Unidade</th>
+              <th className="px-6 py-3 text-left font-semibold">Pontos</th>
+              <th className="px-6 py-3 text-left font-semibold">Última visita</th>
+              <th className="px-6 py-3" />
+            </tr>
+          </thead>
+          <tbody className="stagger divide-y divide-border">
+            {rows.map((c, i) => (
+              <tr
+                key={c.id}
+                {...staggerIndex(i)}
+                className="transition-colors duration-150 hover-fine:hover:bg-background"
+              >
+                <td className="px-6 py-3">
+                  <Link
+                    href={`/admin/clientes/${c.id}`}
+                    className="font-medium transition-colors duration-150 hover:text-brand"
+                  >
+                    {c.name}
+                  </Link>
+                </td>
+                <td className="px-6 py-3 font-mono text-[12.5px] text-muted-foreground">
+                  {c.phone}
+                </td>
+                <td className="px-6 py-3 text-[13px] text-muted-foreground">
+                  {c.unitName}
+                </td>
+                <td className="px-6 py-3 font-mono text-[13px] font-semibold tabular-nums text-brand">
+                  {c.points} pts
+                </td>
+                <td className="px-6 py-3 font-mono text-[12.5px] text-muted-foreground">
+                  {c.lastVisit ?? "—"}
+                </td>
+                <td className="px-6 py-3">
+                  <RowActions>
+                    <EditAction href={`/admin/clientes/${c.id}`} label={c.name} />
+                    {canDelete && (
+                      <DeleteAction onClick={() => setToDelete(c)} label={c.name} />
+                    )}
+                  </RowActions>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
       <ConfirmDialog
         open={!!toDelete}

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import type { ProductCategoryRow, ProductRow, UnitRow } from "@/types/database.types";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/admin/page-header";
 import {
   Dialog,
   DialogContent,
@@ -47,23 +48,21 @@ export function ProductsClient({
 
   return (
     <div>
-      <header className="mb-7 flex flex-wrap items-end justify-between gap-4 border-b border-border pb-6">
-        <div>
-          <h1 className="font-heading text-[28px] font-semibold leading-none tracking-tight sm:text-[32px]">
-            Produtos
-          </h1>
-          <p className="mt-1.5 text-sm text-muted-foreground">
-            {products.length} produto{products.length !== 1 ? "s" : ""} · catálogo geral
-          </p>
-        </div>
-        <Button
-          onClick={openNew}
-          className="shrink-0 bg-brand text-primary-foreground hover:bg-brand-hover"
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          Novo produto
-        </Button>
-      </header>
+      <PageHeader
+        title="Produtos"
+        description={`${products.length} produto${
+          products.length !== 1 ? "s" : ""
+        } · catálogo geral`}
+        actions={
+          <Button
+            onClick={openNew}
+            className="bg-brand text-primary-foreground hover:bg-brand-hover"
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Novo produto
+          </Button>
+        }
+      />
 
       <ProductsTable
         products={products}

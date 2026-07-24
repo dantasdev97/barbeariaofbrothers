@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { PageHeader } from "@/components/admin/page-header";
 import {
   ArrowLeft,
   Camera,
@@ -195,17 +196,15 @@ export function Scanner() {
     <div className="mx-auto max-w-md">
       <Link
         href="/admin/operacao"
-        className="mb-4 inline-flex items-center text-sm text-muted-foreground hover:text-foreground"
+        className="mb-4 -ml-2 inline-flex min-h-11 items-center rounded-lg px-2 text-sm text-muted-foreground transition-colors duration-150 hover-fine:hover:text-foreground"
       >
-        <ArrowLeft className="mr-1 h-4 w-4" /> Voltar
+        <ArrowLeft className="mr-1.5 h-4 w-4" /> Voltar
       </Link>
 
-      <h1 className="mb-1 font-heading text-[26px] font-semibold leading-none tracking-tight">
-        Escanear QR
-      </h1>
-      <p className="mb-5 text-sm text-muted-foreground">
-        Aponta a câmara para o QR do cartão (físico ou no telemóvel do cliente).
-      </p>
+      <PageHeader
+        title="Escanear QR"
+        description="Aponta a câmara para o QR do cartão (físico ou no telemóvel do cliente)."
+      />
 
       {!native && (
         <div className="relative overflow-hidden rounded-2xl border border-border bg-black">
@@ -282,13 +281,15 @@ export function Scanner() {
           aria-live="assertive"
           onClick={feedback.kind === "error" ? () => setFeedback(null) : undefined}
           className={cn(
-            "fixed inset-0 z-[100] flex items-center justify-center p-6 transition-opacity",
+            // Entrava a corte seco. `enter-fade` dá-lhe uma entrada curta —
+            // o ecrã inteiro a mudar de cor de repente é agressivo.
+            "fixed inset-0 z-[100] flex animate-[enter-fade_140ms_var(--ease-out-strong)_both] items-center justify-center p-6",
             feedback.kind === "success"
               ? "bg-emerald-500/95"
-              : "bg-red-500/95 cursor-pointer",
+              : "cursor-pointer bg-destructive/95",
           )}
         >
-          <div className="flex flex-col items-center text-center text-white">
+          <div className="flex animate-[enter-up_260ms_var(--ease-out-strong)_both] flex-col items-center text-center text-white">
             {feedback.kind === "success" ? (
               <CheckCircle2 className="h-28 w-28 drop-shadow-md" strokeWidth={1.75} />
             ) : (

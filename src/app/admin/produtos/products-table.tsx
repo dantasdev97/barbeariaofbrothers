@@ -7,7 +7,9 @@ import type { ProductRow } from "@/types/database.types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ConfirmDialog } from "@/components/admin/confirm-dialog";
+import { EmptyState } from "@/components/admin/empty-state";
 import { deleteProduct } from "@/lib/admin-actions";
+import { staggerIndex } from "@/lib/motion";
 import { formatPrice, cn } from "@/lib/utils";
 
 type UnitLite = { id: string; name: string; slug: string };
@@ -32,7 +34,7 @@ function PriceCell({ p }: { p: ProductRow }) {
       )}
       <span className="font-semibold text-brand">{formatPrice(p.price_cents)}</span>
       {pct != null && (
-        <Badge variant="secondary" className="bg-green-500/15 px-1.5 text-[10px] font-semibold text-green-600">
+        <Badge variant="secondary" className="bg-emerald-500/15 px-1.5 text-[10px] font-semibold text-emerald-600">
           −{pct}%
         </Badge>
       )}
@@ -98,19 +100,19 @@ export function ProductsTable({
 
   if (products.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-2xl border border-border bg-bg-surface py-16 text-center">
-        <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-background">
-          <Package className="h-6 w-6 text-muted-foreground" />
-        </div>
-        <p className="font-heading text-base font-semibold">Sem produtos ainda</p>
-        <p className="mt-1 text-sm text-muted-foreground">Adicione o primeiro produto ao catálogo.</p>
-        <Button
-          className="mt-6 bg-brand text-primary-foreground hover:bg-brand-hover"
-          onClick={onAdd}
-        >
-          Adicionar produto
-        </Button>
-      </div>
+      <EmptyState
+        icon={<Package className="h-6 w-6" />}
+        title="Sem produtos ainda"
+        description="Adicione o primeiro produto ao catálogo."
+        action={
+          <Button
+            className="bg-brand text-primary-foreground hover:bg-brand-hover"
+            onClick={onAdd}
+          >
+            Adicionar produto
+          </Button>
+        }
+      />
     );
   }
 
@@ -128,11 +130,13 @@ export function ProductsTable({
             key={c.id}
             type="button"
             onClick={() => setFilter(c.id)}
+            aria-pressed={filter === c.id}
             className={cn(
-              "rounded-full border px-3 py-1.5 text-xs font-medium transition",
+              "min-h-9 rounded-full border px-4 text-xs font-medium",
+              "transition-[background-color,border-color,color,transform] duration-150 ease-out-strong active:scale-[0.96]",
               filter === c.id
                 ? "border-brand bg-brand text-primary-foreground"
-                : "border-border bg-bg-surface text-muted-foreground hover:bg-background hover:text-foreground",
+                : "border-border bg-bg-surface text-muted-foreground hover-fine:hover:bg-background hover-fine:hover:text-foreground",
             )}
           >
             {c.label} · {c.n}
@@ -140,10 +144,23 @@ export function ProductsTable({
         ))}
       </div>
 
+      {visible.length === 0 && (
+        <EmptyState
+          icon={<Package className="h-6 w-6" />}
+          title="Nenhum produto neste filtro"
+          description="Não há produtos que correspondam ao filtro seleccionado."
+          action={
+            <Button variant="secondary" onClick={() => setFilter("all")}>
+              Ver todos os produtos
+            </Button>
+          }
+        />
+      )}
+
       {/* Mobile cards */}
-      <div className="space-y-3 md:hidden">
-        {visible.map((p) => (
-          <article key={p.id} className="rounded-xl border border-border bg-bg-surface p-4">
+      <div className="stagger space-y-3 md:hidden">
+        {visible.map((p, i) => (
+          <article key={p.id} {...staggerIndex(i)} className="rounded-xl border border-border bg-bg-surface p-4">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <h2 className="flex items-center gap-1.5 truncate font-heading text-lg font-semibold">
@@ -192,9 +209,13 @@ export function ProductsTable({
               <th className="px-5 py-4" />
             </tr>
           </thead>
-          <tbody className="divide-y divide-border">
-            {visible.map((p) => (
-              <tr key={p.id} className="transition hover:bg-background">
+          <tbody className="stagger divide-y divide-border">
+            {visible.map((p, i) => (
+              <tr
+                key={p.id}
+                {...staggerIndex(i)}
+                className="transition-colors duration-150 hover-fine:hover:bg-background"
+              >
                 <td className="px-5 py-4 font-medium">
                   <span className="flex items-center gap-1.5">
                     {p.featured && <Star className="h-3.5 w-3.5 shrink-0 fill-brand text-brand" />}

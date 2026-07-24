@@ -3,6 +3,7 @@ import { Plus, Search } from "lucide-react";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireRole } from "@/lib/admin-auth";
 import { Input } from "@/components/ui/input";
+import { PageHeader } from "@/components/admin/page-header";
 import { ClientsTable, type ClientRow } from "./clients-table";
 
 type SearchParams = { q?: string; unit?: string };
@@ -78,31 +79,28 @@ export default async function ClientesPage({
 
   return (
     <div>
-      <header className="mb-7 flex flex-wrap items-end justify-between gap-4 border-b border-border pb-6">
-        <div>
-          <h1 className="font-heading text-[28px] font-semibold leading-none tracking-tight sm:text-[32px]">
-            Clientes
-          </h1>
-          <p className="mt-1.5 text-sm text-muted-foreground">
-            {(clients ?? []).length} cliente{(clients ?? []).length !== 1 ? "s" : ""} ·
-            cartão fidelidade digital
-          </p>
-        </div>
-        <div className="flex shrink-0 gap-2">
-          <Link
-            href="/admin/clientes/cartoes"
-            className="inline-flex items-center gap-2 rounded-[10px] border border-border bg-transparent px-4 py-2.5 text-[13px] font-medium text-muted-foreground transition hover:bg-background hover:text-foreground"
-          >
-            Exportar cartões
-          </Link>
-          <Link
-            href="/admin/clientes/novo"
-            className="inline-flex items-center gap-2 rounded-[10px] bg-brand px-4 py-2.5 text-[13px] font-medium text-[#0e0a07] transition hover:opacity-90"
-          >
-            <Plus className="h-4 w-4" /> Novo cliente
-          </Link>
-        </div>
-      </header>
+      <PageHeader
+        title="Clientes"
+        description={`${(clients ?? []).length} cliente${
+          (clients ?? []).length !== 1 ? "s" : ""
+        } · cartão fidelidade digital`}
+        actions={
+          <>
+            <Link
+              href="/admin/clientes/cartoes"
+              className="inline-flex items-center gap-2 rounded-[10px] border border-border bg-transparent px-4 py-2.5 text-[13px] font-medium text-muted-foreground transition-[background-color,color,transform] duration-150 ease-out-strong hover:bg-background hover:text-foreground active:scale-[0.97]"
+            >
+              Exportar cartões
+            </Link>
+            <Link
+              href="/admin/clientes/novo"
+              className="inline-flex items-center gap-2 rounded-[10px] bg-brand px-4 py-2.5 text-[13px] font-medium text-[#0e0a07] transition-[opacity,transform] duration-150 ease-out-strong hover:opacity-90 active:scale-[0.97]"
+            >
+              <Plus className="h-4 w-4" /> Novo cliente
+            </Link>
+          </>
+        }
+      />
 
       <form
         action="/admin/clientes"
@@ -111,17 +109,19 @@ export default async function ClientesPage({
       >
         <div className="relative flex-1 min-w-[220px]">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          {/* h-11 (44px) em todo o formulário: é o mínimo confortável para o
+           * polegar, e o Input traz h-8 por omissão. */}
           <Input
             name="q"
             defaultValue={q ?? ""}
             placeholder="Buscar por nome ou telefone…"
-            className="pl-9"
+            className="h-11 pl-9"
           />
         </div>
         <select
           name="unit"
           defaultValue={unit ?? ""}
-          className="h-10 rounded-md border border-border bg-background px-3 text-sm"
+          className="h-11 rounded-md border border-border bg-background px-3 text-sm"
         >
           <option value="">Todas as unidades</option>
           {(units ?? []).map((u) => (
@@ -132,24 +132,13 @@ export default async function ClientesPage({
         </select>
         <button
           type="submit"
-          className="inline-flex h-10 items-center rounded-md bg-brand px-4 text-sm font-medium text-[#0e0a07]"
+          className="inline-flex h-11 items-center rounded-md bg-brand px-5 text-sm font-medium text-[#0e0a07] transition-[opacity,transform] duration-150 ease-out-strong hover:opacity-90 active:scale-[0.97]"
         >
           Buscar
         </button>
       </form>
 
-      <div className="overflow-hidden rounded-2xl border border-border bg-bg-surface">
-        <div className="hidden gap-3 px-6 py-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground md:grid md:grid-cols-[2fr_1.4fr_1fr_1fr_1fr_auto]">
-          <div>Nome</div>
-          <div>Telefone</div>
-          <div>Unidade</div>
-          <div>Pontos</div>
-          <div>Última visita</div>
-          <div className="text-right">Ações</div>
-        </div>
-
-        <ClientsTable rows={rows} canDelete={canDelete} />
-      </div>
+      <ClientsTable rows={rows} canDelete={canDelete} />
     </div>
   );
 }

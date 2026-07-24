@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Plus, ShieldCheck } from "lucide-react";
 import type { BarberRow } from "@/types/database.types";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/admin/page-header";
 import {
   Dialog,
   DialogContent,
@@ -47,29 +48,27 @@ export function BarbersClient({
 
   return (
     <div>
-      <header className="mb-7 flex flex-wrap items-end justify-between gap-4 border-b border-border pb-6">
-        <div>
-          <h1 className="font-heading text-[28px] font-semibold leading-none tracking-tight sm:text-[32px]">
-            Barbeiros
-          </h1>
-          <p className="mt-1.5 text-sm text-muted-foreground">
-            {barbers.length} barbeiro{barbers.length !== 1 ? "s" : ""} · todas as unidades
-          </p>
-        </div>
-        <div className="flex shrink-0 flex-wrap gap-2">
-          <Button variant="secondary" onClick={() => setAccess({ mode: "staff" })}>
-            <ShieldCheck className="mr-2 h-4 w-4" />
-            Criar acesso de gestão
-          </Button>
-          <Button
-            onClick={openNew}
-            className="bg-brand text-primary-foreground hover:bg-brand-hover"
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Novo barbeiro
-          </Button>
-        </div>
-      </header>
+      <PageHeader
+        title="Barbeiros"
+        description={`${barbers.length} barbeiro${
+          barbers.length !== 1 ? "s" : ""
+        } · todas as unidades`}
+        actions={
+          <>
+            <Button variant="secondary" onClick={() => setAccess({ mode: "staff" })}>
+              <ShieldCheck className="mr-2 h-4 w-4" />
+              Criar acesso de gestão
+            </Button>
+            <Button
+              onClick={openNew}
+              className="bg-brand text-primary-foreground hover:bg-brand-hover"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Novo barbeiro
+            </Button>
+          </>
+        }
+      />
 
       <BarbersTable
         barbers={barbers}
