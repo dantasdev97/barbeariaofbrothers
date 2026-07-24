@@ -7,6 +7,8 @@ import type { UnitRow } from "@/types/database.types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ConfirmDialog } from "@/components/admin/confirm-dialog";
+import { EmptyState } from "@/components/admin/empty-state";
+import { staggerIndex } from "@/lib/motion";
 import { deleteUnit } from "@/lib/admin-actions";
 
 export function UnitsTable({
@@ -36,28 +38,29 @@ export function UnitsTable({
 
   if (units.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-2xl border border-border bg-bg-surface py-16 text-center">
-        <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-background">
-          <MapPin className="h-6 w-6 text-muted-foreground" />
-        </div>
-        <p className="font-heading text-base font-semibold">Sem unidades ainda</p>
-        <p className="mt-1 text-sm text-muted-foreground">Crie a primeira unidade para começar.</p>
-        <Button
-          className="mt-6 bg-brand text-primary-foreground hover:bg-brand-hover"
-          onClick={onAdd}
-        >
-          Criar unidade
-        </Button>
-      </div>
+      <EmptyState
+        icon={<MapPin className="h-6 w-6" />}
+        title="Sem unidades ainda"
+        description="Crie a primeira unidade para começar."
+        action={
+          <Button
+            className="bg-brand text-primary-foreground hover:bg-brand-hover"
+            onClick={onAdd}
+          >
+            Criar unidade
+          </Button>
+        }
+      />
     );
   }
 
   return (
     <>
-      <div className="space-y-3 md:hidden">
-        {units.map((u) => (
+      <div className="stagger space-y-3 md:hidden">
+        {units.map((u, i) => (
           <article
             key={u.id}
+            {...staggerIndex(i)}
             className="rounded-xl border border-border bg-bg-surface p-4"
           >
             <div className="flex items-start justify-between gap-3">
@@ -105,9 +108,13 @@ export function UnitsTable({
               <th className="px-5 py-4" />
             </tr>
           </thead>
-          <tbody className="divide-y divide-border">
-            {units.map((u) => (
-              <tr key={u.id} className="transition hover:bg-background">
+          <tbody className="stagger divide-y divide-border">
+            {units.map((u, i) => (
+              <tr
+                key={u.id}
+                {...staggerIndex(i)}
+                className="transition-colors duration-150 hover-fine:hover:bg-background"
+              >
                 <td className="px-5 py-4 font-medium">{u.name}</td>
                 <td className="hidden px-5 py-4 sm:table-cell">
                   <code className="rounded-md bg-background px-2 py-1 font-mono text-xs text-muted-foreground">

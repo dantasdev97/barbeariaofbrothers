@@ -109,17 +109,19 @@ export default async function ClientesPage({
       >
         <div className="relative flex-1 min-w-[220px]">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          {/* h-11 (44px) em todo o formulário: é o mínimo confortável para o
+           * polegar, e o Input traz h-8 por omissão. */}
           <Input
             name="q"
             defaultValue={q ?? ""}
             placeholder="Buscar por nome ou telefone…"
-            className="pl-9"
+            className="h-11 pl-9"
           />
         </div>
         <select
           name="unit"
           defaultValue={unit ?? ""}
-          className="h-10 rounded-md border border-border bg-background px-3 text-sm"
+          className="h-11 rounded-md border border-border bg-background px-3 text-sm"
         >
           <option value="">Todas as unidades</option>
           {(units ?? []).map((u) => (
@@ -130,24 +132,13 @@ export default async function ClientesPage({
         </select>
         <button
           type="submit"
-          className="inline-flex h-10 items-center rounded-md bg-brand px-4 text-sm font-medium text-[#0e0a07]"
+          className="inline-flex h-11 items-center rounded-md bg-brand px-5 text-sm font-medium text-[#0e0a07] transition-[opacity,transform] duration-150 ease-out-strong hover:opacity-90 active:scale-[0.97]"
         >
           Buscar
         </button>
       </form>
 
-      <div className="overflow-hidden rounded-2xl border border-border bg-bg-surface">
-        <div className="hidden gap-3 px-6 py-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground md:grid md:grid-cols-[2fr_1.4fr_1fr_1fr_1fr_auto]">
-          <div>Nome</div>
-          <div>Telefone</div>
-          <div>Unidade</div>
-          <div>Pontos</div>
-          <div>Última visita</div>
-          <div className="text-right">Ações</div>
-        </div>
-
-        <ClientsTable rows={rows} canDelete={canDelete} />
-      </div>
+      <ClientsTable rows={rows} canDelete={canDelete} />
     </div>
   );
 }

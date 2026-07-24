@@ -9,11 +9,14 @@ import { cn } from "@/lib/utils";
  * sítio para mexer no ritmo vertical.
  */
 export function PageHeader({
+  eyebrow,
   title,
   description,
   actions,
   className,
 }: {
+  /** Sobretítulo curto acima do h1 (ex. "Referência interna"). */
+  eyebrow?: ReactNode;
   title: ReactNode;
   description?: ReactNode;
   /** Botões à direita (desktop) / por baixo (mobile). */
@@ -28,6 +31,11 @@ export function PageHeader({
       )}
     >
       <div className="min-w-0">
+        {eyebrow && (
+          <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.16em] text-brand/80">
+            {eyebrow}
+          </p>
+        )}
         <h1 className="font-heading text-[28px] font-semibold leading-none tracking-tight sm:text-[32px]">
           {title}
         </h1>

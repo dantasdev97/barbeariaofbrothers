@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import type { UnitRow } from "@/types/database.types";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/admin/page-header";
 import {
   Dialog,
   DialogContent,
@@ -37,23 +38,21 @@ export function UnitsClient({ units }: { units: UnitRow[] }) {
 
   return (
     <div>
-      <header className="mb-7 flex flex-wrap items-end justify-between gap-4 border-b border-border pb-6">
-        <div>
-          <h1 className="font-heading text-[28px] font-semibold leading-none tracking-tight sm:text-[32px]">
-            Unidades
-          </h1>
-          <p className="mt-1.5 text-sm text-muted-foreground">
-            {units.length} barbearia{units.length !== 1 ? "s" : ""} · gerir localizações
-          </p>
-        </div>
-        <Button
-          onClick={openNew}
-          className="shrink-0 bg-brand text-primary-foreground hover:bg-brand-hover"
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          Nova unidade
-        </Button>
-      </header>
+      <PageHeader
+        title="Unidades"
+        description={`${units.length} barbearia${
+          units.length !== 1 ? "s" : ""
+        } · gerir localizações`}
+        actions={
+          <Button
+            onClick={openNew}
+            className="bg-brand text-primary-foreground hover:bg-brand-hover"
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Nova unidade
+          </Button>
+        }
+      />
 
       <UnitsTable units={units} onEdit={openEdit} onAdd={openNew} />
 

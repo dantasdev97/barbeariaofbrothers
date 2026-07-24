@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Copy, ExternalLink, QrCode } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/admin/page-header";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -85,36 +86,36 @@ export function ClientDetail({
     <div>
       {children}
 
-      <header className="mb-6 flex flex-wrap items-end justify-between gap-4 border-b border-border pb-6">
-        <div>
-          <h1 className="font-heading text-[28px] font-semibold leading-none tracking-tight sm:text-[32px]">
-            {client.name}
-          </h1>
-          <p className="mt-1.5 font-mono text-sm text-muted-foreground">
-            {client.phone} · {client.email ?? "sem email"} ·{" "}
-            cadastrado em {unitName(client.unit_id)}
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={copyLink}>
-            <Copy className="mr-2 h-4 w-4" /> Link
-          </Button>
-          <a
-            href={cardUrl}
-            target="_blank"
-            rel="noopener"
-            className="inline-flex h-9 items-center gap-2 rounded-md border border-border bg-transparent px-3 text-sm font-medium transition hover:bg-background"
-          >
-            <ExternalLink className="h-4 w-4" /> Cartão
-          </a>
-          <Button
-            onClick={() => setAdjustOpen(true)}
-            className="bg-brand text-primary-foreground hover:bg-brand-hover"
-          >
-            Ajustar pontos
-          </Button>
-        </div>
-      </header>
+      <PageHeader
+        title={client.name}
+        description={
+          <span className="font-mono">
+            {client.phone} · {client.email ?? "sem email"} · cadastrado em{" "}
+            {unitName(client.unit_id)}
+          </span>
+        }
+        actions={
+          <>
+            <Button variant="outline" onClick={copyLink}>
+              <Copy className="mr-2 h-4 w-4" /> Link
+            </Button>
+            <a
+              href={cardUrl}
+              target="_blank"
+              rel="noopener"
+              className="inline-flex h-10 items-center gap-2 rounded-md border border-border bg-transparent px-3 text-sm font-medium transition-[background-color,transform] duration-150 ease-out-strong hover-fine:hover:bg-background active:scale-[0.97]"
+            >
+              <ExternalLink className="h-4 w-4" /> Cartão
+            </a>
+            <Button
+              onClick={() => setAdjustOpen(true)}
+              className="bg-brand text-primary-foreground hover:bg-brand-hover"
+            >
+              Ajustar pontos
+            </Button>
+          </>
+        }
+      />
 
       {/* Saldos por unidade */}
       <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -189,7 +190,7 @@ export function ClientDetail({
                 </div>
                 <div
                   className={`text-right font-mono font-semibold ${
-                    tx.points > 0 ? "text-green-400" : "text-red-400"
+                    tx.points > 0 ? "text-emerald-600" : "text-destructive"
                   }`}
                 >
                   {sign}

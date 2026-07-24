@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireRole } from "@/lib/admin-auth";
+import { PageHeader } from "@/components/admin/page-header";
 import { CardsExport } from "./cards-export";
 
 export default async function CartoesPage() {
@@ -16,15 +17,10 @@ export default async function CartoesPage() {
 
   return (
     <div>
-      <header className="mb-7 border-b border-border pb-6">
-        <h1 className="font-heading text-[28px] font-semibold leading-none tracking-tight">
-          Cartões para gráfica
-        </h1>
-        <p className="mt-1.5 text-sm text-muted-foreground">
-          Seleciona clientes e exporta uma folha A4 (8 cartões 85×54 mm) para imprimir.
-          Recomendado: imprimir em papel cartão 350g.
-        </p>
-      </header>
+      <PageHeader
+        title="Cartões para gráfica"
+        description="Seleciona clientes e exporta uma folha A4 (8 cartões 85×54 mm) para imprimir. Recomendado: imprimir em papel cartão 350g."
+      />
 
       <CardsExport clients={clients ?? []} units={units ?? []} />
     </div>

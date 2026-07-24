@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Plus, Trash2 } from "lucide-react";
+import { Gift, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -16,6 +16,9 @@ import {
 import { Field } from "@/components/admin/form-bits";
 import { PageHeader } from "@/components/admin/page-header";
 import { staggerIndex } from "@/lib/motion";
+import { EmptyState } from "@/components/admin/empty-state";
+import { ConfirmDialog } from "@/components/admin/confirm-dialog";
+import { DeleteAction, RowActions } from "@/components/admin/row-actions";
 import {
   deleteLoyaltyReward,
   saveLoyaltyReward,
@@ -34,6 +37,7 @@ export function RewardsManager({
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<LoyaltyRewardRow | null>(null);
+  const [toDelete, setToDelete] = useState<LoyaltyRewardRow | null>(null);
   const [pending, startTransition] = useTransition();
 
   const [unitId, setUnitId] = useState(units[0]?.id ?? "");
@@ -87,12 +91,13 @@ export function RewardsManager({
     });
   }
 
-  function remove(id: string) {
-    if (!confirm("Eliminar recompensa?")) return;
+  function confirmRemove() {
+    if (!toDelete) return;
     startTransition(async () => {
       try {
-        await deleteLoyaltyReward(id);
+        await deleteLoyaltyReward(toDelete.id);
         toast.success("Eliminada.");
+        setToDelete(null);
         router.refresh();
       } catch (err) {
         toast.error(err instanceof Error ? err.message : "Falhou.");
@@ -126,9 +131,20 @@ export function RewardsManager({
           <div></div>
         </div>
         {rewards.length === 0 ? (
-          <p className="px-6 py-12 text-center text-sm text-muted-foreground">
-            Sem recompensas.
-          </p>
+          <EmptyState
+            className="border-0"
+            icon={<Gift className="h-6 w-6" />}
+            title="Sem recompensas"
+            description="Crie a primeira recompensa para os clientes trocarem pontos."
+            action={
+              <Button
+                onClick={openNew}
+                className="bg-brand text-primary-foreground hover:bg-brand-hover"
+              >
+                <Plus className="mr-2 h-4 w-4" /> Nova recompensa
+              </Button>
+            }
+          />
         ) : (
           rewards.map((r, i) => (
             <div
@@ -155,24 +171,29 @@ export function RewardsManager({
                 <span
                   className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${
                     r.active
-                      ? "bg-green-500/10 text-green-400"
+                      ? "bg-emerald-500/15 text-emerald-600"
                       : "bg-muted text-muted-foreground"
                   }`}
                 >
                   {r.active ? "Activa" : "Inactiva"}
                 </span>
               </div>
-              <button
-                onClick={() => remove(r.id)}
-                className="text-muted-foreground hover:text-red-400"
-                aria-label="Eliminar"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
+              <RowActions>
+                <DeleteAction onClick={() => setToDelete(r)} label={r.name} />
+              </RowActions>
             </div>
           ))
         )}
       </div>
+
+      <ConfirmDialog
+        open={!!toDelete}
+        onOpenChange={(o) => { if (!o) setToDelete(null); }}
+        title="Eliminar recompensa"
+        description={`Eliminar "${toDelete?.name}"? Os resgates já feitos mantêm-se no histórico.`}
+        onConfirm={confirmRemove}
+        loading={pending}
+      />
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>

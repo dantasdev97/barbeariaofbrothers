@@ -83,7 +83,7 @@ export function CategoriesManager({
               id="cat-unit"
               value={unitId}
               onChange={(e) => setUnitId(e.target.value)}
-              className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground transition focus:outline-none focus:ring-2 focus:ring-brand"
+              className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground transition-[box-shadow,border-color] duration-150 ease-out-strong focus:outline-none focus:ring-2 focus:ring-brand"
             >
               {units.map((u) => (
                 <option key={u.id} value={u.id} className="bg-background">
@@ -153,7 +153,7 @@ export function CategoriesManager({
               {filtered.map((c) => (
                 <li
                   key={c.id}
-                  className="flex items-center justify-between py-3.5 transition hover:bg-background/50 -mx-2 px-2 rounded-lg"
+                  className="flex items-center justify-between py-3.5 transition-colors duration-150 hover-fine:hover:bg-background/50 -mx-2 px-2 rounded-lg"
                 >
                   <div>
                     <p className="text-sm font-medium">{c.name}</p>

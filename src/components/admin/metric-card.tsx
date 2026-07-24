@@ -1,15 +1,8 @@
 "use client";
 
-import { useEffect, type ReactNode } from "react";
-import {
-  motion,
-  useMotionValue,
-  useReducedMotion,
-  useSpring,
-  useTransform,
-} from "framer-motion";
+import { type ReactNode } from "react";
 import { cn } from "@/lib/utils";
-import { COUNT_SPRING } from "@/lib/motion";
+import { AnimatedNumber } from "@/components/admin/animated-number";
 
 export type MetricTone = "brand" | "green" | "blue" | "mute";
 
@@ -41,34 +34,6 @@ const TONE: Record<MetricTone, { badge: string; line: string; icon: string }> = 
     icon: "bg-muted text-muted-foreground",
   },
 };
-
-/**
- * Número que conta até ao valor final.
- *
- * Aqui o JS justifica-se: o valor é dinâmico e vem do servidor, não dá para
- * exprimir em keyframes. `tabular-nums` é obrigatório — sem isso os dígitos
- * têm larguras diferentes e o número treme enquanto conta.
- *
- * A marcação é sempre a mesma, com ou sem movimento reduzido. Ramificar o
- * JSX em `useReducedMotion()` rebenta a hidratação: o servidor não conhece a
- * preferência do utilizador e renderia uma árvore diferente da do cliente.
- * Com movimento reduzido saltamos direitos ao valor, sem contar.
- */
-function AnimatedNumber({ value }: { value: number }) {
-  const reduced = useReducedMotion();
-  const source = useMotionValue(0);
-  const spring = useSpring(source, COUNT_SPRING);
-  const text = useTransform(spring, (v) =>
-    Math.round(v).toLocaleString("pt-PT"),
-  );
-
-  useEffect(() => {
-    source.set(value);
-    if (reduced) spring.jump(value);
-  }, [reduced, source, spring, value]);
-
-  return <motion.span>{text}</motion.span>;
-}
 
 /**
  * Constrói os paths do sparkline num viewBox 100×32.

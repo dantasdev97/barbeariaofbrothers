@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import Image from "next/image";
 import type { UnitRow } from "@/types/database.types";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/admin/page-header";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -31,7 +32,7 @@ function CopyButton({ value }: { value: string }) {
     <button
       type="button"
       onClick={copy}
-      className="inline-flex items-center gap-1 rounded-md border border-border bg-muted px-2 py-1 text-xs font-medium text-muted-foreground transition hover:bg-border"
+      className="inline-flex items-center gap-1 rounded-md border border-border bg-muted px-2 py-1 text-xs font-medium text-muted-foreground transition-colors duration-150 hover-fine:hover:bg-border"
     >
       {copied ? <Check className="h-3 w-3 text-green-600" /> : <Copy className="h-3 w-3" />}
       {copied ? "Copiado" : "Copiar URL"}
@@ -42,7 +43,6 @@ function CopyButton({ value }: { value: string }) {
 function FaviconUpload() {
   const [faviconUrl, setFaviconUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
-  const inputRef = useState<HTMLInputElement | null>(null);
 
   async function handleFile(file: File) {
     if (!file.type.startsWith("image/")) {
@@ -75,7 +75,7 @@ function FaviconUpload() {
         </div>
         <div className="flex-1">
           <label className="cursor-pointer">
-            <span className="inline-flex items-center gap-2 rounded-lg border border-border bg-white px-4 py-2 text-sm font-medium text-foreground transition hover:bg-muted">
+            <span className="inline-flex items-center gap-2 rounded-lg border border-border bg-bg-surface px-4 py-2 text-sm font-medium text-foreground transition-colors duration-150 hover-fine:hover:bg-muted">
               {uploading ? "A carregar…" : "Escolher favicon"}
             </span>
             <input
@@ -173,14 +173,10 @@ export function ConfigClient({ units }: { units: UnitRow[] }) {
 
   return (
     <div>
-      <header className="mb-7 border-b border-border pb-6">
-        <h1 className="font-heading text-[32px] font-semibold leading-none tracking-tight">
-          Configurações
-        </h1>
-        <p className="mt-1.5 text-sm text-muted-foreground">
-          Logo, SEO e informações — geridos por unidade.
-        </p>
-      </header>
+      <PageHeader
+        title="Configurações"
+        description="Logo, SEO e informações — geridos por unidade."
+      />
 
       {/* Per-unit cards */}
       <div className="mb-10 space-y-6">
@@ -191,7 +187,7 @@ export function ConfigClient({ units }: { units: UnitRow[] }) {
           return (
             <div
               key={u.id}
-              className="overflow-hidden rounded-2xl border border-border bg-white shadow-sm"
+              className="overflow-hidden rounded-2xl border border-border bg-bg-surface shadow-sm"
             >
               {/* Card header */}
               <div className="flex items-center gap-4 border-b border-border px-4 py-4 sm:px-6">
@@ -222,8 +218,8 @@ export function ConfigClient({ units }: { units: UnitRow[] }) {
                     <span
                       className={`inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
                         u.active
-                          ? "bg-green-50 text-green-700"
-                          : "bg-red-50 text-red-700"
+                          ? "bg-emerald-500/15 text-emerald-600"
+                          : "bg-muted text-muted-foreground"
                       }`}
                     >
                       {u.active ? "Activa" : "Inactiva"}
@@ -332,7 +328,7 @@ export function ConfigClient({ units }: { units: UnitRow[] }) {
       </div>
 
       {/* Global config */}
-      <div className="rounded-2xl border border-border bg-white p-6 sm:p-8">
+      <div className="rounded-2xl border border-border bg-bg-surface p-6 sm:p-8">
         <div className="mb-6 flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand/10">
             <Settings2 className="h-5 w-5 text-brand" />

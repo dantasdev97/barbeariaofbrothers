@@ -97,14 +97,17 @@ export function AdminSidebar({ email, role }: Props) {
           native && "pt-[env(safe-area-inset-top)] box-content",
         )}
       >
-        <Link href="/admin" className="flex items-center gap-2">
+        <Link
+          href="/admin"
+          className="-ml-1 flex min-h-11 items-center gap-2 rounded-lg px-1"
+        >
           <Image src="/logo.png" alt="" width={28} height={28} />
           <span className="font-heading text-sm font-semibold">Admin</span>
         </Link>
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="inline-flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground transition-[background-color,transform] duration-150 ease-out-strong hover:bg-muted hover:text-foreground active:scale-[0.92]"
+          className="inline-flex h-11 w-11 items-center justify-center rounded-full text-muted-foreground transition-[background-color,transform] duration-150 ease-out-strong hover-fine:hover:bg-muted hover-fine:hover:text-foreground active:scale-[0.92]"
           aria-label="Abrir menu"
           aria-expanded={open}
         >
@@ -144,7 +147,7 @@ export function AdminSidebar({ email, role }: Props) {
             <Link
               href="/admin"
               onClick={() => setOpen(false)}
-              className="flex items-center gap-2"
+              className="-ml-1 flex min-h-11 items-center gap-2 rounded-lg px-1"
             >
               <Image src="/logo.png" alt="" width={28} height={28} />
               <span className="font-heading text-sm font-semibold">Admin</span>
@@ -152,7 +155,7 @@ export function AdminSidebar({ email, role }: Props) {
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground transition-[background-color,transform] duration-150 ease-out-strong hover:bg-muted hover:text-foreground active:scale-[0.92]"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-full text-muted-foreground transition-[background-color,transform] duration-150 ease-out-strong hover-fine:hover:bg-muted hover-fine:hover:text-foreground active:scale-[0.92]"
               aria-label="Fechar"
             >
               <X className="h-[18px] w-[18px]" />
