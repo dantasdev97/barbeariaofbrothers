@@ -2,6 +2,11 @@ import { Camera, Scissors, UserPlus } from "lucide-react";
 import { staggerIndex } from "@/lib/motion";
 import type { LoyaltyServiceRow } from "@/types/database.types";
 
+export type EarnListBonuses = {
+  signup: { points: number; active: boolean };
+  instagram: { points: number; active: boolean };
+};
+
 /**
  * "Formas de ganhar" — partilhada entre `/programa` (quem ainda não tem
  * conta) e `/minha-conta` (quem acabou de criar).
@@ -12,39 +17,43 @@ import type { LoyaltyServiceRow } from "@/types/database.types";
  */
 export function EarnList({
   services,
-  showBonuses = true,
+  bonuses,
   className,
 }: {
   services: LoyaltyServiceRow[];
   /**
-   * Os bónus de registo e Instagram só interessam a quem ainda não os tem.
-   * No cartão são desligados: lá o Instagram já tem um botão próprio, que
-   * atribui os pontos, e repeti-lo aqui daria a entender que há dois.
+   * Pontos reais dos bónus de registo/Instagram, configurados por unidade
+   * em `/admin/fidelidade/bonus`. `undefined`/`null` esconde as duas
+   * linhas — usado no cartão, onde o bónus de registo já foi dado e o do
+   * Instagram tem um botão próprio, que atribui os pontos; repeti-lo aqui
+   * daria a entender que há dois.
    */
-  showBonuses?: boolean;
+  bonuses?: EarnListBonuses | null;
   className?: string;
 }) {
-  const offset = showBonuses ? 2 : 0;
+  const showSignup = !!bonuses?.signup.active;
+  const showInstagram = !!bonuses?.instagram.active;
+  const offset = (showSignup ? 1 : 0) + (showInstagram ? 1 : 0);
 
   return (
     <div
       className={`stagger overflow-hidden rounded-2xl border border-border bg-bg-surface ${className ?? ""}`}
     >
-      {showBonuses && (
-        <>
-          <EarnRow
-            index={0}
-            icon={<UserPlus className="h-5 w-5" />}
-            title="Criar conta"
-            detail="50 pontos de boas-vindas"
-          />
-          <EarnRow
-            index={1}
-            icon={<Camera className="h-5 w-5" />}
-            title="Seguir no Instagram"
-            detail="30 pontos"
-          />
-        </>
+      {showSignup && (
+        <EarnRow
+          index={0}
+          icon={<UserPlus className="h-5 w-5" />}
+          title="Criar conta"
+          detail={`${bonuses!.signup.points} pontos de boas-vindas`}
+        />
+      )}
+      {showInstagram && (
+        <EarnRow
+          index={showSignup ? 1 : 0}
+          icon={<Camera className="h-5 w-5" />}
+          title="Seguir no Instagram"
+          detail={`${bonuses!.instagram.points} pontos`}
+        />
       )}
       {services.map((s, i) => (
         <EarnRow

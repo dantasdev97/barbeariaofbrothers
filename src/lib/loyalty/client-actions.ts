@@ -130,6 +130,11 @@ export async function grantBonus(
 // Leituras
 // ---------------------------------------------------------------------
 
+export type ClientBonuses = {
+  signup: { points: number; active: boolean };
+  instagram: { points: number; active: boolean };
+};
+
 export type ClientAccount = {
   client: ClientRow;
   unit: UnitRow | null;
@@ -139,6 +144,7 @@ export type ClientAccount = {
   rewards: LoyaltyRewardRow[];
   services: LoyaltyServiceRow[];
   claimedBonuses: LoyaltyBonusKind[];
+  bonuses: ClientBonuses;
 };
 
 /**
@@ -164,7 +170,7 @@ export async function getMyAccount(): Promise<ClientAccount | null> {
   if (!client) return null;
   const c = client as ClientRow;
 
-  const [balances, txs, coupons, rewards, services, unit] = await Promise.all([
+  const [balances, txs, coupons, rewards, services, unit, bonusRows] = await Promise.all([
     sb.from("client_unit_balances").select("unit_id, balance").eq("client_id", c.id),
     sb
       .from("loyalty_transactions")
@@ -191,12 +197,33 @@ export async function getMyAccount(): Promise<ClientAccount | null> {
       .eq("active", true)
       .order("display_order"),
     sb.from("units").select("*").eq("id", c.unit_id).maybeSingle(),
+    sb
+      .from("loyalty_bonuses")
+      .select("kind, points, active")
+      .eq("unit_id", c.unit_id),
   ]);
 
   const balance =
     (balances.data ?? []).find((b) => b.unit_id === c.unit_id)?.balance ?? 0;
 
   const transactions = (txs.data ?? []) as LoyaltyTransactionRow[];
+
+  // RLS só devolve linhas activas (política pública de leitura) — sem
+  // linha significa desactivado ou ainda por configurar, nunca "50/30
+  // por omissão": quem configura no painel é o dono, não este ficheiro.
+  const bonusList = (bonusRows.data ?? []) as {
+    kind: LoyaltyBonusKind;
+    points: number;
+    active: boolean;
+  }[];
+  const findBonus = (kind: LoyaltyBonusKind) => bonusList.find((b) => b.kind === kind);
+  const bonuses: ClientBonuses = {
+    signup: { points: findBonus("signup")?.points ?? 50, active: findBonus("signup")?.active ?? false },
+    instagram: {
+      points: findBonus("instagram")?.points ?? 30,
+      active: findBonus("instagram")?.active ?? false,
+    },
+  };
 
   return {
     client: c,
@@ -209,5 +236,6 @@ export async function getMyAccount(): Promise<ClientAccount | null> {
     claimedBonuses: transactions
       .map((t) => t.bonus_kind)
       .filter((k): k is LoyaltyBonusKind => !!k),
+    bonuses,
   };
 }

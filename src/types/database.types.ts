@@ -157,6 +157,16 @@ export type LoyaltyTxType = "earn" | "redeem" | "adjust" | "bonus";
 /** Bónus atribuíveis uma única vez por cliente. */
 export type LoyaltyBonusKind = "signup" | "instagram";
 
+/** Pontos de bónus por unidade — editável em /admin/fidelidade/bonus (0008). */
+export type LoyaltyBonusRow = {
+  id: string;
+  unit_id: string;
+  kind: LoyaltyBonusKind;
+  points: number;
+  active: boolean;
+  created_at: string;
+};
+
 export type LoyaltyTransactionRow = {
   id: string;
   client_id: string;
@@ -236,6 +246,7 @@ export interface Database {
       loyalty_rewards: { Row: LoyaltyRewardRow; Insert: Insert<LoyaltyRewardRow>; Update: Partial<LoyaltyRewardRow>; Relationships: [] };
       loyalty_transactions: { Row: LoyaltyTransactionRow; Insert: Insert<LoyaltyTransactionRow>; Update: Partial<LoyaltyTransactionRow>; Relationships: [] };
       loyalty_coupons: { Row: LoyaltyCouponRow; Insert: Insert<LoyaltyCouponRow>; Update: Partial<LoyaltyCouponRow>; Relationships: [] };
+      loyalty_bonuses: { Row: LoyaltyBonusRow; Insert: Insert<LoyaltyBonusRow>; Update: Partial<LoyaltyBonusRow>; Relationships: [] };
     };
     Views: {
       client_unit_balances: { Row: ClientUnitBalanceRow; Relationships: [] };

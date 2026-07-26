@@ -195,6 +195,32 @@ export async function deleteLoyaltyReward(id: string) {
 }
 
 // ---------------------------------------------------------------------
+// LOYALTY BONUSES (registo / Instagram) — editável por unidade
+// ---------------------------------------------------------------------
+
+type BonusInput = {
+  unit_id: string;
+  signup: { points: number; active: boolean };
+  instagram: { points: number; active: boolean };
+};
+
+export async function saveLoyaltyBonuses(input: BonusInput) {
+  await requireRole(["super_admin", "manager"]);
+  const sb = createAdminClient();
+  const { error } = await sb.from("loyalty_bonuses").upsert(
+    [
+      { unit_id: input.unit_id, kind: "signup", points: input.signup.points, active: input.signup.active },
+      { unit_id: input.unit_id, kind: "instagram", points: input.instagram.points, active: input.instagram.active },
+    ],
+    { onConflict: "unit_id,kind" },
+  );
+  if (error) throw new Error(error.message);
+  bust();
+  revalidatePath("/programa");
+  revalidatePath("/minha-conta");
+}
+
+// ---------------------------------------------------------------------
 // LINK barbeiro <-> auth user
 // ---------------------------------------------------------------------
 

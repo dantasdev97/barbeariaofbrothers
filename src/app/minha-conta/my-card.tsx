@@ -22,7 +22,7 @@ export function MyCard({ account }: { account: ClientAccount }) {
   /** O cupom acabado de emitir, mostrado em destaque antes de ir para a lista. */
   const [fresh, setFresh] = useState<LoyaltyCouponRow | null>(null);
 
-  const { client, unit, balance, rewards, services, coupons, transactions, claimedBonuses } =
+  const { client, unit, balance, rewards, services, coupons, transactions, claimedBonuses, bonuses } =
     account;
 
   const activeCoupons = coupons.filter((c) => c.status === "active");
@@ -58,7 +58,7 @@ export function MyCard({ account }: { account: ClientAccount }) {
         toast.error(result.error);
         return;
       }
-      toast.success("+30 pontos. Obrigado!");
+      toast.success(`+${bonuses.instagram.points} pontos. Obrigado!`);
       router.refresh();
     });
   }
@@ -234,7 +234,7 @@ export function MyCard({ account }: { account: ClientAccount }) {
       </section>
 
       {/* Bónus por reclamar */}
-      {!claimedBonuses.includes("instagram") && (
+      {!claimedBonuses.includes("instagram") && bonuses.instagram.active && (
         <section className="mt-6">
           <button
             onClick={claimInstagram}
@@ -253,7 +253,7 @@ export function MyCard({ account }: { account: ClientAccount }) {
                 Seguir no Instagram
               </p>
               <p className="mt-0.5 text-[12.5px] text-muted-foreground">
-                +30 pontos, uma vez
+                +{bonuses.instagram.points} pontos, uma vez
               </p>
             </div>
           </button>
@@ -267,7 +267,7 @@ export function MyCard({ account }: { account: ClientAccount }) {
           <h2 className="font-heading text-[20px] font-semibold tracking-tight">
             Como ganhar pontos
           </h2>
-          <EarnList services={services} showBonuses={false} className="mt-4" />
+          <EarnList services={services} className="mt-4" />
           <p className="mt-3 text-[13px] leading-relaxed text-muted-foreground">
             Mostre o QR acima ao barbeiro no fim do atendimento.
           </p>

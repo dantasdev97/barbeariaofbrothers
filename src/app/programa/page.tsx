@@ -6,8 +6,9 @@ import { createClient } from "@/lib/supabase/server";
 import { getAllUnits, getUnitBySlug } from "@/lib/data";
 import { GoogleSignInButton } from "@/components/cliente/google-signin-button";
 import { EarnList } from "@/components/cliente/earn-list";
+import type { EarnListBonuses } from "@/components/cliente/earn-list";
 import { RewardsList } from "@/components/cliente/rewards-list";
-import type { LoyaltyRewardRow, LoyaltyServiceRow } from "@/types/database.types";
+import type { LoyaltyBonusKind, LoyaltyRewardRow, LoyaltyServiceRow } from "@/types/database.types";
 
 export const dynamic = "force-dynamic";
 
@@ -40,9 +41,10 @@ export default async function ProgramaPage({
 
   let services: LoyaltyServiceRow[] = [];
   let rewards: LoyaltyRewardRow[] = [];
+  let bonuses: EarnListBonuses | null = null;
 
   if (sb && unit) {
-    const [s, r] = await Promise.all([
+    const [s, r, b] = await Promise.all([
       sb
         .from("loyalty_services")
         .select("*")
@@ -55,9 +57,22 @@ export default async function ProgramaPage({
         .eq("unit_id", unit.id)
         .eq("active", true)
         .order("points_cost"),
+      sb.from("loyalty_bonuses").select("kind, points, active").eq("unit_id", unit.id),
     ]);
     services = (s.data ?? []) as LoyaltyServiceRow[];
     rewards = (r.data ?? []) as LoyaltyRewardRow[];
+
+    // RLS só devolve linhas activas: sem linha é desactivado, nunca 50/30
+    // por omissão — quem decide o valor é o painel, não esta página.
+    const bonusList = (b.data ?? []) as { kind: LoyaltyBonusKind; points: number; active: boolean }[];
+    const findBonus = (kind: LoyaltyBonusKind) => bonusList.find((x) => x.kind === kind);
+    bonuses = {
+      signup: { points: findBonus("signup")?.points ?? 50, active: findBonus("signup")?.active ?? false },
+      instagram: {
+        points: findBonus("instagram")?.points ?? 30,
+        active: findBonus("instagram")?.active ?? false,
+      },
+    };
   }
 
   // Quem já entrou não precisa de ver o convite outra vez.
@@ -116,7 +131,7 @@ export default async function ProgramaPage({
           <h2 className="font-heading text-[22px] font-semibold tracking-tight">
             Formas de ganhar
           </h2>
-          <EarnList services={services} className="mt-5" />
+          <EarnList services={services} bonuses={bonuses} className="mt-5" />
           <p className="mt-3 text-[13px] leading-relaxed text-muted-foreground">
             Os pontos dos serviços entram quando o barbeiro escaneia o QR do
             seu cartão, no fim do atendimento.
