@@ -41,17 +41,30 @@ export default async function MinhaContaPage({
   // `revalidatePath`, que o Next não permite durante o render de uma
   // página. A RPC é idempotente (0007 devolve o cartão existente se já
   // houver um para este `auth_user_id`), por isso não duplica nada.
-  if (!account && unidade) {
-    const unit = await getUnitBySlug(unidade);
-    if (unit) {
-      const { error } = await sb.rpc("loyalty_create_card", {
-        p_unit_id: unit.id,
-        p_name: null,
-      });
-      if (error) {
-        console.error("[minha-conta] criação automática do cartão falhou", error);
+  //
+  // `autoError` guarda porque é que falhou. Sem isto o ecrã caía calado no
+  // selector de unidades e não havia como saber se o problema foi a unidade
+  // não ter chegado ou a base ter recusado — que são causas opostas.
+  let autoError: string | null = null;
+
+  if (!account) {
+    if (!unidade) {
+      autoError = "não recebi a barbearia de onde veio";
+    } else {
+      const unit = await getUnitBySlug(unidade);
+      if (!unit) {
+        autoError = `a barbearia "${unidade}" não foi encontrada`;
       } else {
-        account = await getMyAccount();
+        const { error } = await sb.rpc("loyalty_create_card", {
+          p_unit_id: unit.id,
+          p_name: null,
+        });
+        if (error) {
+          console.error("[minha-conta] criação automática do cartão falhou", error);
+          autoError = error.message;
+        } else {
+          account = await getMyAccount();
+        }
       }
     }
   }
@@ -69,6 +82,7 @@ export default async function MinhaContaPage({
           user.email?.split("@")[0] ??
           ""
         }
+        autoError={autoError}
       />
     );
     if (!fallbackUnit) return <main className="flex-1">{start}</main>;

@@ -22,9 +22,16 @@ type UnitLite = { id: string; name: string };
 export function StartCard({
   units,
   defaultName,
+  autoError,
 }: {
   units: UnitLite[];
   defaultName: string;
+  /**
+   * Porque é que o cartão não nasceu sozinho. Este ecrã só devia aparecer a
+   * quem entrou sem trazer a barbearia; sempre que aparece a mais, é aqui
+   * que se vê a razão em vez de ficar só nos registos do servidor.
+   */
+  autoError?: string | null;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -59,6 +66,21 @@ export function StartCard({
             O seu cartão é criado na hora e já entra com pontos de boas-vindas.
           </p>
         </header>
+
+        {autoError && (
+          <div
+            {...staggerIndex(1)}
+            className="mt-6 rounded-xl border border-border bg-bg-surface p-4 text-left text-[12.5px] leading-relaxed text-muted-foreground"
+          >
+            <p>
+              Devia ter chegado directamente ao seu cartão. Escolha a
+              barbearia aqui em baixo — funciona à mesma.
+            </p>
+            <p className="mt-2 font-mono text-[11.5px] opacity-70">
+              motivo: {autoError}
+            </p>
+          </div>
+        )}
 
         <div
           {...staggerIndex(1)}
