@@ -2,8 +2,8 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { Sparkles } from "lucide-react";
 import { createPublicClient } from "@/lib/supabase/public";
-import { createClient } from "@/lib/supabase/server";
 import { getAllUnits, getUnitBySlug } from "@/lib/data";
+import { getCardState } from "@/lib/loyalty/session";
 import { ClientShell } from "@/components/cliente/client-shell";
 import { GoogleSignInButton } from "@/components/cliente/google-signin-button";
 import { EarnList } from "@/components/cliente/earn-list";
@@ -76,11 +76,10 @@ export default async function ProgramaPage({
     };
   }
 
-  // Quem já entrou não precisa de ver o convite outra vez.
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Quem já entrou não precisa de ver o convite outra vez. `hasCard` é o
+  // que decide: ter sessão sem cartão ainda precisa do convite, porque o
+  // cartão é que é o produto — não a conta.
+  const { hasCard } = await getCardState();
 
   // Leva a unidade até ao outro lado do login: com ela, `/minha-conta` cria
   // o cartão sozinho e a pessoa aterra nele, em vez de num ecrã a perguntar
@@ -105,7 +104,7 @@ export default async function ProgramaPage({
           </p>
 
           <div className="mt-8">
-            {user ? (
+            {hasCard ? (
               <Link
                 href="/minha-conta"
                 className="inline-flex min-h-12 w-full items-center justify-center rounded-xl bg-brand px-6 text-[15px] font-semibold text-[#0e0a07] transition-[opacity,transform] duration-150 ease-out-strong hover-fine:hover:opacity-90 active:scale-[0.98]"
@@ -157,7 +156,7 @@ export default async function ProgramaPage({
 
         {/* Fecho para quem ainda não entrou. A LB faz o mesmo no fim da
          * lista: a pessoa acabou de ver o que ganha, é ali que decide. */}
-        {!user && (
+        {!hasCard && (
           <section className="rounded-2xl bg-foreground p-7 text-center text-background">
             <h2 className="font-heading text-[22px] font-semibold leading-tight tracking-tight">
               Comece a ganhar hoje
@@ -184,7 +183,7 @@ export default async function ProgramaPage({
   if (!unit) return <main className="flex-1">{content}</main>;
 
   return (
-    <ClientShell unit={unit} units={units}>
+    <ClientShell unit={unit} units={units} hasCard={hasCard}>
       {content}
     </ClientShell>
   );

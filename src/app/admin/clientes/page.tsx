@@ -25,11 +25,13 @@ export default async function ClientesPage({
     (() => {
       let query = sb
         .from("clients")
-        .select("id, name, phone, qr_token, unit_id, created_at")
+        .select("id, name, phone, email, auth_user_id, qr_token, unit_id, created_at")
         .order("created_at", { ascending: false })
         .limit(200);
       if (q) {
-        query = query.or(`name.ilike.%${q}%,phone.ilike.%${q}%`);
+        // Email entra na procura: quem se regista pela Google não deixa
+        // telefone, e sem isto não havia como encontrar essas pessoas.
+        query = query.or(`name.ilike.%${q}%,phone.ilike.%${q}%,email.ilike.%${q}%`);
       }
       if (unit) query = query.eq("unit_id", unit);
       return query;
@@ -66,6 +68,10 @@ export default async function ClientesPage({
       id: c.id,
       name: c.name,
       phone: c.phone,
+      email: c.email,
+      // Criado pelo próprio, entrando com a Google — por oposição aos que o
+      // barbeiro cadastrou à mão no painel.
+      selfRegistered: !!c.auth_user_id,
       unitName: unitNameById.get(c.unit_id) ?? "—",
       points: balances.get(c.id) ?? 0,
       lastVisit: last
@@ -108,7 +114,7 @@ export default async function ClientesPage({
           <Input
             name="q"
             defaultValue={q ?? ""}
-            placeholder="Buscar por nome ou telefone…"
+            placeholder="Buscar por nome, telefone ou email…"
             className="h-11 pl-9"
           />
         </div>

@@ -19,15 +19,18 @@ import type { UnitRow } from "@/types/database.types";
 export function ClientShell({
   unit,
   units,
+  hasCard = false,
   children,
 }: {
   unit: UnitRow;
   units: UnitRow[];
+  /** Estas páginas já sabem a resposta sem consultar nada: passam-na ao nav. */
+  hasCard?: boolean;
   children: React.ReactNode;
 }) {
   return (
     <>
-      <Header unit={unit} units={units} />
+      <Header unit={unit} units={units} hasCard={hasCard} />
       {/* Coluna flex (o layout público usa só `flex-1`): o `/entrar` é curto
        * e sem isto sobrava um vazio entre o conteúdo e o rodapé em ecrãs
        * altos. Assim o conteúdo cresce e o rodapé assenta no fundo. */}

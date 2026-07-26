@@ -73,7 +73,7 @@ export default async function MinhaContaPage({
     );
     if (!fallbackUnit) return <main className="flex-1">{start}</main>;
     return (
-      <ClientShell unit={fallbackUnit} units={units}>
+      <ClientShell unit={fallbackUnit} units={units} hasCard={false}>
         {start}
       </ClientShell>
     );
@@ -84,7 +84,7 @@ export default async function MinhaContaPage({
   if (!shellUnit) return <main className="flex-1">{card}</main>;
 
   return (
-    <ClientShell unit={shellUnit} units={units}>
+    <ClientShell unit={shellUnit} units={units} hasCard>
       {card}
     </ClientShell>
   );
