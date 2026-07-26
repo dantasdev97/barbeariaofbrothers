@@ -4,6 +4,8 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { AlertCircle, ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { getAllUnits, getUnitBySlug } from "@/lib/data";
+import { ClientShell } from "@/components/cliente/client-shell";
 import { GoogleSignInButton } from "@/components/cliente/google-signin-button";
 
 export const dynamic = "force-dynamic";
@@ -24,11 +26,16 @@ export const metadata: Metadata = {
 export default async function EntrarPage({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string; erro?: string }>;
+  searchParams: Promise<{ next?: string; erro?: string; unidade?: string }>;
 }) {
-  const { next, erro } = await searchParams;
+  const { next, erro, unidade } = await searchParams;
+
+  // Quem chega aqui a partir de uma unidade traz o slug: sem ele, o destino
+  // por omissão é o `/minha-conta` sem contexto, e a pessoa acaba no ecrã a
+  // escolher a barbearia de onde veio.
+  const fallbackNext = unidade ? `/minha-conta?unidade=${unidade}` : "/minha-conta";
   const safeNext =
-    next && next.startsWith("/") && !next.startsWith("//") ? next : "/minha-conta";
+    next && next.startsWith("/") && !next.startsWith("//") ? next : fallbackNext;
 
   // Já autenticado: não faz sentido mostrar o ecrã de entrada.
   const supabase = await createClient();
@@ -37,11 +44,17 @@ export default async function EntrarPage({
   } = await supabase.auth.getUser();
   if (user) redirect(safeNext);
 
-  return (
-    <main className="flex min-h-[100dvh] flex-col bg-background">
+  const [unit, units] = await Promise.all([
+    unidade ? getUnitBySlug(unidade) : Promise.resolve(null),
+    getAllUnits(),
+  ]);
+  const shellUnit = unit ?? units[0] ?? null;
+
+  const content = (
+    <div className="flex min-h-[60vh] flex-1 flex-col bg-background">
       <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-6 py-12">
         <Link
-          href="/programa"
+          href={unidade ? `/programa?unidade=${unidade}` : "/programa"}
           className="mb-8 -ml-2 inline-flex min-h-11 items-center self-start rounded-lg px-2 text-sm text-muted-foreground transition-colors duration-150 hover-fine:hover:text-foreground"
         >
           <ArrowLeft className="mr-1.5 h-4 w-4" />
@@ -88,6 +101,14 @@ export default async function EntrarPage({
           </p>
         </div>
       </div>
-    </main>
+    </div>
+  );
+
+  if (!shellUnit) return <main className="flex-1">{content}</main>;
+
+  return (
+    <ClientShell unit={shellUnit} units={units}>
+      {content}
+    </ClientShell>
   );
 }

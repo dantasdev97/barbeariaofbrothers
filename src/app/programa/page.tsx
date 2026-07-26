@@ -4,6 +4,7 @@ import { Sparkles } from "lucide-react";
 import { createPublicClient } from "@/lib/supabase/public";
 import { createClient } from "@/lib/supabase/server";
 import { getAllUnits, getUnitBySlug } from "@/lib/data";
+import { ClientShell } from "@/components/cliente/client-shell";
 import { GoogleSignInButton } from "@/components/cliente/google-signin-button";
 import { EarnList } from "@/components/cliente/earn-list";
 import type { EarnListBonuses } from "@/components/cliente/earn-list";
@@ -81,8 +82,13 @@ export default async function ProgramaPage({
     data: { user },
   } = await supabase.auth.getUser();
 
-  return (
-    <main className="min-h-[100dvh] bg-background">
+  // Leva a unidade até ao outro lado do login: com ela, `/minha-conta` cria
+  // o cartão sozinho e a pessoa aterra nele, em vez de num ecrã a perguntar
+  // outra vez qual é a barbearia de onde acabou de vir.
+  const signInNext = unit ? `/minha-conta?unidade=${unit.slug}` : "/minha-conta";
+
+  const content = (
+    <div className="flex-1 bg-background">
       {/* Hero */}
       <section className="bg-foreground px-6 pb-16 pt-14 text-background">
         <div className="mx-auto max-w-xl page-enter">
@@ -109,13 +115,16 @@ export default async function ProgramaPage({
             ) : (
               <>
                 <GoogleSignInButton
-                  next="/minha-conta"
+                  next={signInNext}
                   label="Criar conta grátis"
                   className="border-transparent bg-brand text-[#0e0a07] hover-fine:hover:opacity-90"
                 />
                 <p className="mt-3 text-center text-[13px] text-background/60">
                   Já tem conta?{" "}
-                  <Link href="/entrar" className="font-semibold text-brand underline underline-offset-2">
+                  <Link
+                    href={unit ? `/entrar?unidade=${unit.slug}` : "/entrar"}
+                    className="font-semibold text-brand underline underline-offset-2"
+                  >
                     Iniciar sessão
                   </Link>
                 </p>
@@ -159,7 +168,7 @@ export default async function ProgramaPage({
             </p>
             <div className="mt-6">
               <GoogleSignInButton
-                next="/minha-conta"
+                next={signInNext}
                 label="Criar conta grátis"
                 className="border-transparent bg-brand text-[#0e0a07] hover-fine:hover:opacity-90"
               />
@@ -167,7 +176,17 @@ export default async function ProgramaPage({
           </section>
         )}
       </div>
-    </main>
+    </div>
+  );
+
+  // Sem unidade não há cabeçalho nem rodapé para montar (ambos são por
+  // unidade). Só acontece com a base vazia; a página continua a abrir.
+  if (!unit) return <main className="flex-1">{content}</main>;
+
+  return (
+    <ClientShell unit={unit} units={units}>
+      {content}
+    </ClientShell>
   );
 }
 
