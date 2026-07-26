@@ -106,11 +106,15 @@ export type ClientRow = {
   id: string;
   unit_id: string;
   name: string;
-  phone: string;
+  /** Opcional desde 0007: quem se regista pelo Google dá email, não telefone. */
+  phone: string | null;
   email: string | null;
   qr_token: string;
   public_slug: string;
   notes: string | null;
+  /** Conta do cliente, quando ele reclamou o cartão. */
+  auth_user_id: string | null;
+  claimed_at: string | null;
   created_at: string;
 };
 
@@ -124,17 +128,34 @@ export type LoyaltyServiceRow = {
   created_at: string;
 };
 
+/**
+ * Tipo de recompensa:
+ *  service → um serviço do menu (corte, sobrancelha, depilação de nariz)
+ *  amount  → desconto de valor fixo, em cêntimos
+ *  percent → desconto percentual
+ *  gift    → brinde da marca (boné, t-shirt)
+ */
+export type LoyaltyRewardKind = "service" | "amount" | "percent" | "gift";
+
 export type LoyaltyRewardRow = {
   id: string;
   unit_id: string;
   name: string;
   description: string | null;
   points_cost: number;
+  kind: LoyaltyRewardKind;
+  /** Só para kind = "amount". Cêntimos: 1000 = 10 €. */
+  value_cents: number | null;
+  /** Só para kind = "percent". 10 = 10 %. */
+  percent: number | null;
   active: boolean;
   created_at: string;
 };
 
-export type LoyaltyTxType = "earn" | "redeem" | "adjust";
+export type LoyaltyTxType = "earn" | "redeem" | "adjust" | "bonus";
+
+/** Bónus atribuíveis uma única vez por cliente. */
+export type LoyaltyBonusKind = "signup" | "instagram";
 
 export type LoyaltyTransactionRow = {
   id: string;
@@ -146,7 +167,31 @@ export type LoyaltyTransactionRow = {
   points: number;
   service_id: string | null;
   reward_id: string | null;
+  bonus_kind: LoyaltyBonusKind | null;
   note: string | null;
+  created_at: string;
+};
+
+export type LoyaltyCouponStatus = "active" | "used" | "expired";
+
+export type LoyaltyCouponRow = {
+  id: string;
+  /** Legível em voz alta ao balcão: OB-XXXX-XXXX, sem caracteres ambíguos. */
+  code: string;
+  client_id: string;
+  unit_id: string;
+  reward_id: string | null;
+  transaction_id: string | null;
+  /** Cópia do que a recompensa valia ao resgatar — editá-la depois não muda o cupom. */
+  reward_label: string;
+  reward_kind: LoyaltyRewardKind;
+  value_cents: number | null;
+  percent: number | null;
+  points_spent: number;
+  status: LoyaltyCouponStatus;
+  expires_at: string | null;
+  used_at: string | null;
+  used_by_user_id: string | null;
   created_at: string;
 };
 
@@ -188,6 +233,7 @@ export interface Database {
       loyalty_services: { Row: LoyaltyServiceRow; Insert: Insert<LoyaltyServiceRow>; Update: Partial<LoyaltyServiceRow>; Relationships: [] };
       loyalty_rewards: { Row: LoyaltyRewardRow; Insert: Insert<LoyaltyRewardRow>; Update: Partial<LoyaltyRewardRow>; Relationships: [] };
       loyalty_transactions: { Row: LoyaltyTransactionRow; Insert: Insert<LoyaltyTransactionRow>; Update: Partial<LoyaltyTransactionRow>; Relationships: [] };
+      loyalty_coupons: { Row: LoyaltyCouponRow; Insert: Insert<LoyaltyCouponRow>; Update: Partial<LoyaltyCouponRow>; Relationships: [] };
     };
     Views: {
       client_unit_balances: { Row: ClientUnitBalanceRow; Relationships: [] };
@@ -208,6 +254,30 @@ export interface Database {
       save_push_token: {
         Args: { p_token: string; p_platform: string | null };
         Returns: undefined;
+      };
+      loyalty_create_card: {
+        Args: { p_unit_id: string; p_name: string | null };
+        Returns: ClientRow;
+      };
+      loyalty_claim_card: {
+        Args: { p_handle: string };
+        Returns: ClientRow;
+      };
+      loyalty_self_redeem: {
+        Args: { p_reward_id: string; p_unit_id: string };
+        Returns: LoyaltyCouponRow;
+      };
+      loyalty_grant_bonus: {
+        Args: { p_kind: string; p_unit_id: string };
+        Returns: LoyaltyTransactionRow;
+      };
+      loyalty_consume_coupon: {
+        Args: { p_code: string };
+        Returns: LoyaltyCouponRow;
+      };
+      current_client_id: {
+        Args: Record<string, never>;
+        Returns: string | null;
       };
     };
     Enums: Record<string, never>;

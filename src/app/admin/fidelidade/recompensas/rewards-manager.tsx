@@ -16,6 +16,8 @@ import {
 import { Field } from "@/components/admin/form-bits";
 import { PageHeader } from "@/components/admin/page-header";
 import { staggerIndex } from "@/lib/motion";
+import { REWARD_KINDS, formatRewardValue, rewardKindLabel } from "@/lib/loyalty/rewards";
+import type { LoyaltyRewardKind } from "@/types/database.types";
 import { EmptyState } from "@/components/admin/empty-state";
 import { ConfirmDialog } from "@/components/admin/confirm-dialog";
 import { DeleteAction, RowActions } from "@/components/admin/row-actions";
@@ -44,6 +46,9 @@ export function RewardsManager({
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [cost, setCost] = useState("100");
+  const [kind, setKind] = useState<LoyaltyRewardKind>("service");
+  const [amount, setAmount] = useState("");
+  const [percent, setPercent] = useState("");
   const [active, setActive] = useState(true);
 
   function openNew() {
@@ -52,6 +57,9 @@ export function RewardsManager({
     setName("");
     setDescription("");
     setCost("100");
+    setKind("service");
+    setAmount("");
+    setPercent("");
     setActive(true);
     setOpen(true);
   }
@@ -62,6 +70,9 @@ export function RewardsManager({
     setName(r.name);
     setDescription(r.description ?? "");
     setCost(String(r.points_cost));
+    setKind(r.kind);
+    setAmount(r.value_cents != null ? String(r.value_cents / 100) : "");
+    setPercent(r.percent != null ? String(r.percent) : "");
     setActive(r.active);
     setOpen(true);
   }
@@ -72,6 +83,17 @@ export function RewardsManager({
     const c = Number(cost);
     if (!Number.isInteger(c) || c <= 0) return toast.error("Custo deve ser > 0.");
 
+    // Cada tipo exige o seu campo — a base tem o mesmo check, mas avisar
+    // aqui poupa uma ida ao servidor para dar um erro que já se sabe.
+    const valueCents = kind === "amount" ? Math.round(Number(amount) * 100) : null;
+    const percentValue = kind === "percent" ? Number(percent) : null;
+    if (kind === "amount" && (!valueCents || valueCents <= 0)) {
+      return toast.error("Indique o valor em euros.");
+    }
+    if (kind === "percent" && (!percentValue || percentValue < 1 || percentValue > 100)) {
+      return toast.error("A percentagem tem de estar entre 1 e 100.");
+    }
+
     startTransition(async () => {
       try {
         await saveLoyaltyReward({
@@ -80,6 +102,9 @@ export function RewardsManager({
           name,
           description,
           points_cost: c,
+          kind,
+          value_cents: valueCents,
+          percent: percentValue,
           active,
         });
         toast.success("Recompensa guardada.");
@@ -156,7 +181,17 @@ export function RewardsManager({
                 onClick={() => openEdit(r)}
                 className="text-left font-medium transition-colors duration-150 hover:text-brand"
               >
-                {r.name}
+                <span className="flex flex-wrap items-center gap-2">
+                  {r.name}
+                  <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    {rewardKindLabel(r.kind)}
+                  </span>
+                  {formatRewardValue(r.kind, r.value_cents, r.percent) && (
+                    <span className="font-mono text-[12px] font-semibold text-brand">
+                      {formatRewardValue(r.kind, r.value_cents, r.percent)}
+                    </span>
+                  )}
+                </span>
                 {r.description && (
                   <div className="text-[11px] font-normal text-muted-foreground">
                     {r.description}
@@ -215,6 +250,65 @@ export function RewardsManager({
                 ))}
               </select>
             </Field>
+            <Field id="rw-kind" label="Tipo de recompensa *">
+              <div className="grid grid-cols-2 gap-2">
+                {REWARD_KINDS.map((k) => {
+                  const Icon = k.icon;
+                  const on = kind === k.value;
+                  return (
+                    <button
+                      key={k.value}
+                      type="button"
+                      onClick={() => setKind(k.value)}
+                      aria-pressed={on}
+                      className={`flex min-h-11 items-center gap-2 rounded-lg border px-3 text-left text-[13px] font-medium transition-[border-color,background-color,transform] duration-150 ease-out-strong active:scale-[0.98] ${
+                        on
+                          ? "border-brand bg-brand/10 text-foreground"
+                          : "border-border bg-background text-muted-foreground hover-fine:hover:border-brand/40"
+                      }`}
+                    >
+                      <Icon className={`h-4 w-4 shrink-0 ${on ? "text-brand" : ""}`} />
+                      {k.label}
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="mt-1.5 text-[11.5px] text-muted-foreground">
+                {REWARD_KINDS.find((k) => k.value === kind)?.hint}
+              </p>
+            </Field>
+
+            {kind === "amount" && (
+              <Field id="rw-amount" label="Valor do desconto (€) *">
+                <Input
+                  id="rw-amount"
+                  type="number"
+                  min="1"
+                  step="0.5"
+                  inputMode="decimal"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  placeholder="ex: 15"
+                />
+              </Field>
+            )}
+
+            {kind === "percent" && (
+              <Field id="rw-percent" label="Percentagem de desconto (%) *">
+                <Input
+                  id="rw-percent"
+                  type="number"
+                  min="1"
+                  max="100"
+                  step="1"
+                  inputMode="numeric"
+                  value={percent}
+                  onChange={(e) => setPercent(e.target.value)}
+                  placeholder="ex: 10"
+                />
+              </Field>
+            )}
+
             <Field id="rw-name" label="Nome *">
               <Input
                 id="rw-name"

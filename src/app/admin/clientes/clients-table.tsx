@@ -19,7 +19,7 @@ import { deleteClient } from "@/lib/loyalty/actions";
 export type ClientRow = {
   id: string;
   name: string;
-  phone: string;
+  phone: string | null;
   unitName: string;
   points: number;
   lastVisit: string | null;
@@ -93,7 +93,7 @@ export function ClientsTable({
                   {c.name}
                 </h2>
                 <p className="mt-0.5 truncate font-mono text-xs text-muted-foreground">
-                  {c.phone}
+                  {c.phone ?? "—"}
                 </p>
               </Link>
               <span className="shrink-0 rounded-full bg-brand/15 px-2.5 py-1 font-mono text-[12px] font-bold tabular-nums text-brand">
@@ -153,7 +153,7 @@ export function ClientsTable({
                   </Link>
                 </td>
                 <td className="px-6 py-3 font-mono text-[12.5px] text-muted-foreground">
-                  {c.phone}
+                  {c.phone ?? "—"}
                 </td>
                 <td className="px-6 py-3 text-[13px] text-muted-foreground">
                   {c.unitName}

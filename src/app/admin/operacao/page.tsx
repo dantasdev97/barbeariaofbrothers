@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { requireRole } from "@/lib/admin-auth";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/admin/page-header";
+import { CouponCheck } from "./coupon-check";
 import { staggerIndex } from "@/lib/motion";
 
 export const dynamic = "force-dynamic";
@@ -19,7 +20,7 @@ export default async function OperacaoLanding({
   const { q } = await searchParams;
   const sb = createAdminClient();
 
-  let results: Array<{ id: string; name: string; phone: string; qr_token: string }> = [];
+  let results: Array<{ id: string; name: string; phone: string | null; qr_token: string }> = [];
   if (q && q.trim().length >= 2) {
     const { data } = await sb
       .from("clients")
@@ -49,6 +50,8 @@ export default async function OperacaoLanding({
         <ScanLine className="h-7 w-7" />
         <span className="font-heading text-lg font-semibold">Escanear QR do cliente</span>
       </Link>
+
+      <CouponCheck />
 
       <form
         action="/admin/operacao"
@@ -84,7 +87,7 @@ export default async function OperacaoLanding({
             >
               <div className="font-medium">{c.name}</div>
               <div className="font-mono text-[12.5px] text-muted-foreground">
-                {c.phone}
+                {c.phone ?? "sem telefone"}
               </div>
             </Link>
           ))}

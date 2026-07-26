@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 type ClientLite = {
   id: string;
   name: string;
-  phone: string;
+  phone: string | null;
   qr_token: string;
   unit_id: string;
 };
@@ -34,7 +34,7 @@ export function CardsExport({
       if (!term) return true;
       return (
         c.name.toLowerCase().includes(term) ||
-        c.phone.toLowerCase().includes(term)
+        (c.phone ?? "").toLowerCase().includes(term)
       );
     });
   }, [clients, unitFilter, q]);
@@ -134,7 +134,7 @@ export function CardsExport({
                 />
                 <div className="font-medium">{c.name}</div>
                 <div className="font-mono text-[12.5px] text-muted-foreground">
-                  {c.phone}
+                  {c.phone ?? "—"}
                 </div>
                 <div className="font-mono text-[11px] text-muted-foreground">
                   {c.qr_token}

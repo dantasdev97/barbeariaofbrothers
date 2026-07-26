@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdminSession } from "@/lib/admin-auth";
 import { generatePublicSlug, generateQrToken } from "@/lib/loyalty/qr";
+import type { LoyaltyRewardKind } from "@/types/database.types";
 
 async function requireRole(roles: Array<"super_admin" | "manager" | "barbeiro">) {
   const { user, profile } = await requireAdminSession();
@@ -151,6 +152,12 @@ type RewardInput = {
   name: string;
   description?: string | null;
   points_cost: number;
+  /** Tipo pedido pelo dono: serviço, valor fixo, percentagem ou brinde. */
+  kind?: LoyaltyRewardKind;
+  /** Só para `amount` — em cêntimos, para não guardar float. */
+  value_cents?: number | null;
+  /** Só para `percent` — 1 a 100. */
+  percent?: number | null;
   active?: boolean;
 };
 
@@ -162,6 +169,11 @@ export async function saveLoyaltyReward(input: RewardInput) {
     name: input.name.trim(),
     description: input.description?.trim() || null,
     points_cost: input.points_cost,
+    kind: input.kind ?? "service",
+    // Limpa o campo do tipo que não se aplica: sem isto, mudar de "valor
+    // fixo" para "serviço" deixava o valor antigo pendurado na linha.
+    value_cents: input.kind === "amount" ? (input.value_cents ?? null) : null,
+    percent: input.kind === "percent" ? (input.percent ?? null) : null,
     active: input.active ?? true,
   };
   if (input.id) {
@@ -321,4 +333,95 @@ export async function lookupClient(
     handle: data.public_slug ?? data.qr_token,
     name: data.name,
   };
+}
+
+// ---------------------------------------------------------------------
+// CUPONS — dar baixa no balcão
+// ---------------------------------------------------------------------
+
+export type CouponLookup = {
+  code: string;
+  clientName: string;
+  rewardLabel: string;
+  rewardKind: LoyaltyRewardKind;
+  valueCents: number | null;
+  percent: number | null;
+  status: "active" | "used" | "expired";
+  usedAt: string | null;
+  expiresAt: string | null;
+};
+
+/** Normaliza o que o barbeiro escreveu: maiúsculas, sem espaços. */
+function normalizeCode(input: string): string {
+  return input.trim().toUpperCase().replace(/\s+/g, "");
+}
+
+/**
+ * Consulta um cupom sem o consumir.
+ *
+ * Serve para o barbeiro ver de quem é e o que dá **antes** de marcar usado —
+ * dar baixa às cegas seria fácil de fazer no cliente errado.
+ */
+export async function lookupCoupon(code: string): Promise<
+  { ok: true; coupon: CouponLookup } | { ok: false; error: string }
+> {
+  await requireRole(["super_admin", "manager", "barbeiro"]);
+  const value = normalizeCode(code);
+  if (!value) return { ok: false, error: "Escreva o código." };
+
+  const sb = createAdminClient();
+  const { data, error } = await sb
+    .from("loyalty_coupons")
+    .select("code, reward_label, reward_kind, value_cents, percent, status, used_at, expires_at, clients(name)")
+    .eq("code", value)
+    .maybeSingle();
+
+  if (error) return { ok: false, error: "Erro a procurar o cupom." };
+  if (!data) return { ok: false, error: "Cupom não encontrado." };
+
+  const client = data.clients as unknown as { name: string } | null;
+  const expired =
+    data.status === "expired" ||
+    (!!data.expires_at && new Date(data.expires_at) < new Date());
+
+  return {
+    ok: true,
+    coupon: {
+      code: data.code,
+      clientName: client?.name ?? "—",
+      rewardLabel: data.reward_label,
+      rewardKind: data.reward_kind,
+      valueCents: data.value_cents,
+      percent: data.percent,
+      status: expired && data.status === "active" ? "expired" : data.status,
+      usedAt: data.used_at,
+      expiresAt: data.expires_at,
+    },
+  };
+}
+
+/**
+ * Marca o cupom como usado. É a RPC que impede a reutilização — a segunda
+ * tentativa encontra o estado já alterado e recusa.
+ */
+export async function consumeCoupon(
+  code: string,
+): Promise<{ ok: true; label: string } | { ok: false; error: string }> {
+  await requireRole(["super_admin", "manager", "barbeiro"]);
+  const value = normalizeCode(code);
+  if (!value) return { ok: false, error: "Escreva o código." };
+
+  const sb = await createClient();
+  const { data, error } = await sb.rpc("loyalty_consume_coupon", { p_code: value });
+
+  if (error) {
+    const raw = error.message ?? "";
+    if (raw.includes("já utilizado")) return { ok: false, error: raw };
+    if (raw.includes("expirado")) return { ok: false, error: "Cupom expirado." };
+    if (raw.includes("não encontrado")) return { ok: false, error: "Cupom não encontrado." };
+    return { ok: false, error: "Não foi possível dar baixa no cupom." };
+  }
+
+  revalidatePath("/admin/operacao", "layout");
+  return { ok: true, label: (data as { reward_label: string }).reward_label };
 }
