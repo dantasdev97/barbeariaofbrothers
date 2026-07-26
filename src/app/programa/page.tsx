@@ -1,15 +1,10 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { Sparkles } from "lucide-react";
-import { createPublicClient } from "@/lib/supabase/public";
-import { getAllUnits, getUnitBySlug } from "@/lib/data";
-import { getCardState } from "@/lib/loyalty/session";
+import { Gift, HandCoins, Sparkles } from "lucide-react";
+import { getProgramaContext } from "@/lib/loyalty/programa";
 import { ClientShell } from "@/components/cliente/client-shell";
 import { GoogleSignInButton } from "@/components/cliente/google-signin-button";
-import { EarnList } from "@/components/cliente/earn-list";
-import type { EarnListBonuses } from "@/components/cliente/earn-list";
-import { RewardsList } from "@/components/cliente/rewards-list";
-import type { LoyaltyBonusKind, LoyaltyRewardRow, LoyaltyServiceRow } from "@/types/database.types";
+import { NavRow } from "@/components/cliente/nav-row";
 
 export const dynamic = "force-dynamic";
 
@@ -24,7 +19,10 @@ export const metadata: Metadata = {
  *
  * Fica aberta a quem ainda não tem conta de propósito: mostrar primeiro o
  * que se ganha e só depois pedir o registo é o que faz a pessoa criar conta.
- * Pedir a conta antes de explicar o valor perde quase toda a gente.
+ *
+ * As duas listas vivem em páginas próprias (`/programa/ganhar` e
+ * `/programa/resgatar`), no molde da referência que o dono mandou: aqui
+ * ficam só as duas linhas de navegação.
  */
 export default async function ProgramaPage({
   searchParams,
@@ -32,59 +30,10 @@ export default async function ProgramaPage({
   searchParams: Promise<{ unidade?: string }>;
 }) {
   const { unidade } = await searchParams;
-  const sb = createPublicClient();
+  const { unit, units, hasCard } = await getProgramaContext(unidade);
 
-  // O botão fixo da landing é por unidade e passa o slug: quem vem do
-  // Vale de Lobos tem de ver os serviços e recompensas do Vale de Lobos.
-  // Antes mostrava sempre a primeira unidade a toda a gente.
-  const units = await getAllUnits();
-  const unit = (unidade ? await getUnitBySlug(unidade) : null) ?? units[0] ?? null;
-
-  let services: LoyaltyServiceRow[] = [];
-  let rewards: LoyaltyRewardRow[] = [];
-  let bonuses: EarnListBonuses | null = null;
-
-  if (sb && unit) {
-    const [s, r, b] = await Promise.all([
-      sb
-        .from("loyalty_services")
-        .select("*")
-        .eq("unit_id", unit.id)
-        .eq("active", true)
-        .order("display_order"),
-      sb
-        .from("loyalty_rewards")
-        .select("*")
-        .eq("unit_id", unit.id)
-        .eq("active", true)
-        .order("points_cost"),
-      sb.from("loyalty_bonuses").select("kind, points, active").eq("unit_id", unit.id),
-    ]);
-    services = (s.data ?? []) as LoyaltyServiceRow[];
-    rewards = (r.data ?? []) as LoyaltyRewardRow[];
-
-    // RLS só devolve linhas activas: sem linha é desactivado, nunca 50/30
-    // por omissão — quem decide o valor é o painel, não esta página.
-    const bonusList = (b.data ?? []) as { kind: LoyaltyBonusKind; points: number; active: boolean }[];
-    const findBonus = (kind: LoyaltyBonusKind) => bonusList.find((x) => x.kind === kind);
-    bonuses = {
-      signup: { points: findBonus("signup")?.points ?? 50, active: findBonus("signup")?.active ?? false },
-      instagram: {
-        points: findBonus("instagram")?.points ?? 30,
-        active: findBonus("instagram")?.active ?? false,
-      },
-    };
-  }
-
-  // Quem já entrou não precisa de ver o convite outra vez. `hasCard` é o
-  // que decide: ter sessão sem cartão ainda precisa do convite, porque o
-  // cartão é que é o produto — não a conta.
-  const { hasCard } = await getCardState();
-
-  // Leva a unidade até ao outro lado do login: com ela, `/minha-conta` cria
-  // o cartão sozinho e a pessoa aterra nele, em vez de num ecrã a perguntar
-  // outra vez qual é a barbearia de onde acabou de vir.
-  const signInNext = unit ? `/minha-conta?unidade=${unit.slug}` : "/minha-conta";
+  const slug = unit?.slug;
+  const q = slug ? `?unidade=${slug}` : "";
 
   const content = (
     <div className="flex-1 bg-background">
@@ -114,14 +63,15 @@ export default async function ProgramaPage({
             ) : (
               <>
                 <GoogleSignInButton
-                  next={signInNext}
+                  next={`/minha-conta${q}`}
+                  unitSlug={slug}
                   label="Criar conta grátis"
                   className="border-transparent bg-brand text-[#0e0a07] hover-fine:hover:opacity-90"
                 />
                 <p className="mt-3 text-center text-[13px] text-background/60">
                   Já tem conta?{" "}
                   <Link
-                    href={unit ? `/entrar?unidade=${unit.slug}` : "/entrar"}
+                    href={`/entrar${q}`}
                     className="font-semibold text-brand underline underline-offset-2"
                   >
                     Iniciar sessão
@@ -133,29 +83,37 @@ export default async function ProgramaPage({
         </div>
       </section>
 
-      <div className="mx-auto max-w-xl space-y-12 px-6 py-12">
-        {/* Formas de ganhar */}
+      <div className="mx-auto max-w-xl space-y-10 px-6 py-12">
+        {/* Pontos — as duas metades do programa, cada uma na sua página */}
         <section>
-          <h2 className="font-heading text-[22px] font-semibold tracking-tight">
-            Formas de ganhar
-          </h2>
-          <EarnList services={services} bonuses={bonuses} className="mt-5" />
-          <p className="mt-3 text-[13px] leading-relaxed text-muted-foreground">
-            Os pontos dos serviços entram quando o barbeiro escaneia o QR do
-            seu cartão, no fim do atendimento.
-          </p>
+          <div className="rounded-2xl border border-border bg-bg-surface px-5 pb-1 pt-6 text-center">
+            <h2 className="font-heading text-[22px] font-semibold tracking-tight">
+              Pontos
+            </h2>
+            <p className="mx-auto mt-2 max-w-xs text-[14px] leading-relaxed text-muted-foreground">
+              Junte pontos por várias acções e troque-os por recompensas da
+              casa.
+            </p>
+
+            <div className="stagger mt-6 -mx-5 border-t border-border text-left">
+              <NavRow
+                index={0}
+                href={`/programa/ganhar${q}`}
+                icon={<HandCoins className="h-5 w-5" />}
+                title="Formas de ganhar"
+              />
+              <NavRow
+                index={1}
+                href={`/programa/resgatar${q}`}
+                icon={<Gift className="h-5 w-5" />}
+                title="Formas de resgatar"
+              />
+            </div>
+          </div>
         </section>
 
-        {/* Formas de resgatar */}
-        <section>
-          <h2 className="font-heading text-[22px] font-semibold tracking-tight">
-            Formas de resgatar
-          </h2>
-          <RewardsList rewards={rewards} className="mt-5" />
-        </section>
-
-        {/* Fecho para quem ainda não entrou. A LB faz o mesmo no fim da
-         * lista: a pessoa acabou de ver o que ganha, é ali que decide. */}
+        {/* Fecho para quem ainda não tem cartão. A pessoa acabou de ver o
+         * que o programa dá — é aqui que decide. */}
         {!hasCard && (
           <section className="rounded-2xl bg-foreground p-7 text-center text-background">
             <h2 className="font-heading text-[22px] font-semibold leading-tight tracking-tight">
@@ -167,7 +125,8 @@ export default async function ProgramaPage({
             </p>
             <div className="mt-6">
               <GoogleSignInButton
-                next={signInNext}
+                next={`/minha-conta${q}`}
+                unitSlug={slug}
                 label="Criar conta grátis"
                 className="border-transparent bg-brand text-[#0e0a07] hover-fine:hover:opacity-90"
               />
@@ -188,4 +147,3 @@ export default async function ProgramaPage({
     </ClientShell>
   );
 }
-

@@ -19,10 +19,16 @@ import { cn } from "@/lib/utils";
  */
 export function GoogleSignInButton({
   next = "/minha-conta",
+  unitSlug,
   label = "Continuar com Google",
   className,
 }: {
   next?: string;
+  /**
+   * Barbearia de onde a pessoa veio. Guardado em cookie antes de sair para
+   * a Google — ver a nota sobre o `next` abaixo.
+   */
+  unitSlug?: string;
   label?: string;
   className?: string;
 }) {
@@ -31,6 +37,15 @@ export function GoogleSignInButton({
   async function signIn() {
     setPending(true);
     try {
+      // O `next` viaja pelo Supabase, e é lá que se perde: se o URL pedido
+      // não bater certo com a lista de "Redirect URLs" do projecto, o
+      // Supabase ignora-o e manda para o Site URL, deitando fora a unidade.
+      // O cookie não passa pelo Supabase, por isso sobrevive — e o
+      // /auth/callback repõe a unidade a partir dele.
+      if (unitSlug) {
+        document.cookie = `ob_unidade=${encodeURIComponent(unitSlug)}; path=/; max-age=900; samesite=lax`;
+      }
+
       const supabase = createClient();
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",

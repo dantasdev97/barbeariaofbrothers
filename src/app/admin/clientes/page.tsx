@@ -28,10 +28,16 @@ export default async function ClientesPage({
         .select("id, name, phone, email, auth_user_id, qr_token, unit_id, created_at")
         .order("created_at", { ascending: false })
         .limit(200);
-      if (q) {
+      // O termo entra numa string de filtro do PostgREST, onde a vírgula
+      // separa condições e os parêntesis agrupam: sem limpar, escrever uma
+      // vírgula na busca altera ou parte a consulta.
+      const safeQ = (q ?? "").replace(/[,()*\\%]/g, "").trim();
+      if (safeQ) {
         // Email entra na procura: quem se regista pela Google não deixa
         // telefone, e sem isto não havia como encontrar essas pessoas.
-        query = query.or(`name.ilike.%${q}%,phone.ilike.%${q}%,email.ilike.%${q}%`);
+        query = query.or(
+          `name.ilike.%${safeQ}%,phone.ilike.%${safeQ}%,email.ilike.%${safeQ}%`,
+        );
       }
       if (unit) query = query.eq("unit_id", unit);
       return query;

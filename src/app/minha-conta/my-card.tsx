@@ -25,7 +25,16 @@ export function MyCard({ account }: { account: ClientAccount }) {
   const { client, unit, balance, rewards, services, coupons, transactions, claimedBonuses, bonuses } =
     account;
 
-  const activeCoupons = coupons.filter((c) => c.status === "active");
+  // Todos os cupões, por usar primeiro. Antes só se mostravam os activos:
+  // quem resgatava e usava perdia o registo de vista e ficava sem prova
+  // nenhuma de que aquilo existiu.
+  const isExpired = (c: LoyaltyCouponRow) =>
+    c.status === "expired" ||
+    (c.status === "active" && !!c.expires_at && new Date(c.expires_at) < new Date());
+  const isUsable = (c: LoyaltyCouponRow) => c.status === "active" && !isExpired(c);
+  const sortedCoupons = [...coupons].sort(
+    (a, b) => Number(isUsable(b)) - Number(isUsable(a)),
+  );
   const nextReward = rewards.find((r) => r.points_cost > balance);
   const nextPct = nextReward
     ? Math.min(100, Math.round((balance / nextReward.points_cost) * 100))
@@ -135,36 +144,74 @@ export function MyCard({ account }: { account: ClientAccount }) {
         </section>
       )}
 
-      {/* Cupons por usar */}
-      {activeCoupons.length > 0 && (
+      {/* Cupons */}
+      {sortedCoupons.length > 0 && (
         <section className="mt-10">
           <h2 className="font-heading text-[20px] font-semibold tracking-tight">
             Os meus cupons
           </h2>
           <div className="stagger mt-4 grid gap-3">
-            {activeCoupons.map((c, i) => (
-              <div
-                key={c.id}
-                {...staggerIndex(i)}
-                className="rounded-2xl border border-border bg-bg-surface p-5"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <p className="font-heading text-base font-semibold leading-tight">
-                    {c.reward_label}
-                  </p>
-                  {c.expires_at && (
-                    <span className="shrink-0 text-[11px] text-muted-foreground">
-                      até{" "}
-                      {new Date(c.expires_at).toLocaleDateString("pt-PT", {
-                        day: "2-digit",
-                        month: "short",
-                      })}
+            {sortedCoupons.map((c, i) => {
+              const usable = isUsable(c);
+              const expired = isExpired(c);
+              return (
+                <div
+                  key={c.id}
+                  {...staggerIndex(i)}
+                  className={`rounded-2xl border p-5 ${
+                    usable
+                      ? "border-border bg-bg-surface"
+                      : "border-border bg-bg-surface opacity-60"
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <p className="font-heading text-base font-semibold leading-tight">
+                      {c.reward_label}
+                    </p>
+                    <span
+                      className={`shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
+                        usable
+                          ? "bg-emerald-500/15 text-emerald-700"
+                          : "bg-muted text-muted-foreground"
+                      }`}
+                    >
+                      {usable
+                        ? "Por usar"
+                        : expired
+                        ? "Expirado"
+                        : `Usado${
+                            c.used_at
+                              ? ` em ${new Date(c.used_at).toLocaleDateString("pt-PT", {
+                                  day: "2-digit",
+                                  month: "short",
+                                })}`
+                              : ""
+                          }`}
                     </span>
+                  </div>
+
+                  {usable ? (
+                    <>
+                      <CouponCode code={c.code} className="mt-3" />
+                      {c.expires_at && (
+                        <p className="mt-2 text-center text-[11.5px] text-muted-foreground">
+                          Válido até{" "}
+                          {new Date(c.expires_at).toLocaleDateString("pt-PT", {
+                            day: "2-digit",
+                            month: "long",
+                            year: "numeric",
+                          })}
+                        </p>
+                      )}
+                    </>
+                  ) : (
+                    <p className="mt-2 font-mono text-[13px] text-muted-foreground">
+                      {c.code}
+                    </p>
                   )}
                 </div>
-                <CouponCode code={c.code} className="mt-3" />
-              </div>
-            ))}
+              );
+            })}
           </div>
         </section>
       )}
@@ -269,7 +316,8 @@ export function MyCard({ account }: { account: ClientAccount }) {
           </h2>
           <EarnList services={services} className="mt-4" />
           <p className="mt-3 text-[13px] leading-relaxed text-muted-foreground">
-            Mostre o QR acima ao barbeiro no fim do atendimento.
+            Os pontos de cada serviço entram na sua conta no fim do
+            atendimento.
           </p>
         </section>
       )}
@@ -342,9 +390,10 @@ export function MyCard({ account }: { account: ClientAccount }) {
         loading={pending}
       />
 
-      <p className="mt-12 pb-8 text-center text-[11.5px] text-muted-foreground">
+      <p className="mt-12 pb-8 text-center text-[11.5px] leading-relaxed text-muted-foreground">
         <Gift className="mr-1 inline h-3.5 w-3.5" />
-        Os pontos dos serviços entram quando o barbeiro escaneia o seu cartão.
+        Resgate quando quiser: recebe um código por email e mostra-o na
+        barbearia.
       </p>
     </div>
   );

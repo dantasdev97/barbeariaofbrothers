@@ -85,7 +85,7 @@ export default async function EntrarPage({
           )}
 
           <div className="mt-8">
-            <GoogleSignInButton next={safeNext} />
+            <GoogleSignInButton next={safeNext} unitSlug={unidade} />
           </div>
 
           <p className="mt-6 text-center text-xs leading-relaxed text-muted-foreground">
