@@ -14,7 +14,14 @@ import { grantBonus, selfRedeem } from "@/lib/loyalty/client-actions";
 import type { ClientAccount } from "@/lib/loyalty/client-actions";
 import type { LoyaltyCouponRow, LoyaltyRewardRow } from "@/types/database.types";
 
-export function MyCard({ account }: { account: ClientAccount }) {
+export function MyCard({
+  account,
+  qrDataUrl,
+}: {
+  account: ClientAccount;
+  /** Gerado no servidor — é o que o barbeiro lê para abrir este cliente. */
+  qrDataUrl?: string;
+}) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -99,6 +106,26 @@ export function MyCard({ account }: { account: ClientAccount }) {
               pts
             </p>
           </div>
+
+          {/* QR de identificação. Fica à vista, sem esconder atrás de um
+           * toque: é a razão de abrir esta página no balcão. */}
+          {qrDataUrl && (
+            <div className="mt-6 flex flex-col items-center">
+              <div className="rounded-2xl bg-white p-3">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={qrDataUrl}
+                  alt="Código do seu cartão"
+                  width={160}
+                  height={160}
+                  className="h-40 w-40 [image-rendering:pixelated]"
+                />
+              </div>
+              <p className="mt-2.5 text-[12px] text-background/60">
+                Mostre este código ao barbeiro
+              </p>
+            </div>
+          )}
 
           {nextReward && (
             <div className="mt-6 rounded-2xl bg-background/10 p-4">

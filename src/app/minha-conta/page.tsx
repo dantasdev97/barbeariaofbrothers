@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
+import QRCode from "qrcode";
 import { createClient } from "@/lib/supabase/server";
+import { cardUrl } from "@/lib/loyalty/qr";
 import { getAllUnits, getUnitBySlug } from "@/lib/data";
 import { getMyAccount } from "@/lib/loyalty/client-actions";
 import { ClientShell } from "@/components/cliente/client-shell";
@@ -94,7 +96,21 @@ export default async function MinhaContaPage({
   }
 
   const shellUnit = account.unit ?? units[0] ?? null;
-  const card = <MyCard account={account} />;
+
+  // O QR é gerado aqui porque o `my-card` é client component. Leva o
+  // `public_slug` (mais legível que o token) e é lido pelo scanner do
+  // barbeiro em /admin/operação/scan, que abre o ecrã deste cliente.
+  const qrDataUrl = await QRCode.toDataURL(
+    cardUrl(account.client.public_slug ?? account.client.qr_token),
+    {
+      margin: 1,
+      width: 600,
+      errorCorrectionLevel: "M",
+      color: { dark: "#0A0A0A", light: "#ffffff" },
+    },
+  );
+
+  const card = <MyCard account={account} qrDataUrl={qrDataUrl} />;
   if (!shellUnit) return <main className="flex-1">{card}</main>;
 
   return (

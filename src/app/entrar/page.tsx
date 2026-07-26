@@ -6,6 +6,7 @@ import { AlertCircle, ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { getAllUnits, getUnitBySlug } from "@/lib/data";
 import { ClientShell } from "@/components/cliente/client-shell";
+import { EmailAuthForm } from "@/components/cliente/email-auth-form";
 import { GoogleSignInButton } from "@/components/cliente/google-signin-button";
 
 export const dynamic = "force-dynamic";
@@ -85,6 +86,14 @@ export default async function EntrarPage({
           )}
 
           <div className="mt-8">
+            <EmailAuthForm next={safeNext} />
+
+            <div className="my-6 flex items-center gap-3">
+              <span className="h-px flex-1 bg-border" />
+              <span className="text-[12px] text-muted-foreground">ou</span>
+              <span className="h-px flex-1 bg-border" />
+            </div>
+
             <GoogleSignInButton next={safeNext} unitSlug={unidade} />
           </div>
 
