@@ -24,6 +24,8 @@ export type Dictionary = {
   };
   cta: {
     book: string;
+    /** Botão fixo que leva ao programa de pontos. */
+    points: string;
   };
   footer: {
     since: string;
@@ -167,6 +169,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
     },
     cta: {
       book: "Agendar corte",
+      points: "Os meus pontos",
     },
     footer: {
       since: "Barbearia Brothers · Desde 2012",
@@ -338,6 +341,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
     },
     cta: {
       book: "Book a haircut",
+      points: "My points",
     },
     footer: {
       since: "Barbearia Brothers · Since 2012",
@@ -506,6 +510,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
     },
     cta: {
       book: "Réserver une coupe",
+      points: "Mes points",
     },
     footer: {
       since: "Barbearia Brothers · Depuis 2012",
@@ -674,6 +679,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
     },
     cta: {
       book: "Reservar corte",
+      points: "Mis puntos",
     },
     footer: {
       since: "Barbearia Brothers · Desde 2012",
@@ -842,6 +848,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
     },
     cta: {
       book: "Termin buchen",
+      points: "Meine Punkte",
     },
     footer: {
       since: "Barbearia Brothers · Seit 2012",

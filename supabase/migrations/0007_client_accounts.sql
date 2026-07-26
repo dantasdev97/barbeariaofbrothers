@@ -12,6 +12,9 @@
 --   • transações do tipo 'bonus' (registo, Instagram), uma vez por cliente
 --   • RPCs para o cliente agir sobre o próprio cartão, com RLS a condizer
 --
+-- Não existem cartões físicos: o cartão é o ecrã do telemóvel do cliente, e
+-- o QR que lá aparece é o que o barbeiro escaneia para lançar pontos.
+--
 -- Tudo aditivo: nenhuma coluna ou tabela é removida, e as linhas que já
 -- existem continuam válidas com os valores por omissão.
 -- =====================================================================
@@ -35,7 +38,7 @@ create unique index if not exists clients_auth_user_id_uidx
 alter table public.clients
   alter column phone drop not null;
 
--- Marca o momento em que o cartão foi reclamado, para auditoria.
+-- Momento em que a conta criou o cartão, para auditoria.
 alter table public.clients
   add column if not exists claimed_at timestamptz;
 
@@ -137,6 +140,24 @@ create index if not exists loyalty_coupons_unit_created
   on public.loyalty_coupons (unit_id, created_at desc);
 
 -- ---------------------------------------------------------------------
+-- 4b. events — clique no programa de pontos
+-- ---------------------------------------------------------------------
+-- O botão fixo da landing passa a apontar para os pontos em vez das
+-- marcações. Sem um tipo próprio, o clique teria de ser gravado como
+-- 'booking_click' e inflaccionaria a contagem de marcações do dashboard
+-- com cliques que não são marcações.
+
+alter table public.events
+  drop constraint if exists events_type_check;
+alter table public.events
+  add constraint events_type_check
+  check (type in (
+    'page_view', 'booking_click', 'product_view',
+    'barber_view', 'whatsapp_checkout', 'add_to_cart',
+    'loyalty_click'
+  ));
+
+-- ---------------------------------------------------------------------
 -- 5. Helpers
 -- ---------------------------------------------------------------------
 
@@ -185,12 +206,9 @@ $$;
 /**
  * Cria um cartão novo para quem se regista pelo Google.
  *
- * Este é o caminho **normal** de entrada: a maior parte das pessoas que
- * cria conta nunca teve cartão físico, e não faz sentido pedir-lhes que
- * validem nada. Entram, o cartão nasce vazio, e a partir daí acumulam.
- *
- * `loyalty_claim_card` fica só para o caso inverso — quem já tinha cartão
- * de papel com pontos e quer trazê-los para a conta.
+ * É o **único** caminho de entrada. Não há cartões físicos: o cartão é o
+ * ecrã do telemóvel, e não há nada a validar. A pessoa entra com o Google,
+ * escolhe a barbearia, e o cartão nasce ali.
  *
  * O bónus de registo entra na mesma transação: se o cartão existe, o bónus
  * existe, sem estado intermédio possível.
@@ -267,64 +285,6 @@ begin
   values
     (v_client.id, p_unit_id, v_user, 'bonus', v_bonus, 'signup', 'Bónus de registo')
   on conflict do nothing;
-
-  return v_client;
-end;
-$$;
-
-/**
- * Liga um cartão que JÁ EXISTE à conta autenticada.
- *
- * A prova de propriedade é a posse do handle: o qr_token impresso no
- * cartão físico ou o public_slug do link. Quem tem o cartão na mão é o
- * dono. Recusa se o cartão já tiver sido reclamado por outra conta.
- */
-create or replace function public.loyalty_claim_card(p_handle text)
-returns public.clients
-language plpgsql
-security definer
-set search_path = public
-as $$
-declare
-  v_user uuid := auth.uid();
-  v_client public.clients;
-  v_handle text := btrim(p_handle);
-begin
-  if v_user is null then
-    raise exception 'auth required' using errcode = '42501';
-  end if;
-
-  if v_handle = '' then
-    raise exception 'cartão inválido' using errcode = '22023';
-  end if;
-
-  -- Uma conta, um cartão.
-  if exists (select 1 from public.clients where auth_user_id = v_user) then
-    raise exception 'esta conta já tem um cartão associado' using errcode = '23505';
-  end if;
-
-  select * into v_client
-  from public.clients
-  where qr_token = v_handle or public_slug = v_handle
-  for update;
-
-  if v_client.id is null then
-    raise exception 'cartão não encontrado' using errcode = 'P0002';
-  end if;
-
-  if v_client.auth_user_id is not null then
-    if v_client.auth_user_id = v_user then
-      return v_client;
-    end if;
-    raise exception 'este cartão já pertence a outra conta' using errcode = '42501';
-  end if;
-
-  update public.clients
-  set auth_user_id = v_user,
-      claimed_at = now(),
-      email = coalesce(email, (select email from auth.users where id = v_user))
-  where id = v_client.id
-  returning * into v_client;
 
   return v_client;
 end;
@@ -541,7 +501,6 @@ end;
 $$;
 
 grant execute on function public.loyalty_create_card   (uuid, text) to authenticated;
-grant execute on function public.loyalty_claim_card    (text)       to authenticated;
 grant execute on function public.loyalty_self_redeem   (uuid, uuid) to authenticated;
 grant execute on function public.loyalty_grant_bonus   (text, uuid) to authenticated;
 grant execute on function public.loyalty_consume_coupon(text)       to authenticated;

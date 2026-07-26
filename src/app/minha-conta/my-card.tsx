@@ -7,6 +7,7 @@ import { Gift, Camera, Loader2, MapPin, Sparkles, Ticket } from "lucide-react";
 import { AnimatedNumber } from "@/components/admin/animated-number";
 import { ConfirmDialog } from "@/components/admin/confirm-dialog";
 import { CouponCode } from "@/components/cliente/coupon-code";
+import { EarnList } from "@/components/cliente/earn-list";
 import { formatRewardValue, rewardKindIcon } from "@/lib/loyalty/rewards";
 import { staggerIndex } from "@/lib/motion";
 import { grantBonus, selfRedeem } from "@/lib/loyalty/client-actions";
@@ -21,7 +22,7 @@ export function MyCard({ account }: { account: ClientAccount }) {
   /** O cupom acabado de emitir, mostrado em destaque antes de ir para a lista. */
   const [fresh, setFresh] = useState<LoyaltyCouponRow | null>(null);
 
-  const { client, unit, balance, rewards, coupons, transactions, claimedBonuses } =
+  const { client, unit, balance, rewards, services, coupons, transactions, claimedBonuses } =
     account;
 
   const activeCoupons = coupons.filter((c) => c.status === "active");
@@ -256,6 +257,20 @@ export function MyCard({ account }: { account: ClientAccount }) {
               </p>
             </div>
           </button>
+        </section>
+      )}
+
+      {/* Como ganhar mais. Sem os bónus: o de registo já foi dado e o do
+       * Instagram tem o botão logo acima. */}
+      {services.length > 0 && (
+        <section className="mt-10">
+          <h2 className="font-heading text-[20px] font-semibold tracking-tight">
+            Como ganhar pontos
+          </h2>
+          <EarnList services={services} showBonuses={false} className="mt-4" />
+          <p className="mt-3 text-[13px] leading-relaxed text-muted-foreground">
+            Mostre o QR acima ao barbeiro no fim do atendimento.
+          </p>
         </section>
       )}
 

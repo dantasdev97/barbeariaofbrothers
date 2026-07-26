@@ -87,12 +87,6 @@ export default async function ClientesPage({
         actions={
           <>
             <Link
-              href="/admin/clientes/cartoes"
-              className="inline-flex items-center gap-2 rounded-[10px] border border-border bg-transparent px-4 py-2.5 text-[13px] font-medium text-muted-foreground transition-[background-color,color,transform] duration-150 ease-out-strong hover:bg-background hover:text-foreground active:scale-[0.97]"
-            >
-              Exportar cartões
-            </Link>
-            <Link
               href="/admin/clientes/novo"
               className="inline-flex items-center gap-2 rounded-[10px] bg-brand px-4 py-2.5 text-[13px] font-medium text-[#0e0a07] transition-[opacity,transform] duration-150 ease-out-strong hover:opacity-90 active:scale-[0.97]"
             >

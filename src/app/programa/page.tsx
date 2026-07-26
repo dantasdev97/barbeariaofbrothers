@@ -1,12 +1,12 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { Gift, Camera, Scissors, Sparkles, UserPlus } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { createPublicClient } from "@/lib/supabase/public";
 import { createClient } from "@/lib/supabase/server";
-import { getAllUnits } from "@/lib/data";
+import { getAllUnits, getUnitBySlug } from "@/lib/data";
 import { GoogleSignInButton } from "@/components/cliente/google-signin-button";
-import { formatRewardValue, rewardKindIcon } from "@/lib/loyalty/rewards";
-import { staggerIndex } from "@/lib/motion";
+import { EarnList } from "@/components/cliente/earn-list";
+import { RewardsList } from "@/components/cliente/rewards-list";
 import type { LoyaltyRewardRow, LoyaltyServiceRow } from "@/types/database.types";
 
 export const dynamic = "force-dynamic";
@@ -24,10 +24,19 @@ export const metadata: Metadata = {
  * que se ganha e só depois pedir o registo é o que faz a pessoa criar conta.
  * Pedir a conta antes de explicar o valor perde quase toda a gente.
  */
-export default async function ProgramaPage() {
+export default async function ProgramaPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ unidade?: string }>;
+}) {
+  const { unidade } = await searchParams;
   const sb = createPublicClient();
+
+  // O botão fixo da landing é por unidade e passa o slug: quem vem do
+  // Vale de Lobos tem de ver os serviços e recompensas do Vale de Lobos.
+  // Antes mostrava sempre a primeira unidade a toda a gente.
   const units = await getAllUnits();
-  const unit = units[0] ?? null;
+  const unit = (unidade ? await getUnitBySlug(unidade) : null) ?? units[0] ?? null;
 
   let services: LoyaltyServiceRow[] = [];
   let rewards: LoyaltyRewardRow[] = [];
@@ -107,32 +116,10 @@ export default async function ProgramaPage() {
           <h2 className="font-heading text-[22px] font-semibold tracking-tight">
             Formas de ganhar
           </h2>
-          <div className="stagger mt-5 overflow-hidden rounded-2xl border border-border bg-bg-surface">
-            <EarnRow
-              index={0}
-              icon={<UserPlus className="h-5 w-5" />}
-              title="Criar conta"
-              detail="50 pontos de boas-vindas"
-            />
-            <EarnRow
-              index={1}
-              icon={<Camera className="h-5 w-5" />}
-              title="Seguir no Instagram"
-              detail="30 pontos"
-            />
-            {services.map((s, i) => (
-              <EarnRow
-                key={s.id}
-                index={i + 2}
-                icon={<Scissors className="h-5 w-5" />}
-                title={s.name}
-                detail={`${s.points_value} pontos`}
-              />
-            ))}
-          </div>
+          <EarnList services={services} className="mt-5" />
           <p className="mt-3 text-[13px] leading-relaxed text-muted-foreground">
-            Os pontos dos serviços entram quando o barbeiro escaneia o seu
-            cartão no fim do atendimento.
+            Os pontos dos serviços entram quando o barbeiro escaneia o QR do
+            seu cartão, no fim do atendimento.
           </p>
         </section>
 
@@ -141,60 +128,26 @@ export default async function ProgramaPage() {
           <h2 className="font-heading text-[22px] font-semibold tracking-tight">
             Formas de resgatar
           </h2>
-          {rewards.length === 0 ? (
-            <p className="mt-5 rounded-2xl border border-dashed border-border bg-bg-surface p-8 text-center text-sm text-muted-foreground">
-              Recompensas em preparação.
-            </p>
-          ) : (
-            <div className="stagger mt-5 grid gap-3">
-              {rewards.map((r, i) => {
-                const Icon = rewardKindIcon(r.kind);
-                const value = formatRewardValue(r.kind, r.value_cents, r.percent);
-                return (
-                  <div
-                    key={r.id}
-                    {...staggerIndex(i)}
-                    className="flex items-start gap-4 rounded-2xl border border-border bg-bg-surface p-5"
-                  >
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand/10 text-brand">
-                      <Icon className="h-5 w-5" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <h3 className="font-heading text-base font-semibold leading-tight">
-                        {r.name}
-                        {value && (
-                          <span className="ml-2 font-sans text-sm font-medium text-brand">
-                            {value}
-                          </span>
-                        )}
-                      </h3>
-                      {r.description && (
-                        <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground">
-                          {r.description}
-                        </p>
-                      )}
-                    </div>
-                    <span className="shrink-0 rounded-full bg-foreground px-3 py-1 font-mono text-[12px] font-bold tabular-nums text-background">
-                      {r.points_cost}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+          <RewardsList rewards={rewards} className="mt-5" />
         </section>
 
+        {/* Fecho para quem ainda não entrou. A LB faz o mesmo no fim da
+         * lista: a pessoa acabou de ver o que ganha, é ali que decide. */}
         {!user && (
-          <section className="rounded-2xl bg-bg-surface p-6 text-center">
-            <Gift className="mx-auto h-7 w-7 text-brand" />
-            <p className="mt-3 font-heading text-lg font-semibold leading-tight">
+          <section className="rounded-2xl bg-foreground p-7 text-center text-background">
+            <h2 className="font-heading text-[22px] font-semibold leading-tight tracking-tight">
               Comece a ganhar hoje
+            </h2>
+            <p className="mx-auto mt-2 max-w-xs text-[14px] leading-relaxed text-background/70">
+              Criar conta é grátis e leva um toque. Os pontos começam a contar
+              no próximo corte.
             </p>
-            <p className="mt-1.5 text-sm text-muted-foreground">
-              Criar conta é grátis e leva um toque.
-            </p>
-            <div className="mt-5">
-              <GoogleSignInButton next="/minha-conta" label="Criar conta grátis" />
+            <div className="mt-6">
+              <GoogleSignInButton
+                next="/minha-conta"
+                label="Criar conta grátis"
+                className="border-transparent bg-brand text-[#0e0a07] hover-fine:hover:opacity-90"
+              />
             </div>
           </section>
         )}
@@ -203,29 +156,3 @@ export default async function ProgramaPage() {
   );
 }
 
-function EarnRow({
-  icon,
-  title,
-  detail,
-  index,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  detail: string;
-  index: number;
-}) {
-  return (
-    <div
-      {...staggerIndex(index)}
-      className="flex items-center gap-4 border-b border-border px-5 py-4 last:border-b-0"
-    >
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-background text-muted-foreground">
-        {icon}
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="font-medium leading-tight">{title}</p>
-        <p className="mt-0.5 text-[13px] text-muted-foreground">{detail}</p>
-      </div>
-    </div>
-  );
-}

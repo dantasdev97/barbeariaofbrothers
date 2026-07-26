@@ -9,6 +9,7 @@ import type {
   LoyaltyBonusKind,
   LoyaltyCouponRow,
   LoyaltyRewardRow,
+  LoyaltyServiceRow,
   LoyaltyTransactionRow,
   UnitRow,
 } from "@/types/database.types";
@@ -31,13 +32,6 @@ function toMessage(error: unknown, fallback: string): string {
   const raw = error instanceof Error ? error.message : String(error ?? "");
   if (!raw) return fallback;
   if (raw.includes("auth required")) return "Precisa de iniciar sessão.";
-  if (raw.includes("já tem um cartão")) {
-    return "A sua conta já está ligada a um cartão.";
-  }
-  if (raw.includes("já pertence a outra conta")) {
-    return "Este cartão já pertence a outra conta. Fale com o barbeiro.";
-  }
-  if (raw.includes("não encontrado")) return "Cartão não encontrado.";
   if (raw.includes("saldo insuficiente")) return "Pontos insuficientes.";
   if (raw.includes("bónus já atribuído")) return "Este bónus já foi atribuído.";
   if (raw.includes("conta sem cartão")) {
@@ -49,9 +43,8 @@ function toMessage(error: unknown, fallback: string): string {
 /**
  * Cria um cartão novo para quem acabou de se registar.
  *
- * É o caminho normal: quase ninguém que cria conta pela primeira vez tem
- * cartão de papel, e pedir uma validação a essas pessoas só as afastaria.
- * Entram, o cartão nasce, e o bónus de registo já vem incluído.
+ * É o único caminho: não há cartões físicos. A pessoa entra com o Google,
+ * escolhe a barbearia, e o cartão nasce com o bónus de registo incluído.
  */
 export async function createMyCard(
   unitId: string,
@@ -68,26 +61,6 @@ export async function createMyCard(
   }
 
   revalidatePath("/minha-conta");
-  return { ok: true, data: data as ClientRow };
-}
-
-/**
- * Liga um cartão que já existe à conta autenticada.
- *
- * `handle` é o qr_token do cartão físico ou o public_slug do link — ter um
- * dos dois é a prova de propriedade. Só para quem já era cliente antes de
- * haver contas; quem é novo usa `createMyCard`.
- */
-export async function claimCard(handle: string): Promise<ActionResult<ClientRow>> {
-  const sb = await createClient();
-  const { data, error } = await sb.rpc("loyalty_claim_card", {
-    p_handle: handle.trim(),
-  });
-
-  if (error) return { ok: false, error: toMessage(error, "Não foi possível ligar o cartão.") };
-
-  revalidatePath("/minha-conta");
-  revalidatePath(`/cliente/${handle}`);
   return { ok: true, data: data as ClientRow };
 }
 
@@ -164,15 +137,16 @@ export type ClientAccount = {
   transactions: LoyaltyTransactionRow[];
   coupons: LoyaltyCouponRow[];
   rewards: LoyaltyRewardRow[];
+  services: LoyaltyServiceRow[];
   claimedBonuses: LoyaltyBonusKind[];
 };
 
 /**
  * Tudo o que o cartão do cliente precisa, numa ida à base.
  *
- * Devolve `null` quando o utilizador está autenticado mas ainda não ligou
- * nenhum cartão — é esse o estado que a página usa para o convidar a
- * escanear o QR.
+ * Devolve `null` quando o utilizador está autenticado mas ainda não tem
+ * cartão — é esse o estado que faz a página mostrar a escolha da
+ * barbearia.
  */
 export async function getMyAccount(): Promise<ClientAccount | null> {
   const sb = await createClient();
@@ -190,7 +164,7 @@ export async function getMyAccount(): Promise<ClientAccount | null> {
   if (!client) return null;
   const c = client as ClientRow;
 
-  const [balances, txs, coupons, rewards, unit] = await Promise.all([
+  const [balances, txs, coupons, rewards, services, unit] = await Promise.all([
     sb.from("client_unit_balances").select("unit_id, balance").eq("client_id", c.id),
     sb
       .from("loyalty_transactions")
@@ -210,6 +184,12 @@ export async function getMyAccount(): Promise<ClientAccount | null> {
       .eq("unit_id", c.unit_id)
       .eq("active", true)
       .order("points_cost"),
+    sb
+      .from("loyalty_services")
+      .select("*")
+      .eq("unit_id", c.unit_id)
+      .eq("active", true)
+      .order("display_order"),
     sb.from("units").select("*").eq("id", c.unit_id).maybeSingle(),
   ]);
 
@@ -225,6 +205,7 @@ export async function getMyAccount(): Promise<ClientAccount | null> {
     transactions,
     coupons: (coupons.data ?? []) as LoyaltyCouponRow[],
     rewards: (rewards.data ?? []) as LoyaltyRewardRow[],
+    services: (services.data ?? []) as LoyaltyServiceRow[],
     claimedBonuses: transactions
       .map((t) => t.bonus_kind)
       .filter((k): k is LoyaltyBonusKind => !!k),

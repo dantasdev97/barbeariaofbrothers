@@ -3,22 +3,21 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Loader2, MapPin, Sparkles, Ticket } from "lucide-react";
+import { Loader2, MapPin, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { claimCard, createMyCard } from "@/lib/loyalty/client-actions";
+import { createMyCard } from "@/lib/loyalty/client-actions";
 import { staggerIndex } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
 type UnitLite = { id: string; name: string };
 
 /**
- * Primeiro ecrã de quem acabou de criar conta e ainda não tem cartão.
+ * Último passo de quem acabou de entrar com o Google.
  *
- * O caminho em destaque é criar um cartão novo — é o que serve quase toda a
- * gente, e não pede validação nenhuma: escolhe a unidade e está feito.
- * Recuperar um cartão de papel existente fica em segundo plano, porque só
- * interessa a quem já era cliente antes de haver contas.
+ * Só há um caminho, e é este: escolher a barbearia. Não existem cartões
+ * físicos nem nada para validar — o cartão é o ecrã do telemóvel e nasce
+ * aqui, já com o bónus de registo.
  */
 export function StartCard({
   units,
@@ -31,8 +30,6 @@ export function StartCard({
   const [pending, startTransition] = useTransition();
   const [unitId, setUnitId] = useState(units[0]?.id ?? "");
   const [name, setName] = useState(defaultName);
-  const [showClaim, setShowClaim] = useState(false);
-  const [handle, setHandle] = useState("");
 
   function start() {
     if (!unitId) return toast.error("Escolha a barbearia.");
@@ -43,22 +40,6 @@ export function StartCard({
         return;
       }
       toast.success("Cartão criado. Bem-vindo!");
-      router.refresh();
-    });
-  }
-
-  function claim() {
-    const value = handle.trim();
-    if (!value) return toast.error("Escreva o código do cartão.");
-    startTransition(async () => {
-      // Aceita o código solto ou o link inteiro colado do telemóvel.
-      const match = value.match(/cliente\/([A-Za-z0-9-]+)/);
-      const result = await claimCard(match?.[1] ?? value);
-      if (!result.ok) {
-        toast.error(result.error);
-        return;
-      }
-      toast.success("Cartão recuperado!");
       router.refresh();
     });
   }
@@ -150,46 +131,6 @@ export function StartCard({
               "Criar o meu cartão"
             )}
           </Button>
-        </div>
-
-        {/* Recuperar cartão de papel — caminho secundário de propósito. */}
-        <div {...staggerIndex(2)} className="mt-6 text-center">
-          {!showClaim ? (
-            <button
-              type="button"
-              onClick={() => setShowClaim(true)}
-              className="min-h-11 px-3 text-sm text-muted-foreground underline underline-offset-4 transition-colors duration-150 hover-fine:hover:text-foreground"
-            >
-              Já tenho um cartão da barbearia
-            </button>
-          ) : (
-            <div className="rounded-2xl border border-dashed border-border bg-bg-surface p-5 text-left">
-              <p className="flex items-center gap-2 text-sm font-medium">
-                <Ticket className="h-4 w-4 text-brand" />
-                Recuperar cartão existente
-              </p>
-              <p className="mt-1 text-[12.5px] text-muted-foreground">
-                Escreva o código do cartão, ou basta escanear o QR dele para
-                trazer os pontos que já tem.
-              </p>
-              <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-                <Input
-                  value={handle}
-                  onChange={(e) => setHandle(e.target.value)}
-                  placeholder="Código ou link do cartão"
-                  className="h-11 flex-1"
-                />
-                <Button
-                  onClick={claim}
-                  disabled={pending}
-                  variant="secondary"
-                  className="h-11 sm:w-auto"
-                >
-                  Recuperar
-                </Button>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </div>

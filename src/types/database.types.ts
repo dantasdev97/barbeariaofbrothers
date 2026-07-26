@@ -112,7 +112,7 @@ export type ClientRow = {
   qr_token: string;
   public_slug: string;
   notes: string | null;
-  /** Conta do cliente, quando ele reclamou o cartão. */
+  /** Conta do cliente, criada ao entrar com o Google. */
   auth_user_id: string | null;
   claimed_at: string | null;
   created_at: string;
@@ -207,7 +207,9 @@ export type EventType =
   | "product_view"
   | "barber_view"
   | "whatsapp_checkout"
-  | "add_to_cart";
+  | "add_to_cart"
+  /** Clique no botão fixo que leva ao programa de pontos. */
+  | "loyalty_click";
 
 export type EventRow = {
   id: number;
@@ -257,10 +259,6 @@ export interface Database {
       };
       loyalty_create_card: {
         Args: { p_unit_id: string; p_name: string | null };
-        Returns: ClientRow;
-      };
-      loyalty_claim_card: {
-        Args: { p_handle: string };
         Returns: ClientRow;
       };
       loyalty_self_redeem: {
