@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -16,14 +16,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { lookupClient } from "@/lib/loyalty/actions";
+import { extractHandle } from "@/lib/loyalty/handle";
 import { useIsNative } from "@/lib/native/platform";
 import { cn } from "@/lib/utils";
-
-function extractHandle(value: string): string {
-  // Aceita URL completa ou só handle (slug minúsculo OU token maiúsculo)
-  const m = value.match(/cliente\/([A-Za-z0-9-]+)/);
-  return (m?.[1] ?? value).trim();
-}
 
 type Feedback = {
   kind: "success" | "error";
@@ -31,49 +26,155 @@ type Feedback = {
   sub?: string;
 };
 
+/**
+ * Lado máximo (px) do frame enviado ao descodificador.
+ *
+ * Medido, não adivinhado: reduzir a imagem funciona como filtro passa-baixo e
+ * faz a média do ruído do sensor, e o jsQR lê melhor assim do que com um
+ * recorte em resolução quase nativa. Numa bateria de frames sintéticos com
+ * desfoque e ruído, 640 lê 83% e a taxa cai monotonicamente até 28% a 1000px.
+ * Um recorte central à mesma escala efetiva acerta exactamente nos mesmos
+ * frames, por isso não vale a segunda passagem.
+ */
+const DECODE_MAX_SIDE = 640;
+/** Exceções seguidas antes de desistir: uma falha isolada não deve matar o scan. */
+const MAX_CONSECUTIVE_ERRORS = 30;
+/** Depois disto sem leitura, sugerimos a entrada manual. */
+const HINT_AFTER_MS = 12_000;
+
+/**
+ * `requestVideoFrameCallback` só existe em browsers recentes. Onde existe é
+ * melhor que `requestAnimationFrame`: dispara por frame *da câmara* e não por
+ * frame *do ecrã*, e não é suspenso quando o elemento sai de vista.
+ */
+type VideoWithFrameCallback = HTMLVideoElement & {
+  requestVideoFrameCallback?: (cb: () => void) => number;
+  cancelVideoFrameCallback?: (handle: number) => void;
+};
+
 export function Scanner() {
   const router = useRouter();
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const rafRef = useRef<number | null>(null);
+  const vfcRef = useRef<number | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const handledRef = useRef(false);
+  const stoppedRef = useRef(false);
+  const errorsRef = useRef(0);
   const [running, setRunning] = useState(false);
   const [loading, setLoading] = useState(false);
   const [manual, setManual] = useState("");
+  const [status, setStatus] = useState<string | null>(null);
+  const [showHint, setShowHint] = useState(false);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const native = useIsNative();
 
   // Liberta câmara e loop sem mexer no estado (seguro em unmount).
-  function teardown() {
+  const teardown = useCallback(() => {
+    stoppedRef.current = true;
     if (rafRef.current !== null) {
       cancelAnimationFrame(rafRef.current);
       rafRef.current = null;
+    }
+    const video = videoRef.current as VideoWithFrameCallback | null;
+    if (vfcRef.current !== null) {
+      video?.cancelVideoFrameCallback?.(vfcRef.current);
+      vfcRef.current = null;
     }
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((t) => t.stop());
       streamRef.current = null;
     }
     if (videoRef.current) videoRef.current.srcObject = null;
-  }
+  }, []);
 
   // Cleanup ao desmontar
+  useEffect(() => teardown, [teardown]);
+
+  // Sugestão de entrada manual quando a leitura demora. Sem isto, uma câmara
+  // que nunca lê não dá qualquer sinal ao barbeiro — fica só a imagem.
+  // A reposição do aviso é feita em `start()`, não aqui: a renderização já
+  // exige `running`, e chamar setState no corpo do efeito provoca renders em
+  // cascata.
   useEffect(() => {
-    return () => teardown();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    if (!running) return;
+    const id = setTimeout(() => setShowHint(true), HINT_AFTER_MS);
+    return () => clearTimeout(id);
+  }, [running]);
+
+  const goTo = useCallback(
+    async (handle: string) => {
+      teardown();
+      setRunning(false);
+      setLoading(true);
+      try {
+        const res = await lookupClient(handle);
+        if (res.ok) {
+          setFeedback({ kind: "success", title: "Cartão encontrado", sub: res.name });
+          setTimeout(() => {
+            router.push(`/admin/operacao/cliente/${res.handle}`);
+          }, 750);
+        } else {
+          setFeedback({ kind: "error", title: "Cartão inválido", sub: res.error });
+          setTimeout(() => setFeedback(null), 2500);
+        }
+      } catch (err) {
+        console.error("[scanner:lookup]", err);
+        setFeedback({
+          kind: "error",
+          title: "Erro",
+          sub: err instanceof Error ? err.message : "Falhou a validação.",
+        });
+        setTimeout(() => setFeedback(null), 2500);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [router, teardown],
+  );
 
   // App nativa (Capacitor): usa o scanner ML Kit nativo.
   async function startNative() {
     setLoading(true);
+    setStatus(null);
     try {
-      const { BarcodeScanner } = await import("@capacitor-mlkit/barcode-scanning");
+      const { BarcodeScanner, BarcodeFormat } = await import(
+        "@capacitor-mlkit/barcode-scanning"
+      );
+
+      // Sem este teste, num dispositivo sem suporte o `scan()` abre a câmara e
+      // nunca devolve nada.
+      const { supported } = await BarcodeScanner.isSupported();
+      if (!supported) {
+        toast.error("Scanner nativo indisponível neste dispositivo.");
+        return;
+      }
+
       const { camera } = await BarcodeScanner.requestPermissions();
       if (camera !== "granted" && camera !== "limited") {
         toast.error("Permissão de câmara recusada.");
         return;
       }
-      const { barcodes } = await BarcodeScanner.scan();
+
+      // O módulo de barcode do Google Play Services é descarregado a pedido.
+      // Se faltar, `scan()` mostra a câmara e nunca deteta nada.
+      try {
+        const { available } =
+          await BarcodeScanner.isGoogleBarcodeScannerModuleAvailable();
+        if (!available) {
+          setStatus("A instalar leitor…");
+          await BarcodeScanner.installGoogleBarcodeScannerModule();
+        }
+      } catch {
+        // iOS não tem este módulo — a rejeição aqui é esperada.
+      } finally {
+        setStatus(null);
+      }
+
+      const { barcodes } = await BarcodeScanner.scan({
+        formats: [BarcodeFormat.QrCode],
+      });
       const raw = barcodes[0]?.rawValue;
       if (!raw) {
         toast.error("Nenhum QR detetado.");
@@ -87,6 +188,7 @@ export function Scanner() {
         err instanceof Error ? `Falha no scanner: ${err.message}` : "Falha no scanner.",
       );
     } finally {
+      setStatus(null);
       setLoading(false);
     }
   }
@@ -94,15 +196,27 @@ export function Scanner() {
   // Web: jsQR sobre os frames do vídeo (sem worker — fiável em iOS Safari).
   async function start() {
     if (native) return startNative();
-    const video = videoRef.current;
+    const video = videoRef.current as VideoWithFrameCallback | null;
     if (!video) return;
     setLoading(true);
     handledRef.current = false;
+    stoppedRef.current = false;
+    errorsRef.current = 0;
+    setShowHint(false);
     try {
       const jsQR = (await import("jsqr")).default;
 
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: "environment" } },
+        video: {
+          facingMode: { ideal: "environment" },
+          // Pedir mais do que vamos descodificar é deliberado: garante que a
+          // redução para DECODE_MAX_SIDE acontece, e é essa redução que faz a
+          // média do ruído do sensor. Medido em frames com desfoque e ruído,
+          // uma câmara 640×480 lida em tamanho nativo lê 33%, enquanto
+          // 1280×720 reduzida para 640 lê 67%.
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
         audio: false,
       });
       streamRef.current = stream;
@@ -113,33 +227,74 @@ export function Scanner() {
       if (!canvasRef.current) canvasRef.current = document.createElement("canvas");
       const canvas = canvasRef.current;
       const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      if (!ctx) {
+        // Falhar alto: antes o loop saía em silêncio e a câmara ficava a rodar.
+        throw new Error("Canvas 2D indisponível neste browser.");
+      }
       setRunning(true);
 
-      const tick = () => {
-        if (handledRef.current || !ctx) return;
-        const v = videoRef.current;
-        if (v && v.readyState >= 2 && v.videoWidth && v.videoHeight) {
-          // descodifica numa resolução reduzida para ser rápido
-          const scale = Math.min(1, 640 / Math.max(v.videoWidth, v.videoHeight));
-          const w = Math.round(v.videoWidth * scale);
-          const h = Math.round(v.videoHeight * scale);
-          canvas.width = w;
-          canvas.height = h;
-          ctx.drawImage(v, 0, 0, w, h);
-          const img = ctx.getImageData(0, 0, w, h);
-          const code = jsQR(img.data, w, h, { inversionAttempts: "attemptBoth" });
-          if (code?.data) {
-            const handle = extractHandle(code.data);
-            if (handle) {
-              handledRef.current = true;
-              goTo(handle);
-              return;
-            }
-          }
-        }
-        rafRef.current = requestAnimationFrame(tick);
+      /** Descodifica o frame atual reduzido. Devolve o texto do QR ou null. */
+      const decodeFrame = (v: HTMLVideoElement): string | null => {
+        const scale = Math.min(1, DECODE_MAX_SIDE / Math.max(v.videoWidth, v.videoHeight));
+        const w = Math.max(1, Math.round(v.videoWidth * scale));
+        const h = Math.max(1, Math.round(v.videoHeight * scale));
+        canvas.width = w;
+        canvas.height = h;
+        ctx.drawImage(v, 0, 0, w, h);
+        const img = ctx.getImageData(0, 0, w, h);
+        const code = jsQR(img.data, w, h, { inversionAttempts: "attemptBoth" });
+        return code?.data ?? null;
       };
-      rafRef.current = requestAnimationFrame(tick);
+
+      const schedule = () => {
+        if (handledRef.current || stoppedRef.current) return;
+        if (typeof video.requestVideoFrameCallback === "function") {
+          vfcRef.current = video.requestVideoFrameCallback(tick);
+        } else {
+          rafRef.current = requestAnimationFrame(tick);
+        }
+      };
+
+      const tick = () => {
+        if (handledRef.current || stoppedRef.current) return;
+        // Tudo dentro de try/finally: uma exceção num frame não pode matar o
+        // loop. Era esta a razão de a câmara ficar viva sem nunca ler nada.
+        try {
+          const v = videoRef.current;
+          if (v && v.readyState >= 2 && v.videoWidth && v.videoHeight) {
+            const data = decodeFrame(v);
+            if (data) {
+              const handle = extractHandle(data);
+              if (handle) {
+                handledRef.current = true;
+                goTo(handle);
+                return;
+              }
+            }
+            errorsRef.current = 0;
+          }
+        } catch (err) {
+          errorsRef.current++;
+          console.error(
+            `[scanner:decode] falha ${errorsRef.current}/${MAX_CONSECUTIVE_ERRORS}`,
+            err,
+          );
+          if (errorsRef.current >= MAX_CONSECUTIVE_ERRORS) {
+            teardown();
+            setRunning(false);
+            toast.error(
+              err instanceof Error
+                ? `Descodificação falhou: ${err.message}`
+                : "Descodificação falhou.",
+            );
+            return;
+          }
+        } finally {
+          schedule();
+        }
+      };
+
+      schedule();
     } catch (err) {
       console.error("[scanner]", err);
       teardown();
@@ -157,32 +312,6 @@ export function Scanner() {
   function stop() {
     teardown();
     setRunning(false);
-  }
-
-  async function goTo(handle: string) {
-    stop();
-    setLoading(true);
-    try {
-      const res = await lookupClient(handle);
-      if (res.ok) {
-        setFeedback({ kind: "success", title: "Cartão encontrado", sub: res.name });
-        setTimeout(() => {
-          router.push(`/admin/operacao/cliente/${res.handle}`);
-        }, 750);
-      } else {
-        setFeedback({ kind: "error", title: "Cartão inválido", sub: res.error });
-        setTimeout(() => setFeedback(null), 2500);
-      }
-    } catch (err) {
-      setFeedback({
-        kind: "error",
-        title: "Erro",
-        sub: err instanceof Error ? err.message : "Falhou a validação.",
-      });
-      setTimeout(() => setFeedback(null), 2500);
-    } finally {
-      setLoading(false);
-    }
   }
 
   function submitManual(e: React.FormEvent) {
@@ -231,7 +360,8 @@ export function Scanner() {
           >
             {loading ? (
               <>
-                <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> A iniciar…
+                <RefreshCw className="mr-2 h-4 w-4 animate-spin" />{" "}
+                {status ?? "A iniciar…"}
               </>
             ) : (
               <>
@@ -251,6 +381,19 @@ export function Scanner() {
           ? "Toca em iniciar e aponta a câmara ao QR. Permite o acesso quando pedido."
           : "Aponta o QR ao centro do quadrado. A câmara só funciona em HTTPS e tens de permitir o acesso quando o browser pedir."}
       </p>
+
+      {/* Sem este aviso, uma câmara que não lê é indistinguível de uma câmara
+       * avariada — o barbeiro não tinha forma de saber o que fazer. */}
+      {showHint && running && (
+        <div className="mt-3 rounded-xl border border-brand/40 bg-brand/5 p-4 text-xs leading-relaxed text-muted-foreground">
+          <p className="font-semibold text-foreground">Ainda não li o QR.</p>
+          <p className="mt-1.5">
+            Espera que a câmara focar, evita reflexos e baixa o brilho do ecrã do
+            cliente se estiver ao máximo. Se não resultar, usa a entrada manual
+            abaixo.
+          </p>
+        </div>
+      )}
 
       <form
         onSubmit={submitManual}

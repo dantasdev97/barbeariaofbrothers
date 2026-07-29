@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdminSession } from "@/lib/admin-auth";
+import { extractHandle } from "@/lib/loyalty/handle";
 import { generatePublicSlug, generateQrToken } from "@/lib/loyalty/qr";
 
 async function requireRole(roles: Array<"super_admin" | "manager" | "barbeiro">) {
@@ -227,32 +228,81 @@ export async function linkBarberToUser(barberId: string, email: string, password
 // RPC wrappers — operação (usa session do utilizador, não service role)
 // ---------------------------------------------------------------------
 
-export async function loyaltyEarn(clientId: string, unitId: string, serviceId: string) {
+/**
+ * Erros esperados são devolvidos, não lançados: o Next redige exceções de
+ * Server Actions em produção e o cliente recebia apenas um digest genérico,
+ * escondendo a razão real da recusa do RPC.
+ */
+export type OpResult = { ok: true } | { ok: false; error: string; code?: string };
+
+/**
+ * Traduz os `errcode` levantados pelos RPCs de fidelidade
+ * (`supabase/migrations/0004_loyalty.sql`) para algo utilizável ao balcão.
+ */
+function describeRpcError(
+  error: { message: string; code?: string; details?: string | null; hint?: string | null },
+  context: string,
+): OpResult {
+  console.error(`[${context}]`, {
+    message: error.message,
+    code: error.code,
+    details: error.details,
+    hint: error.hint,
+  });
+
+  const byCode: Record<string, string> = {
+    "42501": "Sem permissão para operar nesta unidade.",
+    "22023": "Serviço ou recompensa inválido/inativo nesta unidade.",
+    "23514": "Saldo insuficiente para este resgate.",
+  };
+
+  return {
+    ok: false,
+    code: error.code,
+    error: (error.code && byCode[error.code]) || error.message || "Operação falhou.",
+  };
+}
+
+/** Revalida as rotas afetadas por uma transação de pontos. */
+function bustOperation() {
+  revalidatePath("/admin/operacao", "layout");
+  // `/cliente` não é uma rota — o cartão público vive em `/cliente/[handle]`,
+  // e um caminho com segmento dinâmico exige o `type`.
+  revalidatePath("/cliente/[handle]", "page");
+}
+
+export async function loyaltyEarn(
+  clientId: string,
+  unitId: string,
+  serviceId: string,
+): Promise<OpResult> {
   await requireRole(["super_admin", "manager", "barbeiro"]);
   const sb = await createClient();
-  const { data, error } = await sb.rpc("loyalty_earn", {
+  const { error } = await sb.rpc("loyalty_earn", {
     p_client_id: clientId,
     p_unit_id: unitId,
     p_service_id: serviceId,
   });
-  if (error) throw new Error(error.message);
-  revalidatePath("/admin/operacao", "layout");
-  revalidatePath(`/cliente`, "layout");
-  return data;
+  if (error) return describeRpcError(error, "loyaltyEarn");
+  bustOperation();
+  return { ok: true };
 }
 
-export async function loyaltyRedeem(clientId: string, unitId: string, rewardId: string) {
+export async function loyaltyRedeem(
+  clientId: string,
+  unitId: string,
+  rewardId: string,
+): Promise<OpResult> {
   await requireRole(["super_admin", "manager", "barbeiro"]);
   const sb = await createClient();
-  const { data, error } = await sb.rpc("loyalty_redeem", {
+  const { error } = await sb.rpc("loyalty_redeem", {
     p_client_id: clientId,
     p_unit_id: unitId,
     p_reward_id: rewardId,
   });
-  if (error) throw new Error(error.message);
-  revalidatePath("/admin/operacao", "layout");
-  revalidatePath(`/cliente`, "layout");
-  return data;
+  if (error) return describeRpcError(error, "loyaltyRedeem");
+  bustOperation();
+  return { ok: true };
 }
 
 export async function loyaltyAdjust(
@@ -280,11 +330,7 @@ export async function loyaltyAdjust(
 
 export async function gotoClientByToken(handle: string) {
   await requireRole(["super_admin", "manager", "barbeiro"]);
-  const t = handle.trim();
-  // Aceita URL completa, qr_token (com hífen) ou public_slug (com letras minúsculas + hífen)
-  const match = t.match(/cliente\/([A-Za-z0-9-]+)/);
-  const finalHandle = match?.[1] ?? t;
-  redirect(`/admin/operacao/cliente/${finalHandle}`);
+  redirect(`/admin/operacao/cliente/${extractHandle(handle)}`);
 }
 
 /**
@@ -299,10 +345,8 @@ export async function lookupClient(
   | { ok: false; error: string }
 > {
   await requireRole(["super_admin", "manager", "barbeiro"]);
-  const t = handle.trim();
-  if (!t) return { ok: false, error: "Handle vazio." };
-  const match = t.match(/cliente\/([A-Za-z0-9-]+)/);
-  const finalHandle = (match?.[1] ?? t).trim();
+  if (!handle.trim()) return { ok: false, error: "Handle vazio." };
+  const finalHandle = extractHandle(handle);
   if (!finalHandle) return { ok: false, error: "Handle inválido." };
 
   const sb = createAdminClient();
@@ -312,7 +356,10 @@ export async function lookupClient(
     .or(`public_slug.eq.${finalHandle},qr_token.eq.${finalHandle}`)
     .maybeSingle();
 
-  if (error) return { ok: false, error: "Erro a procurar cartão." };
+  if (error) {
+    console.error("[lookupClient]", error);
+    return { ok: false, error: "Erro a procurar cartão." };
+  }
   if (!data) return { ok: false, error: "Cartão não encontrado." };
 
   // Prefere public_slug (URL amigável) quando existe

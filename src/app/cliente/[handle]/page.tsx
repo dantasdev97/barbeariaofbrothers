@@ -4,6 +4,7 @@ import QRCode from "qrcode";
 import { Gift, MapPin, QrCode, Sparkles } from "lucide-react";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { cardUrl } from "@/lib/loyalty/qr";
+import { getClientByHandle } from "@/lib/loyalty/queries";
 import { getAllUnits } from "@/lib/data";
 import { Header } from "@/components/public/header";
 import { Footer } from "@/components/public/footer";
@@ -16,16 +17,10 @@ export async function generateMetadata({
   params: Promise<{ handle: string }>;
 }): Promise<Metadata> {
   const { handle } = await params;
-  const sb = createAdminClient();
-  const isToken = /^[A-Z0-9-]+$/.test(handle);
-  const { data } = await sb
-    .from("clients")
-    .select("name")
-    .eq(isToken ? "qr_token" : "public_slug", handle)
-    .maybeSingle();
+  const client = await getClientByHandle(handle);
   return {
-    title: data?.name
-      ? `Cartão Fidelidade · ${data.name}`
+    title: client?.name
+      ? `Cartão Fidelidade · ${client.name}`
       : "Cartão Fidelidade",
     robots: { index: false, follow: false },
   };
@@ -39,12 +34,7 @@ export default async function CartaoPublico({
   const { handle } = await params;
   const sb = createAdminClient();
 
-  const isToken = /^[A-Z0-9-]+$/.test(handle);
-  const { data: client } = await sb
-    .from("clients")
-    .select("*")
-    .eq(isToken ? "qr_token" : "public_slug", handle)
-    .maybeSingle();
+  const client = await getClientByHandle(handle);
   if (!client) notFound();
 
   const allUnits = await getAllUnits();
