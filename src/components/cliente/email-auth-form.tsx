@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { Loader2 } from "lucide-react";
+import { Loader2, MailCheck } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,12 +42,16 @@ function toMessage(raw: string): string {
  * a perguntar a unidade.
  */
 export function EmailAuthForm({ next }: { next: string }) {
-  const router = useRouter();
   const [mode, setMode] = useState<Mode>("signin");
   const [pending, setPending] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  /**
+   * Email a que foi enviada a confirmação. Estado do ecrã e não um `toast`:
+   * a pessoa precisa de continuar a ver isto enquanto vai à caixa de correio.
+   */
+  const [awaitingConfirmation, setAwaitingConfirmation] = useState<string | null>(null);
 
   const isSignup = mode === "signup";
 
@@ -63,7 +66,7 @@ export function EmailAuthForm({ next }: { next: string }) {
     setPending(true);
     try {
       const supabase = createClient();
-      const { error } = isSignup
+      const { data, error } = isSignup
         ? await supabase.auth.signUp({
             email: email.trim(),
             password,
@@ -76,13 +79,45 @@ export function EmailAuthForm({ next }: { next: string }) {
 
       if (error) throw error;
 
-      router.push(next);
-      router.refresh();
+      // Com a confirmação de email ligada no Supabase, o `signUp` devolve
+      // utilizador **sem sessão** e sem erro. Navegar aqui mandava a pessoa
+      // para /minha-conta, que a devolvia a este ecrã sem dizer porquê — era
+      // exactamente o que acontecia ao criar conta.
+      if (!data.session) {
+        setPending(false);
+        setAwaitingConfirmation(email.trim());
+        return;
+      }
+
+      // Carregamento completo e não `router.push` + `router.refresh()`: os dois
+      // seguidos arriscam o refresh abortar a navegação, e o pedido ao servidor
+      // tem de levar o cookie de sessão acabado de escrever.
+      window.location.assign(next);
     } catch (err) {
       setPending(false);
       toast.error(
         toMessage(err instanceof Error ? err.message : "Não foi possível entrar."),
       );
+    }
+  }
+
+  async function resendConfirmation() {
+    if (!awaitingConfirmation) return;
+    setPending(true);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email: awaitingConfirmation,
+      });
+      if (error) throw error;
+      toast.success("Email reenviado.");
+    } catch (err) {
+      toast.error(
+        toMessage(err instanceof Error ? err.message : "Não foi possível reenviar."),
+      );
+    } finally {
+      setPending(false);
     }
   }
 
@@ -105,6 +140,52 @@ export function EmailAuthForm({ next }: { next: string }) {
     } finally {
       setPending(false);
     }
+  }
+
+  // Conta criada, falta confirmar. Substitui o formulário: deixá-lo à vista
+  // convidava a tentar entrar outra vez, que é justamente o que ainda não
+  // resulta.
+  if (awaitingConfirmation) {
+    return (
+      <div className="rounded-2xl border border-brand/40 bg-brand/5 p-6 text-center">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-brand/15 text-brand">
+          <MailCheck className="h-6 w-6" />
+        </div>
+        <h2 className="mt-4 font-heading text-lg font-semibold leading-tight">
+          Confirme o seu email
+        </h2>
+        <p className="mt-2 text-[13.5px] leading-relaxed text-muted-foreground">
+          Enviámos um link para{" "}
+          <strong className="font-medium text-foreground">{awaitingConfirmation}</strong>.
+          Abra-o para activar a conta e receber os seus pontos de boas-vindas.
+        </p>
+        <Button
+          onClick={resendConfirmation}
+          disabled={pending}
+          variant="outline"
+          className="mt-5 h-11 w-full"
+        >
+          {pending ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" /> A reenviar…
+            </>
+          ) : (
+            "Reenviar email"
+          )}
+        </Button>
+        <button
+          type="button"
+          onClick={() => {
+            setAwaitingConfirmation(null);
+            setMode("signin");
+            setPassword("");
+          }}
+          className="mt-3 min-h-11 w-full text-[13px] text-muted-foreground underline underline-offset-2 transition-colors duration-150 hover-fine:hover:text-foreground"
+        >
+          Já confirmei — entrar
+        </button>
+      </div>
+    );
   }
 
   return (

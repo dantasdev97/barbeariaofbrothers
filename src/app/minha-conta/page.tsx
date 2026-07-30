@@ -55,23 +55,29 @@ export default async function MinhaContaPage({
   let autoError: string | null = null;
 
   if (!account) {
-    if (!unidade) {
-      autoError = "não recebi a barbearia de onde veio";
+    // Sem slug no URL, a barbearia ainda pode ser óbvia: se só uma participa no
+    // programa, perguntar qual não tem outra resposta possível. Quem entra pela
+    // página inicial caía no selector em vez de no cartão.
+    const target = unidade
+      ? await getUnitBySlug(unidade)
+      : loyaltyUnits.length === 1
+        ? loyaltyUnits[0]
+        : null;
+
+    if (!target) {
+      autoError = unidade
+        ? `a barbearia "${unidade}" não foi encontrada`
+        : "não recebi a barbearia de onde veio";
     } else {
-      const unit = await getUnitBySlug(unidade);
-      if (!unit) {
-        autoError = `a barbearia "${unidade}" não foi encontrada`;
+      const { error } = await sb.rpc("loyalty_create_card", {
+        p_unit_id: target.id,
+        p_name: null,
+      });
+      if (error) {
+        console.error("[minha-conta] criação automática do cartão falhou", error);
+        autoError = error.message;
       } else {
-        const { error } = await sb.rpc("loyalty_create_card", {
-          p_unit_id: unit.id,
-          p_name: null,
-        });
-        if (error) {
-          console.error("[minha-conta] criação automática do cartão falhou", error);
-          autoError = error.message;
-        } else {
-          account = await getMyAccount();
-        }
+        account = await getMyAccount();
       }
     }
   }
