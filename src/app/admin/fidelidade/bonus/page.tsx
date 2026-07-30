@@ -9,7 +9,7 @@ export default async function BonusPage() {
   const sb = createAdminClient();
   const [{ data: bonuses }, { data: units }] = await Promise.all([
     sb.from("loyalty_bonuses").select("*"),
-    sb.from("units").select("id, name, slug").order("name"),
+    sb.from("units").select("id, name, slug, loyalty_active").order("name"),
   ]);
 
   return <BonusManager bonuses={bonuses ?? []} units={units ?? []} />;

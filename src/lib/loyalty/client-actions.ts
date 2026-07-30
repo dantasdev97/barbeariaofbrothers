@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendCouponEmail } from "@/lib/email/coupon";
+import { normalizeInstagramHandle } from "@/lib/loyalty/instagram";
 import type {
   ClientRow,
   LoyaltyBonusKind,
@@ -109,15 +110,19 @@ export async function selfRedeem(
   return { ok: true, data: coupon };
 }
 
+
 /** Bónus de registo e de Instagram — uma vez por cliente, garantido no índice. */
 export async function grantBonus(
   kind: "signup" | "instagram",
   unitId: string,
+  /** Obrigatório em `instagram`: o @ do cliente, para se poder conferir. */
+  handle?: string,
 ): Promise<ActionResult<LoyaltyTransactionRow>> {
   const sb = await createClient();
   const { data, error } = await sb.rpc("loyalty_grant_bonus", {
     p_kind: kind,
     p_unit_id: unitId,
+    p_handle: handle ? normalizeInstagramHandle(handle) : null,
   });
 
   if (error) return { ok: false, error: toMessage(error, "Não foi possível atribuir o bónus.") };
@@ -218,9 +223,9 @@ export async function getMyAccount(): Promise<ClientAccount | null> {
   }[];
   const findBonus = (kind: LoyaltyBonusKind) => bonusList.find((b) => b.kind === kind);
   const bonuses: ClientBonuses = {
-    signup: { points: findBonus("signup")?.points ?? 50, active: findBonus("signup")?.active ?? false },
+    signup: { points: findBonus("signup")?.points ?? 10, active: findBonus("signup")?.active ?? false },
     instagram: {
-      points: findBonus("instagram")?.points ?? 30,
+      points: findBonus("instagram")?.points ?? 15,
       active: findBonus("instagram")?.active ?? false,
     },
   };

@@ -47,6 +47,11 @@ export type UnitRow = {
   socials: Socials | null;
   seo: SeoMeta | null;
   active: boolean;
+  /**
+   * Se esta unidade participa no cartão fidelidade. Independente de `active`:
+   * a unidade pode estar no site sem estar no programa de pontos.
+   */
+  loyalty_active: boolean;
   created_at: string;
 };
 
@@ -115,6 +120,11 @@ export type ClientRow = {
   /** Conta do cliente, criada ao entrar com o Google. */
   auth_user_id: string | null;
   claimed_at: string | null;
+  /**
+   * @ que o cliente indicou ao reclamar o bónus de Instagram, sem o `@`.
+   * Serve para o dono poder conferir quem seguiu de facto.
+   */
+  instagram_handle: string | null;
   created_at: string;
 };
 

@@ -24,15 +24,15 @@ create table if not exists public.loyalty_bonuses (
   unique (unit_id, kind)
 );
 
--- Backfill: preserva os valores actuais (50/30) como ponto de partida
+-- Backfill: 10 pts no registo e 15 no Instagram, como ponto de partida
 -- editável, para nenhuma unidade ficar sem bónus configurado depois desta
 -- migração — sem isto, `loyalty_create_card` não teria de onde ler o valor.
 insert into public.loyalty_bonuses (unit_id, kind, points)
-select id, 'signup', 50 from public.units
+select id, 'signup', 10 from public.units
 on conflict (unit_id, kind) do nothing;
 
 insert into public.loyalty_bonuses (unit_id, kind, points)
-select id, 'instagram', 30 from public.units
+select id, 'instagram', 15 from public.units
 on conflict (unit_id, kind) do nothing;
 
 -- ---------------------------------------------------------------------
@@ -132,7 +132,7 @@ begin
   select points into v_bonus
   from public.loyalty_bonuses
   where unit_id = p_unit_id and kind = 'signup' and active = true;
-  v_bonus := coalesce(v_bonus, 50);
+  v_bonus := coalesce(v_bonus, 10);
 
   insert into public.loyalty_transactions
     (client_id, unit_id, actor_user_id, type, points, bonus_kind, note)

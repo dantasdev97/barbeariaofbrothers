@@ -20,7 +20,7 @@ import { REWARD_KINDS, formatRewardValue, rewardKindLabel } from "@/lib/loyalty/
 import type { LoyaltyRewardKind } from "@/types/database.types";
 import { EmptyState } from "@/components/admin/empty-state";
 import { ConfirmDialog } from "@/components/admin/confirm-dialog";
-import { DeleteAction, RowActions } from "@/components/admin/row-actions";
+import { DeleteAction, EditAction, RowActions } from "@/components/admin/row-actions";
 import {
   deleteLoyaltyReward,
   saveLoyaltyReward,
@@ -214,6 +214,7 @@ export function RewardsManager({
                 </span>
               </div>
               <RowActions>
+                <EditAction onClick={() => openEdit(r)} label={r.name} />
                 <DeleteAction onClick={() => setToDelete(r)} label={r.name} />
               </RowActions>
             </div>

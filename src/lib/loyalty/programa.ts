@@ -1,6 +1,6 @@
 import "server-only";
 import { createPublicClient } from "@/lib/supabase/public";
-import { getAllUnits, getUnitBySlug } from "@/lib/data";
+import { getLoyaltyUnits, getUnitBySlug } from "@/lib/data";
 import { getCardState } from "@/lib/loyalty/session";
 import type { EarnListBonuses } from "@/components/cliente/earn-list";
 import type {
@@ -34,7 +34,7 @@ export async function getProgramaContext(
   // O botão fixo e o ícone do cabeçalho são por unidade e passam o slug:
   // quem vem do Vale de Lobos tem de ver o que é do Vale de Lobos.
   const [units, requested, { hasCard }] = await Promise.all([
-    getAllUnits(),
+    getLoyaltyUnits(),
     unidade ? getUnitBySlug(unidade) : Promise.resolve(null),
     getCardState(),
   ]);
@@ -77,11 +77,11 @@ export async function getProgramaContext(
     rewards: (r.data ?? []) as LoyaltyRewardRow[],
     bonuses: {
       signup: {
-        points: findBonus("signup")?.points ?? 50,
+        points: findBonus("signup")?.points ?? 10,
         active: findBonus("signup")?.active ?? false,
       },
       instagram: {
-        points: findBonus("instagram")?.points ?? 30,
+        points: findBonus("instagram")?.points ?? 15,
         active: findBonus("instagram")?.active ?? false,
       },
     },

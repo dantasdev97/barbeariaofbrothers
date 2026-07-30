@@ -9,10 +9,10 @@ import { Input } from "@/components/ui/input";
 import { Field } from "@/components/admin/form-bits";
 import { PageHeader } from "@/components/admin/page-header";
 import { staggerIndex } from "@/lib/motion";
-import { saveLoyaltyBonuses } from "@/lib/loyalty/actions";
+import { saveLoyaltyBonuses, setUnitLoyaltyActive } from "@/lib/loyalty/actions";
 import type { LoyaltyBonusRow, UnitRow } from "@/types/database.types";
 
-type UnitLite = Pick<UnitRow, "id" | "name" | "slug">;
+type UnitLite = Pick<UnitRow, "id" | "name" | "slug" | "loyalty_active">;
 
 type BonusState = {
   points: string;
@@ -28,8 +28,8 @@ function initialState(unitId: string, bonuses: LoyaltyBonusRow[]): UnitBonusStat
   const signup = bonuses.find((b) => b.unit_id === unitId && b.kind === "signup");
   const instagram = bonuses.find((b) => b.unit_id === unitId && b.kind === "instagram");
   return {
-    signup: { points: String(signup?.points ?? 50), active: signup?.active ?? true },
-    instagram: { points: String(instagram?.points ?? 30), active: instagram?.active ?? true },
+    signup: { points: String(signup?.points ?? 10), active: signup?.active ?? true },
+    instagram: { points: String(instagram?.points ?? 15), active: instagram?.active ?? true },
   };
 }
 
@@ -52,6 +52,29 @@ export function BonusManager({
   );
   const [pendingUnit, setPendingUnit] = useState<string | null>(null);
   const [, startTransition] = useTransition();
+  /** Estado local do interruptor, para responder ao toque sem esperar o servidor. */
+  const [loyaltyOn, setLoyaltyOn] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(units.map((u) => [u.id, u.loyalty_active])),
+  );
+  const [togglingUnit, setTogglingUnit] = useState<string | null>(null);
+
+  function toggleLoyalty(unitId: string, next: boolean) {
+    setLoyaltyOn((prev) => ({ ...prev, [unitId]: next }));
+    setTogglingUnit(unitId);
+    startTransition(async () => {
+      try {
+        await setUnitLoyaltyActive(unitId, next);
+        toast.success(next ? "Unidade no programa." : "Unidade fora do programa.");
+        router.refresh();
+      } catch (err) {
+        // Repõe o visto: não deve ficar a dizer que gravou quando não gravou.
+        setLoyaltyOn((prev) => ({ ...prev, [unitId]: !next }));
+        toast.error(err instanceof Error ? err.message : "Falhou.");
+      } finally {
+        setTogglingUnit(null);
+      }
+    });
+  }
 
   function update(unitId: string, kind: "signup" | "instagram", patch: Partial<BonusState>) {
     setState((prev) => ({
@@ -106,11 +129,30 @@ export function BonusManager({
               {...staggerIndex(i)}
               className="overflow-hidden rounded-2xl border border-border bg-bg-surface"
             >
-              <div className="border-b border-border px-6 py-[18px]">
+              <div className="flex items-center justify-between gap-4 border-b border-border px-6 py-[18px]">
                 <div className="font-heading text-base font-semibold tracking-tight">
                   {u.name}
                 </div>
+                {/* Tira a unidade do cartão fidelidade sem a tirar do site:
+                 * ela continua com página, barbeiros e produtos. */}
+                <label className="flex shrink-0 cursor-pointer items-center gap-2 text-[12.5px] text-muted-foreground">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 accent-brand"
+                    checked={loyaltyOn[u.id] ?? true}
+                    disabled={togglingUnit === u.id}
+                    onChange={(e) => toggleLoyalty(u.id, e.target.checked)}
+                  />
+                  No programa
+                </label>
               </div>
+
+              {!(loyaltyOn[u.id] ?? true) && (
+                <p className="border-b border-border bg-background px-6 py-3 text-[12.5px] leading-relaxed text-muted-foreground">
+                  Fora do cartão fidelidade. Não aparece a quem cria conta e o
+                  staff não pode lançar pontos aqui.
+                </p>
+              )}
 
               <div className="space-y-4 px-6 py-5">
                 <div className="flex items-start gap-3">

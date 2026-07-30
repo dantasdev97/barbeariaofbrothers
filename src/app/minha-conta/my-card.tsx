@@ -10,7 +10,10 @@ import { CouponCode } from "@/components/cliente/coupon-code";
 import { EarnList } from "@/components/cliente/earn-list";
 import { formatRewardValue, rewardKindIcon } from "@/lib/loyalty/rewards";
 import { staggerIndex } from "@/lib/motion";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { grantBonus, selfRedeem } from "@/lib/loyalty/client-actions";
+import { normalizeInstagramHandle } from "@/lib/loyalty/instagram";
 import type { ClientAccount } from "@/lib/loyalty/client-actions";
 import type { LoyaltyCouponRow, LoyaltyRewardRow } from "@/types/database.types";
 
@@ -28,6 +31,8 @@ export function MyCard({
   const [toRedeem, setToRedeem] = useState<LoyaltyRewardRow | null>(null);
   /** O cupom acabado de emitir, mostrado em destaque antes de ir para a lista. */
   const [fresh, setFresh] = useState<LoyaltyCouponRow | null>(null);
+  /** @ de Instagram escrito pelo cliente, exigido antes de dar o bónus. */
+  const [igHandle, setIgHandle] = useState("");
 
   const { client, unit, balance, rewards, services, coupons, transactions, claimedBonuses, bonuses } =
     account;
@@ -66,9 +71,14 @@ export function MyCard({
   }
 
   function claimInstagram() {
+    const handle = normalizeInstagramHandle(igHandle);
+    if (!handle) {
+      toast.error("Escreva o seu nome de Instagram.");
+      return;
+    }
     setBusyId("instagram");
     startTransition(async () => {
-      const result = await grantBonus("instagram", client.unit_id);
+      const result = await grantBonus("instagram", client.unit_id, handle);
       setBusyId(null);
       if (!result.ok) {
         toast.error(result.error);
@@ -307,20 +317,13 @@ export function MyCard({
         )}
       </section>
 
-      {/* Bónus por reclamar */}
+      {/* Bónus de Instagram. Pede o @ antes de dar os pontos: sem isso era um
+       * clique livre e não havia como saber quem seguiu de facto. */}
       {!claimedBonuses.includes("instagram") && bonuses.instagram.active && (
-        <section className="mt-6">
-          <button
-            onClick={claimInstagram}
-            disabled={pending}
-            className="flex min-h-16 w-full items-center gap-4 rounded-2xl border border-dashed border-border bg-bg-surface p-5 text-left transition-[border-color,transform] duration-150 ease-out-strong hover-fine:hover:border-brand/50 active:scale-[0.99] disabled:opacity-60"
-          >
+        <section className="mt-6 rounded-2xl border border-dashed border-border bg-bg-surface p-5">
+          <div className="flex items-center gap-4">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand/10 text-brand">
-              {busyId === "instagram" ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
-              ) : (
-                <Camera className="h-5 w-5" />
-              )}
+              <Camera className="h-5 w-5" />
             </div>
             <div className="min-w-0 flex-1">
               <p className="font-heading text-base font-semibold leading-tight">
@@ -330,7 +333,49 @@ export function MyCard({
                 +{bonuses.instagram.points} pontos, uma vez
               </p>
             </div>
-          </button>
+          </div>
+
+          <label
+            htmlFor="ig-handle"
+            className="mt-4 block text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground"
+          >
+            O seu Instagram
+          </label>
+          <div className="mt-1.5 flex items-center gap-2">
+            <div className="relative flex-1">
+              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                @
+              </span>
+              <Input
+                id="ig-handle"
+                value={igHandle}
+                onChange={(e) => setIgHandle(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && igHandle.trim() && !pending) claimInstagram();
+                }}
+                placeholder="oseunome"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
+                className="h-12 pl-7 text-base"
+              />
+            </div>
+            <Button
+              onClick={claimInstagram}
+              disabled={pending || !igHandle.trim()}
+              className="h-12 shrink-0 bg-brand px-5 text-primary-foreground hover:bg-brand-hover"
+            >
+              {busyId === "instagram" ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                "Confirmar"
+              )}
+            </Button>
+          </div>
+          <p className="mt-2 text-[12px] leading-relaxed text-muted-foreground">
+            Siga-nos e escreva aqui o seu nome de utilizador — confirmamos na
+            barbearia.
+          </p>
         </section>
       )}
 

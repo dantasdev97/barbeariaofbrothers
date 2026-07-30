@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import QRCode from "qrcode";
 import { createClient } from "@/lib/supabase/server";
 import { cardUrl } from "@/lib/loyalty/qr";
-import { getAllUnits, getUnitBySlug } from "@/lib/data";
+import { getLoyaltyUnits, getUnitBySlug } from "@/lib/data";
 import { getMyAccount } from "@/lib/loyalty/client-actions";
 import { ClientShell } from "@/components/cliente/client-shell";
 import { MyCard } from "./my-card";
@@ -33,7 +33,7 @@ export default async function MinhaContaPage({
   }
 
   let account = await getMyAccount();
-  const units = await getAllUnits();
+  const units = await getLoyaltyUnits();
 
   // Autenticado mas ainda sem cartão. Quem veio de `/programa?unidade=X`
   // traz o slug: a barbearia já é conhecida e voltar a perguntá-la é um

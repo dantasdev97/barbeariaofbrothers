@@ -205,6 +205,26 @@ type BonusInput = {
   instagram: { points: number; active: boolean };
 };
 
+/**
+ * Liga ou desliga uma unidade do cartão fidelidade.
+ *
+ * Independente de `units.active`: a unidade continua no site público — com
+ * página, barbeiros e produtos — e só sai do programa de pontos.
+ */
+export async function setUnitLoyaltyActive(unitId: string, active: boolean) {
+  await requireRole(["super_admin", "manager"]);
+  const sb = createAdminClient();
+  const { error } = await sb
+    .from("units")
+    .update({ loyalty_active: active })
+    .eq("id", unitId);
+  if (error) throw new Error(error.message);
+  bust();
+  revalidatePath("/programa");
+  revalidatePath("/minha-conta");
+  revalidatePath("/entrar");
+}
+
 export async function saveLoyaltyBonuses(input: BonusInput) {
   await requireRole(["super_admin", "manager"]);
   const sb = createAdminClient();

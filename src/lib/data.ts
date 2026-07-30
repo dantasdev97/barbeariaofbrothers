@@ -31,6 +31,30 @@ export async function getAllUnits(): Promise<UnitRow[]> {
   return (data ?? []) as UnitRow[];
 }
 
+/**
+ * Unidades que participam no cartão fidelidade.
+ *
+ * Separada de `getAllUnits()` de propósito: essa é usada pelo site público
+ * (homepage, layout da unidade, cartão) e filtrar lá dentro tirava a unidade do
+ * site todo. Aqui só interessa quem está no programa de pontos.
+ */
+export async function getLoyaltyUnits(): Promise<UnitRow[]> {
+  const supabase = createPublicClient();
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("units")
+    .select("*")
+    .eq("active", true)
+    .eq("loyalty_active", true)
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    console.error("[getLoyaltyUnits]", error);
+    return [];
+  }
+  return (data ?? []) as UnitRow[];
+}
+
 export async function getUnitBySlug(slug: string): Promise<UnitRow | null> {
   const supabase = createPublicClient();
   if (!supabase) return null;
