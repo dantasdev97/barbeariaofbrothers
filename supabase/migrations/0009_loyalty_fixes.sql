@@ -1,9 +1,14 @@
--- 0007_loyalty_fixes.sql
+-- 0009_loyalty_fixes.sql
 -- Correções ao módulo de fidelidade, na sequência de não ser possível dar baixa
 -- no cartão a partir da operação:
 --   1. unidades sem serviços/recompensas configurados (a lista aparecia vazia)
 --   2. o seed idempotente não tinha constraint em que encaixar o ON CONFLICT
 --   3. o âmbito por unidade em loyalty_transactions não estava a ser imposto
+--
+-- Numerada 0009 e não 0007 para ficar depois de 0007_client_accounts.sql e
+-- 0008_editable_bonus_points.sql, que chegam pela branch das contas de cliente.
+-- Aplica-se na mesma a uma base que ainda não as tenha: o passo dos cupões é
+-- condicional.
 
 -- ---------------------------------------------------------------------
 -- 1. Unicidade por (unidade, nome)
@@ -45,6 +50,30 @@ update public.loyalty_transactions t
 set reward_id = r.keep_id
 from ranked r
 where t.reward_id = r.id and r.id <> r.keep_id;
+
+-- Os cupões referenciam recompensas com `on delete set null`: sem reapontar
+-- primeiro, apagar uma recompensa duplicada apagava do cupão a informação de a
+-- que recompensa ele dizia respeito. A tabela só existe a partir de
+-- 0007_client_accounts.sql, por isso o passo é condicional — e o SQL vai em
+-- `execute` para não falhar a compilação quando ela ainda não existe.
+do $$
+begin
+  if to_regclass('public.loyalty_coupons') is not null then
+    execute $sql$
+      with ranked as (
+        select id,
+          first_value(id) over (
+            partition by unit_id, name order by created_at, id
+          ) as keep_id
+        from public.loyalty_rewards
+      )
+      update public.loyalty_coupons c
+      set reward_id = r.keep_id
+      from ranked r
+      where c.reward_id = r.id and r.id <> r.keep_id
+    $sql$;
+  end if;
+end $$;
 
 delete from public.loyalty_rewards s
 where exists (
