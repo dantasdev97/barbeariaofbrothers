@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Coins, Gift, ScrollText, Sparkles, Users } from "lucide-react";
+import { Award, Coins, Gift, ScrollText, Sparkles, Users } from "lucide-react";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireRole } from "@/lib/admin-auth";
 import { PageHeader } from "@/components/admin/page-header";
@@ -85,6 +85,12 @@ export default async function FidelidadePage() {
               className="inline-flex items-center gap-2 rounded-[10px] border border-border bg-transparent px-4 py-2.5 text-[13px] font-medium text-muted-foreground transition-[background-color,color,transform] duration-150 ease-out-strong hover:bg-background hover:text-foreground active:scale-[0.97]"
             >
               <ScrollText className="h-4 w-4" /> Serviços
+            </Link>
+            <Link
+              href="/admin/fidelidade/bonus"
+              className="inline-flex items-center gap-2 rounded-[10px] border border-border bg-transparent px-4 py-2.5 text-[13px] font-medium text-muted-foreground transition-[background-color,color,transform] duration-150 ease-out-strong hover:bg-background hover:text-foreground active:scale-[0.97]"
+            >
+              <Award className="h-4 w-4" /> Bónus
             </Link>
             <Link
               href="/admin/fidelidade/recompensas"

@@ -19,11 +19,33 @@ import { deleteClient } from "@/lib/loyalty/actions";
 export type ClientRow = {
   id: string;
   name: string;
-  phone: string;
+  phone: string | null;
+  email: string | null;
+  /** Criou o cartão sozinho pela Google, em vez de ser cadastrado ao balcão. */
+  selfRegistered: boolean;
   unitName: string;
   points: number;
   lastVisit: string | null;
 };
+
+/**
+ * Telefone ou email — o que existir.
+ *
+ * Quem se regista pela Google não deixa telefone, e a coluna mostrava só
+ * "—" para essas pessoas: apareciam na lista sem forma nenhuma de as
+ * contactar ou identificar.
+ */
+function contactOf(c: ClientRow): string {
+  return c.phone ?? c.email ?? "—";
+}
+
+function SelfBadge() {
+  return (
+    <span className="inline-flex shrink-0 rounded-full bg-brand/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-brand">
+      Conta própria
+    </span>
+  );
+}
 
 export function ClientsTable({
   rows,
@@ -89,11 +111,14 @@ export function ClientsTable({
                 href={`/admin/clientes/${c.id}`}
                 className="min-w-0 flex-1 rounded-md transition-opacity duration-150 ease-out-strong active:opacity-70"
               >
-                <h2 className="truncate font-heading text-lg font-semibold">
-                  {c.name}
-                </h2>
+                <div className="flex items-center gap-2">
+                  <h2 className="truncate font-heading text-lg font-semibold">
+                    {c.name}
+                  </h2>
+                  {c.selfRegistered && <SelfBadge />}
+                </div>
                 <p className="mt-0.5 truncate font-mono text-xs text-muted-foreground">
-                  {c.phone}
+                  {contactOf(c)}
                 </p>
               </Link>
               <span className="shrink-0 rounded-full bg-brand/15 px-2.5 py-1 font-mono text-[12px] font-bold tabular-nums text-brand">
@@ -130,7 +155,7 @@ export function ClientsTable({
           <thead className="border-b border-border text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
             <tr>
               <th className="px-6 py-3 text-left font-semibold">Nome</th>
-              <th className="px-6 py-3 text-left font-semibold">Telefone</th>
+              <th className="px-6 py-3 text-left font-semibold">Contacto</th>
               <th className="px-6 py-3 text-left font-semibold">Unidade</th>
               <th className="px-6 py-3 text-left font-semibold">Pontos</th>
               <th className="px-6 py-3 text-left font-semibold">Última visita</th>
@@ -145,15 +170,18 @@ export function ClientsTable({
                 className="transition-colors duration-150 hover-fine:hover:bg-background"
               >
                 <td className="px-6 py-3">
-                  <Link
-                    href={`/admin/clientes/${c.id}`}
-                    className="font-medium transition-colors duration-150 hover:text-brand"
-                  >
-                    {c.name}
-                  </Link>
+                  <div className="flex items-center gap-2">
+                    <Link
+                      href={`/admin/clientes/${c.id}`}
+                      className="font-medium transition-colors duration-150 hover:text-brand"
+                    >
+                      {c.name}
+                    </Link>
+                    {c.selfRegistered && <SelfBadge />}
+                  </div>
                 </td>
-                <td className="px-6 py-3 font-mono text-[12.5px] text-muted-foreground">
-                  {c.phone}
+                <td className="max-w-[220px] truncate px-6 py-3 font-mono text-[12.5px] text-muted-foreground">
+                  {contactOf(c)}
                 </td>
                 <td className="px-6 py-3 text-[13px] text-muted-foreground">
                   {c.unitName}

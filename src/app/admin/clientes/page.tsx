@@ -25,11 +25,19 @@ export default async function ClientesPage({
     (() => {
       let query = sb
         .from("clients")
-        .select("id, name, phone, qr_token, unit_id, created_at")
+        .select("id, name, phone, email, auth_user_id, qr_token, unit_id, created_at")
         .order("created_at", { ascending: false })
         .limit(200);
-      if (q) {
-        query = query.or(`name.ilike.%${q}%,phone.ilike.%${q}%`);
+      // O termo entra numa string de filtro do PostgREST, onde a vírgula
+      // separa condições e os parêntesis agrupam: sem limpar, escrever uma
+      // vírgula na busca altera ou parte a consulta.
+      const safeQ = (q ?? "").replace(/[,()*\\%]/g, "").trim();
+      if (safeQ) {
+        // Email entra na procura: quem se regista pela Google não deixa
+        // telefone, e sem isto não havia como encontrar essas pessoas.
+        query = query.or(
+          `name.ilike.%${safeQ}%,phone.ilike.%${safeQ}%,email.ilike.%${safeQ}%`,
+        );
       }
       if (unit) query = query.eq("unit_id", unit);
       return query;
@@ -66,6 +74,10 @@ export default async function ClientesPage({
       id: c.id,
       name: c.name,
       phone: c.phone,
+      email: c.email,
+      // Criado pelo próprio, entrando com a Google — por oposição aos que o
+      // barbeiro cadastrou à mão no painel.
+      selfRegistered: !!c.auth_user_id,
       unitName: unitNameById.get(c.unit_id) ?? "—",
       points: balances.get(c.id) ?? 0,
       lastVisit: last
@@ -86,12 +98,6 @@ export default async function ClientesPage({
         } · cartão fidelidade digital`}
         actions={
           <>
-            <Link
-              href="/admin/clientes/cartoes"
-              className="inline-flex items-center gap-2 rounded-[10px] border border-border bg-transparent px-4 py-2.5 text-[13px] font-medium text-muted-foreground transition-[background-color,color,transform] duration-150 ease-out-strong hover:bg-background hover:text-foreground active:scale-[0.97]"
-            >
-              Exportar cartões
-            </Link>
             <Link
               href="/admin/clientes/novo"
               className="inline-flex items-center gap-2 rounded-[10px] bg-brand px-4 py-2.5 text-[13px] font-medium text-[#0e0a07] transition-[opacity,transform] duration-150 ease-out-strong hover:opacity-90 active:scale-[0.97]"
@@ -114,7 +120,7 @@ export default async function ClientesPage({
           <Input
             name="q"
             defaultValue={q ?? ""}
-            placeholder="Buscar por nome ou telefone…"
+            placeholder="Buscar por nome, telefone ou email…"
             className="h-11 pl-9"
           />
         </div>

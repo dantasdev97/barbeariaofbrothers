@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronDown, Check, ShoppingBag } from "lucide-react";
+import { ChevronDown, Check, ShoppingBag, UserRound } from "lucide-react";
 import type { UnitRow } from "@/types/database.types";
 import { useCart } from "@/hooks/useCart";
 import { useUnidade } from "@/hooks/useUnidade";
@@ -17,9 +17,19 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 
-type Props = { unit: UnitRow; units: UnitRow[] };
+type Props = {
+  unit: UnitRow;
+  units: UnitRow[];
+  /**
+   * Quem já tem cartão vai direito a ele; quem não tem passa primeiro pelo
+   * programa. Vem do servidor (`getCardState`) porque o cabeçalho não pode
+   * consultar a base — e sem isto o ícone prometeria "os meus pontos" a
+   * quem ainda não tem nenhum.
+   */
+  hasCard?: boolean;
+};
 
-export function Header({ unit, units }: Props) {
+export function Header({ unit, units, hasCard = false }: Props) {
   const router = useRouter();
   const setSlug = useUnidade((s) => s.setSlug);
   const totalItems = useCart((s) => s.totalItems());
@@ -105,6 +115,21 @@ export function Header({ unit, units }: Props) {
 
           {/* Language switcher */}
           <LanguageSwitcher />
+
+          {/* Cartão fidelidade. O slug vai sempre no link de quem ainda não
+           * tem cartão: é o que permite criá-lo sozinho do outro lado do
+           * login, em vez de voltar a perguntar a barbearia. */}
+          <Link
+            href={hasCard ? "/minha-conta" : `/programa?unidade=${unit.slug}`}
+            className="relative inline-flex h-10 w-10 items-center justify-center rounded-full bg-bg-surface text-foreground transition hover:bg-border"
+            aria-label={t.header.loyalty}
+            title={t.header.loyalty}
+          >
+            <UserRound className="h-4 w-4" />
+            {hasCard && (
+              <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-brand" />
+            )}
+          </Link>
 
           {/* Cart */}
           <Link

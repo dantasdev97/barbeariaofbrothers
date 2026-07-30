@@ -90,7 +90,8 @@ export function ClientDetail({
         title={client.name}
         description={
           <span className="font-mono">
-            {client.phone} · {client.email ?? "sem email"} · cadastrado em{" "}
+            {client.phone ?? "sem telefone"} · {client.email ?? "sem email"} ·
+            cadastrado em{" "}
             {unitName(client.unit_id)}
           </span>
         }
