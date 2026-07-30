@@ -10,7 +10,9 @@ import {
   Camera,
   CheckCircle2,
   KeyRound,
+  Loader2,
   RefreshCw,
+  ScanLine,
   XCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -19,6 +21,7 @@ import { lookupClient } from "@/lib/loyalty/actions";
 import { extractHandle } from "@/lib/loyalty/handle";
 import { useIsNative } from "@/lib/native/platform";
 import { cn } from "@/lib/utils";
+import { ScanFrame, type ScanPhase } from "./scan-frame";
 
 type Feedback = {
   kind: "success" | "error";
@@ -64,14 +67,22 @@ export function Scanner() {
   const errorsRef = useRef(0);
   const [running, setRunning] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [validating, setValidating] = useState(false);
   const [manual, setManual] = useState("");
   const [status, setStatus] = useState<string | null>(null);
   const [showHint, setShowHint] = useState(false);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const native = useIsNative();
 
-  // Liberta câmara e loop sem mexer no estado (seguro em unmount).
-  const teardown = useCallback(() => {
+  /**
+   * Pára o loop e liberta a câmara, mas **não** limpa o `srcObject`.
+   *
+   * Parar as tracks deixa o `<video>` no último frame; limpar o `srcObject` é
+   * que o apaga para preto. Ao detectar um QR queremos exactamente a primeira
+   * coisa — a imagem congela como numa fotografia enquanto validamos, em vez
+   * de o ecrã apagar durante a ida ao servidor.
+   */
+  const stopStream = useCallback(() => {
     stoppedRef.current = true;
     if (rafRef.current !== null) {
       cancelAnimationFrame(rafRef.current);
@@ -86,11 +97,16 @@ export function Scanner() {
       streamRef.current.getTracks().forEach((t) => t.stop());
       streamRef.current = null;
     }
-    if (videoRef.current) videoRef.current.srcObject = null;
   }, []);
 
+  /** Como `stopStream`, e ainda apaga a imagem. Para quando não vamos voltar. */
+  const releaseVideo = useCallback(() => {
+    stopStream();
+    if (videoRef.current) videoRef.current.srcObject = null;
+  }, [stopStream]);
+
   // Cleanup ao desmontar
-  useEffect(() => teardown, [teardown]);
+  useEffect(() => releaseVideo, [releaseVideo]);
 
   // Sugestão de entrada manual quando a leitura demora. Sem isto, uma câmara
   // que nunca lê não dá qualquer sinal ao barbeiro — fica só a imagem.
@@ -105,8 +121,13 @@ export function Scanner() {
 
   const goTo = useCallback(
     async (handle: string) => {
-      teardown();
+      // Congela a imagem em vez de a apagar: entre detectar o QR e ter a
+      // resposta do servidor o ecrã mostrava preto, o pior momento possível
+      // para não dar sinal nenhum.
+      stopStream();
       setRunning(false);
+      setShowHint(false);
+      setValidating(true);
       setLoading(true);
       try {
         const res = await lookupClient(handle);
@@ -116,11 +137,13 @@ export function Scanner() {
             router.push(`/admin/operacao/cliente/${res.handle}`);
           }, 750);
         } else {
+          releaseVideo();
           setFeedback({ kind: "error", title: "Cartão inválido", sub: res.error });
           setTimeout(() => setFeedback(null), 2500);
         }
       } catch (err) {
         console.error("[scanner:lookup]", err);
+        releaseVideo();
         setFeedback({
           kind: "error",
           title: "Erro",
@@ -128,10 +151,11 @@ export function Scanner() {
         });
         setTimeout(() => setFeedback(null), 2500);
       } finally {
+        setValidating(false);
         setLoading(false);
       }
     },
-    [router, teardown],
+    [router, stopStream, releaseVideo],
   );
 
   // App nativa (Capacitor): usa o scanner ML Kit nativo.
@@ -280,7 +304,7 @@ export function Scanner() {
             err,
           );
           if (errorsRef.current >= MAX_CONSECUTIVE_ERRORS) {
-            teardown();
+            releaseVideo();
             setRunning(false);
             toast.error(
               err instanceof Error
@@ -297,7 +321,7 @@ export function Scanner() {
       schedule();
     } catch (err) {
       console.error("[scanner]", err);
-      teardown();
+      releaseVideo();
       setRunning(false);
       toast.error(
         err instanceof Error
@@ -310,7 +334,7 @@ export function Scanner() {
   }
 
   function stop() {
-    teardown();
+    releaseVideo();
     setRunning(false);
   }
 
@@ -320,6 +344,18 @@ export function Scanner() {
     if (!t) return toast.error("Cola o link ou o handle do cartão.");
     goTo(t);
   }
+
+  /**
+   * Fase visível da mira. `validating` tem precedência: assim que o QR é
+   * detectado o alvo trava, mesmo que o resto do estado ainda esteja a assentar.
+   */
+  const phase: "idle" | ScanPhase = validating
+    ? "found"
+    : running
+      ? "scanning"
+      : loading
+        ? "starting"
+        : "idle";
 
   return (
     <div className="mx-auto max-w-md">
@@ -336,16 +372,51 @@ export function Scanner() {
       />
 
       {!native && (
-        <div className="relative overflow-hidden rounded-2xl border border-border bg-black">
+        <div className="relative overflow-hidden rounded-2xl border border-border bg-[#0b0b0c]">
           <video
             ref={videoRef}
-            className="aspect-square w-full bg-black object-cover"
+            className="aspect-square w-full object-cover"
             playsInline
             muted
           />
-          {running && (
-            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-              <div className="h-3/5 w-3/5 rounded-2xl border-2 border-white/80 shadow-[0_0_0_9999px_rgba(0,0,0,0.35)]" />
+
+          {/* Parado: o quadrado preto não dizia nada. Um alvo desenhado deixa
+           * claro o que vai acontecer e mantém a mesma composição de quando a
+           * câmara liga — não há salto ao arrancar. */}
+          {phase === "idle" && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-white/45">
+              <Camera className="h-9 w-9" strokeWidth={1.5} />
+              <p className="text-[12.5px]">Câmara desligada</p>
+            </div>
+          )}
+
+          {phase !== "idle" && <ScanFrame phase={phase} />}
+
+          {/* Etiqueta de estado. Fica na base para não tapar a mira. */}
+          {(phase === "starting" || phase === "found") && (
+            <div className="absolute inset-x-0 bottom-0 flex justify-center p-4">
+              <div className="animate-enter-up flex items-center gap-2.5 rounded-full bg-black/70 px-4 py-2.5 text-[13px] font-medium text-white backdrop-blur-sm">
+                {/* O spinner segue a cor da mira: laranja a preparar, verde
+                 * depois de travar no cartão. */}
+                <Loader2
+                  className={cn(
+                    "h-4 w-4 animate-spin",
+                    phase === "found" ? "text-emerald-400" : "text-brand",
+                  )}
+                />
+                {phase === "starting"
+                  ? (status ?? "A ligar a câmara…")
+                  : "A validar cartão…"}
+              </div>
+            </div>
+          )}
+
+          {/* Enquanto procura, dizer que está a procurar — sem tapar a imagem. */}
+          {phase === "scanning" && (
+            <div className="absolute inset-x-0 bottom-0 flex justify-center p-4">
+              <div className="animate-enter-up flex items-center gap-2 rounded-full bg-black/55 px-3.5 py-2 text-[12.5px] font-medium text-white/90 backdrop-blur-sm">
+                <ScanLine className="h-3.5 w-3.5 text-brand" />À procura do QR
+              </div>
             </div>
           )}
         </div>
@@ -361,7 +432,7 @@ export function Scanner() {
             {loading ? (
               <>
                 <RefreshCw className="mr-2 h-4 w-4 animate-spin" />{" "}
-                {status ?? "A iniciar…"}
+                {status ?? (validating ? "A validar…" : "A iniciar…")}
               </>
             ) : (
               <>
@@ -433,11 +504,16 @@ export function Scanner() {
           )}
         >
           <div className="flex animate-[enter-up_260ms_var(--ease-out-strong)_both] flex-col items-center text-center text-white">
-            {feedback.kind === "success" ? (
-              <CheckCircle2 className="h-28 w-28 drop-shadow-md" strokeWidth={1.75} />
-            ) : (
-              <XCircle className="h-28 w-28 drop-shadow-md" strokeWidth={1.75} />
-            )}
+            {/* O ícone entra um pouco depois do fundo e com escala própria: o
+             * fundo estabelece o veredicto, o ícone confirma-o. Tudo ao mesmo
+             * tempo lia-se como um piscar. */}
+            <div className="animate-pop-in [animation-delay:60ms]">
+              {feedback.kind === "success" ? (
+                <CheckCircle2 className="h-28 w-28 drop-shadow-md" strokeWidth={1.75} />
+              ) : (
+                <XCircle className="h-28 w-28 drop-shadow-md" strokeWidth={1.75} />
+              )}
+            </div>
             <p className="mt-5 font-heading text-2xl font-semibold leading-tight">
               {feedback.title}
             </p>

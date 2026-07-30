@@ -76,6 +76,12 @@
 
   --animate-enter-up: enter-up 260ms var(--ease-out-strong) both;
   --animate-enter-fade: enter-fade 200ms var(--ease-out-strong) both;
+
+  /* Scanner de QR. Movimento contínuo leva `linear` — qualquer easing num
+   * ciclo infinito lê-se como hesitação. */
+  --animate-scan-sweep: scan-sweep 2.4s linear infinite;
+  --animate-scan-breathe: scan-breathe 2s ease-in-out infinite;
+  --animate-pop-in: pop-in 320ms var(--ease-out-strong) both;
 }
 
 /* ── Light / cream theme (public site) ── */
@@ -222,6 +228,35 @@
   to   { opacity: 1; }
 }
 
+/* ---- Scanner de QR ----
+ * Estas animações são CSS e não JS por uma razão concreta: enquanto a câmara
+ * corre, o jsQR descodifica um frame de cada vez na main thread. Uma animação
+ * por requestAnimationFrame competia com ele e engasgava exactamente quando o
+ * barbeiro está a apontar ao cartão.
+ *
+ * O feixe é filho da moldura e tem 1/3 da altura dela, por isso a percentagem
+ * do translateY é dessa altura: -100% esconde-o acima, 300% leva-o a 100% da
+ * moldura, já fora por baixo. */
+@keyframes scan-sweep {
+  0%   { transform: translateY(-100%); opacity: 0; }
+  12%  { opacity: 1; }
+  88%  { opacity: 1; }
+  100% { transform: translateY(300%); opacity: 0; }
+}
+
+/* Cantos da moldura a respirar enquanto procura. Subtil de propósito: o que
+ * chama a atenção é o feixe, isto só evita que a moldura pareça congelada. */
+@keyframes scan-breathe {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.45; }
+}
+
+/* Confirmação. Começa em 0.92 e não em 0 — nada no mundo real aparece do nada. */
+@keyframes pop-in {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
 @layer utilities {
   .container-page {
     @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
@@ -273,6 +308,15 @@
   .page-enter {
     animation: enter-fade 160ms ease both !important;
     animation-delay: 0ms !important;
+  }
+  /* O feixe do scanner é puro movimento: desaparece em vez de congelar a meio.
+   * Os cantos da moldura ficam à vista, opacos — continuam a dizer onde pôr o
+   * QR, que é a única coisa que aqui é informação e não decoração. */
+  .scan-beam {
+    display: none !important;
+  }
+  .scan-corner {
+    opacity: 1 !important;
   }
 }
 
