@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import QRCode from "qrcode";
 import { createClient } from "@/lib/supabase/server";
 import { cardUrl } from "@/lib/loyalty/qr";
-import { getLoyaltyUnits, getUnitBySlug } from "@/lib/data";
+import { getAllUnits, getLoyaltyUnits, getUnitBySlug } from "@/lib/data";
 import { getMyAccount } from "@/lib/loyalty/client-actions";
 import { ClientShell } from "@/components/cliente/client-shell";
 import { MyCard } from "./my-card";
@@ -33,7 +33,12 @@ export default async function MinhaContaPage({
   }
 
   let account = await getMyAccount();
-  const units = await getLoyaltyUnits();
+  // Duas listas com papéis diferentes: `units` é o seletor do cabeçalho e tem
+  // de mostrar o site todo; `loyaltyUnits` é onde se pode criar cartão.
+  const [units, loyaltyUnits] = await Promise.all([
+    getAllUnits(),
+    getLoyaltyUnits(),
+  ]);
 
   // Autenticado mas ainda sem cartão. Quem veio de `/programa?unidade=X`
   // traz o slug: a barbearia já é conhecida e voltar a perguntá-la é um
@@ -78,7 +83,7 @@ export default async function MinhaContaPage({
     const fallbackUnit = units[0] ?? null;
     const start = (
       <StartCard
-        units={units.map((u) => ({ id: u.id, name: u.name }))}
+        units={loyaltyUnits.map((u) => ({ id: u.id, name: u.name }))}
         defaultName={
           (user.user_metadata?.full_name as string | undefined) ??
           user.email?.split("@")[0] ??

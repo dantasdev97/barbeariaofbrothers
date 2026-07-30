@@ -49,8 +49,12 @@ export async function getLoyaltyUnits(): Promise<UnitRow[]> {
     .order("created_at", { ascending: true });
 
   if (error) {
-    console.error("[getLoyaltyUnits]", error);
-    return [];
+    // Antes de a migração 0011 correr, a coluna `loyalty_active` não existe e
+    // esta consulta falha. Devolver [] deixava o programa sem barbearia
+    // nenhuma para escolher — pior do que oferecer todas. Cai para a lista
+    // completa até a migração ser aplicada.
+    console.error("[getLoyaltyUnits] a usar todas as unidades:", error.message);
+    return getAllUnits();
   }
   return (data ?? []) as UnitRow[];
 }

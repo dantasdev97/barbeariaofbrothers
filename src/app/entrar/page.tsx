@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { AlertCircle, ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { getLoyaltyUnits, getUnitBySlug } from "@/lib/data";
+import { getAllUnits, getUnitBySlug } from "@/lib/data";
 import { ClientShell } from "@/components/cliente/client-shell";
 import { EmailAuthForm } from "@/components/cliente/email-auth-form";
 import { GoogleSignInButton } from "@/components/cliente/google-signin-button";
@@ -47,7 +47,9 @@ export default async function EntrarPage({
 
   const [unit, units] = await Promise.all([
     unidade ? getUnitBySlug(unidade) : Promise.resolve(null),
-    getLoyaltyUnits(),
+    // Todas as unidades: aqui `units` só alimenta o seletor do cabeçalho,
+    // que tem de continuar a mostrar o site inteiro.
+    getAllUnits(),
   ]);
   const shellUnit = unit ?? units[0] ?? null;
 
