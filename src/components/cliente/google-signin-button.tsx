@@ -70,7 +70,7 @@ export function GoogleSignInButton({
       onClick={signIn}
       disabled={pending}
       className={cn(
-        "inline-flex min-h-12 w-full items-center justify-center gap-3 rounded-xl border border-border bg-background px-5 text-[15px] font-semibold",
+        "inline-flex min-h-14 w-full items-center justify-center gap-3 rounded-xl border border-border bg-background px-5 text-base font-semibold",
         "transition-[background-color,border-color,transform,opacity] duration-150 ease-out-strong",
         "hover-fine:hover:border-foreground/30 active:scale-[0.98] disabled:opacity-60",
         className,

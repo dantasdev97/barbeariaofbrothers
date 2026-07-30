@@ -88,15 +88,17 @@ export default async function EntrarPage({
           )}
 
           <div className="mt-8">
-            <EmailAuthForm next={safeNext} />
+            {/* Google primeiro e em destaque: é o caminho sem confirmação de
+             * email, já que a Google garante o endereço na hora. */}
+            <GoogleSignInButton next={safeNext} unitSlug={unidade} />
 
             <div className="my-6 flex items-center gap-3">
               <span className="h-px flex-1 bg-border" />
-              <span className="text-[12px] text-muted-foreground">ou</span>
+              <span className="text-[12px] text-muted-foreground">ou por email</span>
               <span className="h-px flex-1 bg-border" />
             </div>
 
-            <GoogleSignInButton next={safeNext} unitSlug={unidade} />
+            <EmailAuthForm next={safeNext} />
           </div>
 
           <p className="mt-6 text-center text-xs leading-relaxed text-muted-foreground">
