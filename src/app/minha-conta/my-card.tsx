@@ -43,8 +43,12 @@ export function MyCard({
    * Como quer ser tratado. Perguntado uma vez, logo depois do cartão nascer:
    * o nome vem do Google ou da parte do email antes do @, e nenhum dos dois é
    * necessariamente como a pessoa se apresenta.
+   *
+   * Só `false` explícito pergunta: se a coluna ainda não existe na base vem
+   * `undefined`, e aí perguntar levaria a um popup que reaparece sempre e cuja
+   * gravação falha — a RPC que o grava chega na mesma migração.
    */
-  const [askName, setAskName] = useState(!account.client.name_confirmed);
+  const [askName, setAskName] = useState(account.client.name_confirmed === false);
   const [displayName, setDisplayName] = useState(account.client.name);
 
   const { client, unit, balance, rewards, services, coupons, transactions, claimedBonuses, bonuses } =

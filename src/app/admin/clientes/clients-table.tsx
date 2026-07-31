@@ -28,6 +28,12 @@ export type ClientRow = {
   authProvider: string | null;
   /** Foto de perfil, quando o provider a devolve. */
   avatarUrl: string | null;
+  /**
+   * Se se pode confiar no `authProvider`. Falso enquanto a migração da coluna
+   * não correu — aí ele vem sempre null, e o crachá diria "Formulário" a
+   * pessoas que entraram pela Google.
+   */
+  showOrigin: boolean;
   unitName: string;
   points: number;
   lastVisit: string | null;
@@ -176,7 +182,9 @@ export function ClientsTable({
                     <h2 className="truncate font-heading text-lg font-semibold">
                       {c.name}
                     </h2>
-                    {c.selfRegistered && <OriginBadge provider={c.authProvider} />}
+                    {c.selfRegistered && c.showOrigin && (
+                      <OriginBadge provider={c.authProvider} />
+                    )}
                   </span>
                   <span className="mt-0.5 block truncate font-mono text-xs text-muted-foreground">
                     {contactOf(c)}
@@ -241,7 +249,9 @@ export function ClientsTable({
                       >
                         {c.name}
                       </Link>
-                      {c.selfRegistered && <OriginBadge provider={c.authProvider} />}
+                      {c.selfRegistered && c.showOrigin && (
+                      <OriginBadge provider={c.authProvider} />
+                    )}
                     </div>
                   </div>
                 </td>
