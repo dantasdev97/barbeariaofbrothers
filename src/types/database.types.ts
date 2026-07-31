@@ -125,6 +125,12 @@ export type ClientRow = {
    * Serve para o dono poder conferir quem seguiu de facto.
    */
   instagram_handle: string | null;
+  /** Quem autenticou a conta: `google` ou `email`. Null nos cadastros do staff. */
+  auth_provider: string | null;
+  /** Foto de perfil, quando o provider a devolve (só o Google, na prática). */
+  avatar_url: string | null;
+  /** Se o cliente já disse como quer ser tratado. Enquanto false, o cartão pergunta. */
+  name_confirmed: boolean;
   created_at: string;
 };
 
@@ -287,12 +293,17 @@ export interface Database {
         Returns: LoyaltyCouponRow;
       };
       loyalty_grant_bonus: {
-        Args: { p_kind: string; p_unit_id: string };
+        /** `p_handle` é obrigatório no Instagram desde a 0011. */
+        Args: { p_kind: string; p_unit_id: string; p_handle?: string | null };
         Returns: LoyaltyTransactionRow;
       };
       loyalty_consume_coupon: {
         Args: { p_code: string };
         Returns: LoyaltyCouponRow;
+      };
+      loyalty_set_display_name: {
+        Args: { p_name: string };
+        Returns: ClientRow;
       };
       current_client_id: {
         Args: Record<string, never>;

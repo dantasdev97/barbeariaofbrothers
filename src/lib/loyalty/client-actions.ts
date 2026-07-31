@@ -111,6 +111,26 @@ export async function selfRedeem(
 }
 
 
+/**
+ * O cliente define como quer ser tratado.
+ *
+ * Só muda o nome à vista. O `public_slug` fica como está: é o que vai no QR e
+ * nos links já partilhados, e mudá-lo partia cartões que já andam por aí.
+ */
+export async function setMyDisplayName(
+  name: string,
+): Promise<ActionResult<ClientRow>> {
+  const sb = await createClient();
+  const { data, error } = await sb.rpc("loyalty_set_display_name", {
+    p_name: name.trim(),
+  });
+
+  if (error) return { ok: false, error: toMessage(error, "Não foi possível guardar o nome.") };
+
+  revalidatePath("/minha-conta");
+  return { ok: true, data: data as ClientRow };
+}
+
 /** Bónus de registo e de Instagram — uma vez por cliente, garantido no índice. */
 export async function grantBonus(
   kind: "signup" | "instagram",

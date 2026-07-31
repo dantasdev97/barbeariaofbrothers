@@ -12,7 +12,13 @@ import { formatRewardValue, rewardKindIcon } from "@/lib/loyalty/rewards";
 import { staggerIndex } from "@/lib/motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { grantBonus, selfRedeem } from "@/lib/loyalty/client-actions";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { grantBonus, selfRedeem, setMyDisplayName } from "@/lib/loyalty/client-actions";
 import { normalizeInstagramHandle } from "@/lib/loyalty/instagram";
 import type { ClientAccount } from "@/lib/loyalty/client-actions";
 import type { LoyaltyCouponRow, LoyaltyRewardRow } from "@/types/database.types";
@@ -33,6 +39,13 @@ export function MyCard({
   const [fresh, setFresh] = useState<LoyaltyCouponRow | null>(null);
   /** @ de Instagram escrito pelo cliente, exigido antes de dar o bónus. */
   const [igHandle, setIgHandle] = useState("");
+  /**
+   * Como quer ser tratado. Perguntado uma vez, logo depois do cartão nascer:
+   * o nome vem do Google ou da parte do email antes do @, e nenhum dos dois é
+   * necessariamente como a pessoa se apresenta.
+   */
+  const [askName, setAskName] = useState(!account.client.name_confirmed);
+  const [displayName, setDisplayName] = useState(account.client.name);
 
   const { client, unit, balance, rewards, services, coupons, transactions, claimedBonuses, bonuses } =
     account;
@@ -70,6 +83,23 @@ export function MyCard({
     });
   }
 
+  function saveName() {
+    const name = displayName.trim();
+    if (!name) return;
+    setBusyId("name");
+    startTransition(async () => {
+      const result = await setMyDisplayName(name);
+      setBusyId(null);
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
+      }
+      setAskName(false);
+      toast.success(`Olá, ${name}!`);
+      router.refresh();
+    });
+  }
+
   function claimInstagram() {
     const handle = normalizeInstagramHandle(igHandle);
     if (!handle) {
@@ -98,8 +128,10 @@ export function MyCard({
             <Sparkles className="h-3 w-3" />
             Cartão Fidelidade
           </p>
+          {/* Segue o que está a ser escrito no popup: o cartão muda enquanto a
+           * pessoa escreve, para ela ver o resultado antes de confirmar. */}
           <h1 className="mt-3 font-heading text-[26px] font-semibold leading-tight tracking-tight">
-            {client.name}
+            {displayName.trim() || client.name}
           </h1>
           {unit && (
             <p className="mt-1 flex items-center gap-1.5 text-[12px] text-background/70">
@@ -467,6 +499,55 @@ export function MyCard({
         Resgate quando quiser: recebe um código por email e mostra-o na
         barbearia.
       </p>
+
+      {/* Como quer ser tratado. Aparece uma vez, sobre o cartão já criado — o
+       * cartão fica à vista por trás e o nome muda enquanto se escreve. */}
+      <Dialog open={askName} onOpenChange={(o) => !o && setAskName(false)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Como quer ser tratado?</DialogTitle>
+          </DialogHeader>
+          <p className="text-[13.5px] leading-relaxed text-muted-foreground">
+            É o nome que aparece no seu cartão e que o barbeiro vê ao lançar os
+            pontos.
+          </p>
+          <Input
+            value={displayName}
+            onChange={(e) => setDisplayName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && displayName.trim() && !pending) saveName();
+            }}
+            placeholder="O seu nome"
+            autoFocus
+            maxLength={60}
+            className="mt-1 h-12 text-base"
+          />
+          <div className="mt-2 flex gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => {
+                setDisplayName(client.name);
+                setAskName(false);
+              }}
+              className="flex-1"
+            >
+              Agora não
+            </Button>
+            <Button
+              onClick={saveName}
+              disabled={pending || !displayName.trim()}
+              className="flex-1 bg-brand text-primary-foreground hover:bg-brand-hover"
+            >
+              {busyId === "name" ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                "Guardar"
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

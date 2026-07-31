@@ -21,11 +21,13 @@ export default async function ClientesPage({
   const sb = createAdminClient();
 
   const [{ data: units }, { data: clients }] = await Promise.all([
-    sb.from("units").select("id, name, slug").order("name"),
+    // Só as unidades do programa: filtrar clientes por uma barbearia que não
+    // tem cartão fidelidade não devolve nada e só confunde.
+    sb.from("units").select("id, name, slug").eq("loyalty_active", true).order("name"),
     (() => {
       let query = sb
         .from("clients")
-        .select("id, name, phone, email, auth_user_id, qr_token, unit_id, created_at")
+        .select("id, name, phone, email, auth_user_id, auth_provider, avatar_url, qr_token, unit_id, created_at")
         .order("created_at", { ascending: false })
         .limit(200);
       // O termo entra numa string de filtro do PostgREST, onde a vírgula
@@ -78,6 +80,8 @@ export default async function ClientesPage({
       // Criado pelo próprio, entrando com a Google — por oposição aos que o
       // barbeiro cadastrou à mão no painel.
       selfRegistered: !!c.auth_user_id,
+      authProvider: c.auth_provider ?? null,
+      avatarUrl: c.avatar_url ?? null,
       unitName: unitNameById.get(c.unit_id) ?? "—",
       points: balances.get(c.id) ?? 0,
       lastVisit: last
