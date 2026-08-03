@@ -13,7 +13,6 @@ import { buildOrganizationJsonLd, homeMetadata } from "@/lib/seo";
 import { getServerI18n } from "@/lib/i18n/server";
 import { formatPhonePT } from "@/lib/utils";
 import { MarqueeBand } from "@/components/public/sections/marquee-band";
-import { WhyUs } from "@/components/public/sections/why-us";
 import { FooterBottomBar } from "@/components/public/footer";
 import {
   FacebookIcon,
@@ -34,6 +33,22 @@ export default async function HomePage() {
   ]);
 
   const jsonLd = buildOrganizationJsonLd(units);
+
+  // Redes agregadas das unidades, sem repetir a mesma conta duas vezes.
+  const socials = [
+    ...new Map(
+      units
+        .flatMap((u) => [
+          { href: u.socials?.instagram, label: "Instagram", Icon: InstagramIcon },
+          { href: u.socials?.facebook, label: "Facebook", Icon: FacebookIcon },
+          { href: u.socials?.tiktok, label: "TikTok", Icon: TikTokIcon },
+        ])
+        .filter((s): s is { href: string; label: string; Icon: typeof InstagramIcon } =>
+          Boolean(s.href),
+        )
+        .map((s) => [s.href, s] as const),
+    ).values(),
+  ];
 
   return (
     <>
@@ -145,42 +160,6 @@ export default async function HomePage() {
         </section>
 
         <MarqueeBand />
-
-        {/* ───────────────────────────  SERVIÇOS  ───────────────────────── */}
-        {/* Renderiza a partir de `t.homeLanding.services`, a mesma lista que
-            alimenta o `makesOffer` do JSON-LD em `src/lib/seo.ts`, para que o
-            conteúdo visível e a marcação não possam divergir. */}
-        <section className="px-4 py-24 sm:px-6">
-          <div className="mx-auto max-w-7xl">
-            <div className="mx-auto mb-14 max-w-2xl text-center">
-              <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-brand">
-                {t.homeLanding.servicesEyebrow}
-              </p>
-              <h2 className="font-heading text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
-                {t.homeLanding.servicesTitle}
-              </h2>
-              <p className="mt-4 text-[17px] text-muted-foreground">
-                {t.homeLanding.servicesSubtitle}
-              </p>
-            </div>
-
-            <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {t.homeLanding.services.map((name) => (
-                <li
-                  key={name}
-                  className="flex items-center gap-3 rounded-2xl border border-border bg-bg-surface px-5 py-4 transition hover:border-brand/30"
-                >
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand/10">
-                    <Scissors className="h-4 w-4 text-brand" />
-                  </span>
-                  <span className="font-heading text-lg font-medium">{name}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </section>
-
-        <WhyUs />
 
         {/* ──────────────────────── AS NOSSAS UNIDADES ──────────────────── */}
         {units.length > 0 && (
@@ -357,33 +336,107 @@ export default async function HomePage() {
         )}
       </main>
 
-      {/* A homepage não tinha footer nenhum — e por isso `/privacidade` e
-          `/termos` estavam sem ligações internas a partir do URL com mais
-          autoridade do domínio. */}
+      {/* Footer de marca: as páginas de unidade usam `<Footer unit={...} />`,
+          que é obrigatoriamente de uma só unidade. A homepage não tem unidade,
+          por isso lista as duas — e mantém a mesma linguagem visual. */}
       <footer className="bg-[#0b1115]">
-        <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-14 sm:px-6">
-          <Image
-            src="/logo.png"
-            alt="Barbearia Of Brothers"
-            width={56}
-            height={56}
-            className="h-14 w-auto brightness-0 invert"
-          />
-          <p className="max-w-md text-[13px] leading-relaxed text-white/60">
-            {t.footer.since}
-          </p>
-          <nav className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-white/70">
-            {units.map((unit) => (
-              <Link
-                key={unit.id}
-                href={`/${unit.slug}`}
-                className="transition hover:text-brand"
-              >
-                {unit.name}
-              </Link>
-            ))}
-          </nav>
+        <div className="mx-auto grid max-w-7xl gap-10 px-4 py-16 sm:px-6 md:grid-cols-4">
+          {/* Marca */}
+          <div>
+            <Image
+              src="/logo.png"
+              alt="Barbearia Of Brothers"
+              width={56}
+              height={56}
+              className="h-14 w-auto brightness-0 invert"
+            />
+            <p className="mt-4 text-[13px] text-white/60">{t.footer.since}</p>
+            <p className="mt-3 max-w-xs text-[13px] leading-relaxed text-white/40">
+              {t.homeLanding.intro}
+            </p>
+          </div>
+
+          {/* Unidades, com morada */}
+          <div className="md:col-span-2">
+            <h2 className="mb-3 font-heading text-[14px] font-semibold uppercase tracking-wider text-white">
+              {t.homeLanding.unitsEyebrow.replace(/^\d+\s*—\s*/, "")}
+            </h2>
+            <ul className="grid gap-4 sm:grid-cols-2">
+              {units.map((unit) => (
+                <li key={unit.id}>
+                  <Link
+                    href={`/${unit.slug}`}
+                    className="font-heading text-[15px] font-semibold text-white transition hover:text-brand"
+                  >
+                    {unit.name}
+                  </Link>
+                  {unit.address && (
+                    <p className="mt-1.5 flex items-start gap-2 text-[13px] leading-relaxed text-white/60">
+                      <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-brand" />
+                      {unit.address}
+                    </p>
+                  )}
+                  {unit.phone && (
+                    <a
+                      href={`tel:${unit.phone}`}
+                      className="mt-1.5 flex items-center gap-2 text-[13px] text-white/60 transition hover:text-brand"
+                    >
+                      <Phone className="h-3.5 w-3.5 text-brand" />
+                      {formatPhonePT(unit.phone)}
+                    </a>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Navegação */}
+          <div>
+            <h2 className="mb-3 font-heading text-[14px] font-semibold uppercase tracking-wider text-white">
+              {t.footer.navigate}
+            </h2>
+            <ul className="space-y-2 text-sm text-white/70">
+              {units.map((unit) => (
+                <li key={unit.id}>
+                  <Link
+                    href={`/${unit.slug}/barbeiros`}
+                    className="transition hover:text-brand"
+                  >
+                    {t.homeLanding.viewTeam} — {unit.name}
+                  </Link>
+                </li>
+              ))}
+              {units.map((unit) => (
+                <li key={`c-${unit.id}`}>
+                  <Link
+                    href={`/${unit.slug}/contato`}
+                    className="transition hover:text-brand"
+                  >
+                    {t.homeLanding.viewContact} — {unit.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+
+            {socials.length > 0 && (
+              <div className="mt-6 flex gap-2">
+                {socials.map(({ href, label, Icon }) => (
+                  <a
+                    key={href}
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={label}
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white/70 transition hover:bg-brand hover:text-[#1a1410]"
+                  >
+                    <Icon className="h-4 w-4" />
+                  </a>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
+
         <FooterBottomBar />
       </footer>
     </>
