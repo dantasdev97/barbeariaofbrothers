@@ -46,17 +46,45 @@ export const CANONICAL_ORIGIN = "https://www.barbeariaofbrothers.pt";
  * Production, cada deploy de preview passaria a declarar canonicals de produção
  * e a competir com o site real no índice.
  */
+/**
+ * Normaliza um valor de origem vindo de variável de ambiente.
+ *
+ * Estas variáveis são escritas à mão no painel da Vercel, por isso são o ponto
+ * mais provável de erro humano. Um valor sem esquema (`www.exemplo.pt`) fazia o
+ * `new URL()` do `metadataBase` rebentar e **falhava o build inteiro** — um
+ * gralha no painel não deve poder deitar o site abaixo.
+ *
+ * Devolve `null` quando não dá para aproveitar nada, para o chamador cair no
+ * fallback.
+ */
+function normalizeOrigin(value: string | undefined): string | null {
+  const trimmed = value?.trim().replace(/\/+$/, "");
+  if (!trimmed) return null;
+
+  const withScheme = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+  try {
+    return new URL(withScheme).origin;
+  } catch {
+    console.warn(
+      `[siteUrl] Origem inválida na configuração: "${value}". A usar ${CANONICAL_ORIGIN}.`,
+    );
+    return null;
+  }
+}
+
 export function siteUrl() {
-  const explicit = process.env.SITE_URL; // override em runtime (usado pelo seo:check)
-  if (explicit) return explicit.replace(/\/$/, "");
+  // override em runtime (usado pelo seo:check)
+  const explicit = normalizeOrigin(process.env.SITE_URL);
+  if (explicit) return explicit;
 
   const vercelEnv = process.env.NEXT_PUBLIC_VERCEL_ENV;
-  const vercelUrl = process.env.NEXT_PUBLIC_VERCEL_URL;
-  if (vercelEnv && vercelEnv !== "production" && vercelUrl) {
-    return `https://${vercelUrl}`;
-  }
+  const preview =
+    vercelEnv && vercelEnv !== "production"
+      ? normalizeOrigin(process.env.NEXT_PUBLIC_VERCEL_URL)
+      : null;
+  if (preview) return preview;
 
-  return (process.env.NEXT_PUBLIC_SITE_URL ?? CANONICAL_ORIGIN).replace(/\/$/, "");
+  return normalizeOrigin(process.env.NEXT_PUBLIC_SITE_URL) ?? CANONICAL_ORIGIN;
 }
 
 export function absoluteUrl(path: string) {
