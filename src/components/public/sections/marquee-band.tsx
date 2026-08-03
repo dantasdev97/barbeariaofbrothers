@@ -12,8 +12,11 @@ export async function MarqueeBand() {
 
   return (
     <div className="relative overflow-hidden bg-foreground py-5">
+      {/* `linear` porque é movimento constante — qualquer easing daria a
+          impressão de que a faixa acelera e trava. A classe `marquee-track` é o
+          gancho para a regra de movimento reduzido em globals.css. */}
       <div
-        className="flex w-max gap-12"
+        className="marquee-track flex w-max gap-12"
         style={{ animation: "marquee 30s linear infinite" }}
       >
         {[...t.marquee, ...t.marquee].map((item, i) => (

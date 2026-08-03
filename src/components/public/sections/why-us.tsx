@@ -30,16 +30,19 @@ export async function WhyUs() {
           </p>
         </div>
 
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="stagger grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {ICONS.map((Icon, i) => {
             const { title, desc } = t.whyUs.features[i];
             return (
               <div
                 key={title}
-                className="flex flex-col gap-4 rounded-2xl border border-border bg-bg-surface p-6 transition-all duration-200 hover:-translate-y-1 hover:border-brand/30 hover:shadow-[0_16px_40px_-16px_rgba(243,146,0,0.15)]"
+                style={{ "--stagger-index": i } as React.CSSProperties}
+                /* Propriedades explícitas em vez de `transition-all`: `all`
+                   anima também o que dispara layout, e é mais caro. */
+                className="group/why flex flex-col gap-4 rounded-2xl border border-border bg-bg-surface p-6 transition-[border-color,box-shadow,translate] duration-200 ease-out-strong hover:-translate-y-1 hover:border-brand/40 hover:shadow-premium-lg"
               >
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand/10">
-                  <Icon className="h-5 w-5 text-brand" />
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand/10 text-brand transition-colors duration-200 group-hover/why:bg-brand group-hover/why:text-primary-foreground">
+                  <Icon className="h-5 w-5" />
                 </div>
                 <h3 className="font-heading text-lg font-semibold leading-snug">
                   {title}

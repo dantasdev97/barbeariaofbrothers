@@ -274,6 +274,13 @@
     animation: enter-fade 160ms ease both !important;
     animation-delay: 0ms !important;
   }
+  /* O override global (0.01ms + iteration-count 1) faria o marquee saltar para
+   * o fim do keyframe e deixar a faixa deslocada, com metade do conteúdo fora
+   * do ecrã. Parar mesmo é mais correto do que acelerar até ao fim. */
+  .marquee-track {
+    animation: none !important;
+    transform: none !important;
+  }
 }
 
 /* ---- Capacitor (app nativa) ---- */
