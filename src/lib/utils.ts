@@ -30,12 +30,37 @@ export function slugify(text: string) {
     .replace(/-+/g, "-");
 }
 
+/**
+ * Host canónico do site. O apex (barbeariaofbrothers.pt) redireciona para `www`
+ * na Vercel, por isso tudo o que é indexável — canonicals, OG, sitemap, JSON-LD —
+ * tem de apontar para `www`. Apontar para o apex faz o Google seguir um redirect
+ * a partir do URL que declarámos como canónico, e os sinais não consolidam.
+ */
+export const CANONICAL_ORIGIN = "https://www.barbeariaofbrothers.pt";
+
+/**
+ * Origem a usar em tudo o que é absoluto (canonicals, OG, sitemap, JSON-LD).
+ *
+ * A verificação de preview vem **antes** de `NEXT_PUBLIC_SITE_URL` de propósito:
+ * se essa variável for definida a nível de projeto na Vercel em vez de só em
+ * Production, cada deploy de preview passaria a declarar canonicals de produção
+ * e a competir com o site real no índice.
+ */
+export function siteUrl() {
+  const explicit = process.env.SITE_URL; // override em runtime (usado pelo seo:check)
+  if (explicit) return explicit.replace(/\/$/, "");
+
+  const vercelEnv = process.env.NEXT_PUBLIC_VERCEL_ENV;
+  const vercelUrl = process.env.NEXT_PUBLIC_VERCEL_URL;
+  if (vercelEnv && vercelEnv !== "production" && vercelUrl) {
+    return `https://${vercelUrl}`;
+  }
+
+  return (process.env.NEXT_PUBLIC_SITE_URL ?? CANONICAL_ORIGIN).replace(/\/$/, "");
+}
+
 export function absoluteUrl(path: string) {
-  const base =
-    process.env.SITE_URL ??              // servidor — lida em runtime (não precisa rebuild)
-    process.env.NEXT_PUBLIC_SITE_URL ??  // cliente — injetada no build
-    "https://barbeariaofbrothers.pt";    // fallback de produção
-  return `${base.replace(/\/$/, "")}${path.startsWith("/") ? path : `/${path}`}`;
+  return `${siteUrl()}${path.startsWith("/") ? path : `/${path}`}`;
 }
 
 export function formatPhonePT(phone: string | null | undefined) {
