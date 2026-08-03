@@ -140,19 +140,30 @@ export async function Footer({ unit }: Props) {
         </div>
       </div>
 
-      {/* ── Bottom bar ── */}
-      <div className="border-t border-white/8">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-4 py-6 text-[13px] text-white/40 sm:flex-row sm:px-6">
-          <span>
-            {t.footer.rights.replace("{year}", String(new Date().getFullYear()))}
-          </span>
-          <div className="flex items-center gap-4">
-            <Link href="/privacidade" className="transition hover:text-white/60">{t.footer.privacy}</Link>
-            <Link href="/termos" className="transition hover:text-white/60">{t.footer.terms}</Link>
-            <span>{t.footer.madeIn}</span>
-          </div>
+      <FooterBottomBar />
+    </footer>
+  );
+}
+
+/**
+ * Barra inferior — copyright e ligações legais. Não depende de unidade nenhuma,
+ * por isso a homepage (que não tem unidade) reutiliza-a tal como está.
+ */
+export async function FooterBottomBar() {
+  const { dict: t } = await getServerI18n();
+
+  return (
+    <div className="border-t border-white/8">
+      <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-4 py-6 text-[13px] text-white/40 sm:flex-row sm:px-6">
+        <span>
+          {t.footer.rights.replace("{year}", String(new Date().getFullYear()))}
+        </span>
+        <div className="flex items-center gap-4">
+          <Link href="/privacidade" className="transition hover:text-white/60">{t.footer.privacy}</Link>
+          <Link href="/termos" className="transition hover:text-white/60">{t.footer.terms}</Link>
+          <span>{t.footer.madeIn}</span>
         </div>
       </div>
-    </footer>
+    </div>
   );
 }

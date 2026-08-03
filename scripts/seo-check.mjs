@@ -173,6 +173,58 @@ async function checkIndexable(base, url, expectedOrigin) {
   return { html, ogImage: ogOf(html, "image") };
 }
 
+/**
+ * A homepage é o URL com mais autoridade do domínio e esteve meses como um
+ * seletor de unidades com ~40 palavras e sem marcação nenhuma — o maior fator
+ * isolado na perda de posição. Estas asserções impedem que volte a esvaziar-se.
+ */
+async function checkHomepage(base, unitSlugs) {
+  const where = "/ (homepage)";
+  const html = await (await get(`${base}/`)).text();
+
+  const h1s = [...html.matchAll(/<h1[^>]*>([\s\S]*?)<\/h1>/gi)].map((m) =>
+    m[1].replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim(),
+  );
+  if (h1s.length !== 1) {
+    err(where, `esperado exatamente 1 <h1>, encontrado ${h1s.length}`);
+  } else if (!/leiria/i.test(h1s[0])) {
+    err(where, `o <h1> não menciona Leiria: "${h1s[0]}"`);
+  }
+
+  const hasLocalJsonLd = jsonLdOf(html).some((block) => {
+    try {
+      const s = JSON.stringify(JSON.parse(block));
+      return /"Organization"|"BarberShop"|"HairSalon"|"LocalBusiness"/.test(s);
+    } catch {
+      return false;
+    }
+  });
+  if (!hasLocalJsonLd) {
+    err(where, "sem JSON-LD Organization/LocalBusiness — a marca não está marcada");
+  }
+
+  // Texto visível: um seletor vazio ronda as 40 palavras.
+  const text = html
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  const words = text.split(" ").filter(Boolean).length;
+  if (words < 150) {
+    err(where, `só ${words} palavras de texto visível — a homepage voltou a ficar vazia`);
+  }
+
+  for (const slug of unitSlugs) {
+    if (!html.includes(`href="/${slug}"`)) {
+      err(where, `não liga para a unidade /${slug}`);
+    }
+  }
+  for (const p of ["/privacidade", "/termos"]) {
+    if (!html.includes(`href="${p}"`)) err(where, `não liga para ${p}`);
+  }
+}
+
 async function checkNoindex(base, path) {
   const res = await get(`${base}${path}`);
   const html = await res.text();
@@ -323,6 +375,8 @@ async function main() {
       );
     }
     for (const p of noindexPaths) await checkNoindex(base, p);
+
+    await checkHomepage(base, unitSlugs);
 
     // ── redirects legados (lidos do artefacto de build, não duplicados) ────
     const manifestPath = ".next/routes-manifest.json";

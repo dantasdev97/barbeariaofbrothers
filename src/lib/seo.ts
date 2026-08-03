@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { ProductRow, UnitRow } from "@/types/database.types";
 import { absoluteUrl } from "@/lib/utils";
 import { LOCALES } from "@/lib/i18n/config";
+import { dictionaries } from "@/lib/i18n/dictionaries";
 
 type PageSeo = {
   title?: string;
@@ -92,7 +93,7 @@ export function notFoundMetadata(title = "Página não encontrada"): Metadata {
 export function homeMetadata(): Metadata {
   const title = "Barbearia em Leiria | Of Brothers — Desde 2012";
   const description =
-    "Barbearia em Leiria desde 2012. Escolha a sua unidade Of Brothers para agendar, conhecer a equipa e ver produtos.";
+    "Barbearia em Leiria desde 2012. Corte, barba, degradê e navalha por uma equipa certificada, em duas unidades. Agende online.";
 
   return {
     title: { absolute: title },
@@ -154,14 +155,14 @@ export function buildUnitMetadata(unit: UnitRow, page?: PageSeo): Metadata {
 
 const JSON_LD_LOCALES = LOCALES.map((l) => (l === "pt" ? "pt-PT" : l));
 
-const SERVICES = [
-  "Corte de cabelo",
-  "Barba",
-  "Degradê",
-  "Sobrancelha",
-  "Navalha",
-  "Pigmentação",
-];
+/**
+ * Fonte única dos serviços, partilhada entre o `makesOffer` do JSON-LD e a
+ * secção visível da homepage — antes existiam três listas dessincronizadas
+ * (esta, o `marquee` do dicionário e a tabela `loyalty_services`).
+ *
+ * Usa sempre a versão `pt`: o JSON-LD é emitido em pt-PT, tal como o `og:locale`.
+ */
+const SERVICES = dictionaries.pt.homeLanding.services;
 
 export function buildLocalBusinessJsonLd(unit: UnitRow) {
   return {
@@ -241,6 +242,48 @@ export function buildProductJsonLd(unit: UnitRow, product: ProductRow) {
           },
         }
       : {}),
+  };
+}
+
+/**
+ * JSON-LD da homepage.
+ *
+ * A homepage é o URL com mais autoridade do domínio e não tinha marcação
+ * nenhuma. Emite a marca como `Organization` e aponta para as lojas pelos `@id`
+ * que `buildLocalBusinessJsonLd` já emite em cada página de unidade — em vez de
+ * redefinir as lojas aqui e arriscar que as duas definições divirjam.
+ *
+ * Sem `aggregateRating`, pelas razões documentadas acima.
+ */
+export function buildOrganizationJsonLd(units: UnitRow[]) {
+  const sameAs = [
+    ...new Set(
+      units.flatMap((u) =>
+        [u.socials?.instagram, u.socials?.facebook, u.socials?.tiktok].filter(
+          Boolean,
+        ),
+      ),
+    ),
+  ];
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "@id": absoluteUrl("/#organization"),
+    name: "Barbearia Of Brothers",
+    url: absoluteUrl("/"),
+    logo: absoluteUrl("/logo.png"),
+    description:
+      "Barbearia em Leiria desde 2012. Corte, barba, degradê e acabamentos de precisão.",
+    areaServed: { "@type": "City", name: "Leiria" },
+    foundingDate: "2012",
+    ...(sameAs.length ? { sameAs } : {}),
+    subOrganization: units.map((u) => ({
+      "@type": "BarberShop",
+      "@id": absoluteUrl(`/${u.slug}#salon`),
+      name: u.name,
+      url: absoluteUrl(`/${u.slug}`),
+    })),
   };
 }
 
