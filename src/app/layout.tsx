@@ -1,11 +1,11 @@
 import type { Metadata, Viewport } from "next";
 import { Poppins, Space_Grotesk } from "next/font/google";
-import { Analytics } from "@vercel/analytics/next";
 import { Toaster } from "@/components/ui/sonner";
 import { CookieBanner } from "@/components/public/cookie-banner";
 import { NativeProvider } from "@/components/native/native-provider";
 import { LocaleProvider } from "@/components/public/locale-provider";
 import { getServerI18n } from "@/lib/i18n/server";
+import { absoluteUrl, siteUrl } from "@/lib/utils";
 import "./globals.css";
 
 const poppins = Poppins({
@@ -23,9 +23,9 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL ?? "https://barbeariaofbrothers.pt",
-  ),
+  // Tem de usar a mesma origem que o `absoluteUrl()`: um metadataBase que
+  // discorde manda todos os URLs relativos de OG para o host errado.
+  metadataBase: new URL(siteUrl()),
   title: {
     default: "Barbearia em Leiria | Of Brothers — Desde 2012",
     template: "%s · Barbearia Of Brothers",
@@ -34,7 +34,10 @@ export const metadata: Metadata = {
     "Barbearia Of Brothers — corte, barba e estilo desde 2012. Agende online com os nossos barbeiros e descubra os nossos produtos.",
   applicationName: "Barbearia Of Brothers",
   authors: [{ name: "Barbearia Of Brothers" }],
-  alternates: { canonical: "https://barbeariaofbrothers.pt" },
+  // Sem `alternates` aqui de propósito. No App Router o canonical do root é
+  // herdado por todas as rotas que não o sobrescrevam, e era isso que fazia as
+  // páginas legais, o admin, o login e todos os 404 declararem-se como sendo a
+  // homepage. Cada página define o seu via `buildPageMetadata`/`buildUnitMetadata`.
   icons: {
     icon: [
       { rel: "icon", url: "/favicon.ico?v=2" },
@@ -47,8 +50,10 @@ export const metadata: Metadata = {
     type: "website",
     locale: "pt_PT",
     siteName: "Barbearia Of Brothers",
-    url: "https://barbeariaofbrothers.pt",
-    images: [{ url: "https://barbeariaofbrothers.pt/og-image.png", width: 1200, height: 630 }],
+    url: absoluteUrl("/"),
+    // A imagem vem de `src/app/opengraph-image.tsx` (convenção de ficheiro do
+    // Next, que tem prioridade sobre este objeto). O antigo `/og-image.png`
+    // estava declarado aqui mas devolvia 404.
   },
   twitter: { card: "summary_large_image" },
   robots: { index: true, follow: true },
@@ -91,7 +96,6 @@ export default async function RootLayout({
           richColors
           closeButton
         />
-        <Analytics />
       </body>
     </html>
   );

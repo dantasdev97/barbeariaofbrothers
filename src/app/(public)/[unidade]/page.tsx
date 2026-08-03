@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import { Award, CalendarCheck, Package, Scissors, ShoppingBag } from "lucide-react";
+import { ShoppingBag } from "lucide-react";
 import {
   getBarbersByUnit,
   getProductsByUnit,
@@ -13,6 +13,8 @@ import { formatPrice, formatPriceOrAsk } from "@/lib/utils";
 import { getServerI18n } from "@/lib/i18n/server";
 import { interpolate } from "@/lib/i18n/dictionaries";
 import { buildBreadcrumbJsonLd } from "@/lib/seo";
+import { MarqueeBand } from "@/components/public/sections/marquee-band";
+import { WhyUs } from "@/components/public/sections/why-us";
 
 const BARBER_GRADIENTS = [
   "linear-gradient(135deg, #1a1410, #3a302a)",
@@ -147,11 +149,12 @@ export default async function UnitHome({
           </div>
 
           {/* Stats row */}
-          <div className="mt-10 grid grid-cols-3 gap-4 border-t border-border pt-8 sm:w-max sm:gap-12">
+          {/* Só métricas verificáveis: "350 cortes/mês" e "4.9 ★ Google" eram
+              literais inventados, sem fonte. `yearsOpen` é calculado a partir
+              de 2012. */}
+          <div className="mt-10 grid gap-4 border-t border-border pt-8 sm:w-max sm:gap-12">
             {[
               { num: `${yearsOpen}+`, label: t.stats.years },
-              { num: "350", label: t.stats.cutsMonth },
-              { num: "4.9", label: t.stats.googleRating },
             ].map((s) => (
               <div key={s.label}>
                 <div className="font-heading text-3xl font-semibold tracking-tight">
@@ -166,61 +169,9 @@ export default async function UnitHome({
         </div>
       </section>
 
-      {/* ── Marquee band — standalone full-width block ── */}
-      <div className="relative overflow-hidden bg-foreground py-5">
-        <div
-          className="flex w-max gap-12"
-          style={{ animation: "marquee 30s linear infinite" }}
-        >
-          {[...t.marquee, ...t.marquee].map((item, i) => (
-            <div key={i} className="flex items-center gap-12">
-              <span className="font-heading text-[22px] font-medium tracking-wide text-background">
-                {item}
-              </span>
-              <span className="text-brand">●</span>
-            </div>
-          ))}
-        </div>
-      </div>
+      <MarqueeBand />
 
-      {/* ──────────────────────── PORQUE NÓS ───────────────────────── */}
-      <section className="px-4 py-24 sm:px-6">
-        <div className="mx-auto max-w-7xl">
-          <div className="mx-auto mb-14 max-w-2xl text-center">
-            <p className="mb-4 text-[11px] font-semibold uppercase tracking-[0.18em] text-brand">
-              {t.whyUs.eyebrow}
-            </p>
-            <h2 className="font-heading text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
-              {t.whyUs.titleLine1}<br />{t.whyUs.titleLine2}
-            </h2>
-            <p className="mt-4 text-[17px] text-muted-foreground">
-              {t.whyUs.subtitle}
-            </p>
-          </div>
-
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {[Award, Scissors, CalendarCheck, Package].map((Icon, i) => {
-              const { title, desc } = t.whyUs.features[i];
-              return (
-                <div
-                  key={title}
-                  className="flex flex-col gap-4 rounded-2xl border border-border bg-bg-surface p-6 transition-all duration-200 hover:-translate-y-1 hover:border-brand/30 hover:shadow-[0_16px_40px_-16px_rgba(243,146,0,0.15)]"
-                >
-                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand/10">
-                    <Icon className="h-5 w-5 text-brand" />
-                  </div>
-                  <h3 className="font-heading text-lg font-semibold leading-snug">
-                    {title}
-                  </h3>
-                  <p className="text-sm leading-relaxed text-muted-foreground">
-                    {desc}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </section>
+      <WhyUs />
 
       {/* ──────────────────────────── BARBERS ────────────────────────────── */}
       {featuredBarbers.length > 0 && (
@@ -272,9 +223,6 @@ export default async function UnitHome({
                           {initials}
                         </span>
                       )}
-                      <div className="absolute right-4 top-4 rounded-full bg-card px-3 py-1.5 text-[12px] font-medium tracking-wide text-foreground">
-                        {interpolate(t.team.yearsBadge, { n: i < 3 ? [12, 8, 5][i] : 4 })}
-                      </div>
                     </div>
 
                     <div className="p-6">

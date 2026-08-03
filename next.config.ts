@@ -12,7 +12,7 @@ const securityHeaders = [
       "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com",
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https:",
-      "connect-src 'self' https://*.supabase.co https://www.google-analytics.com https://region1.google-analytics.com https://vitals.vercel-insights.com",
+      "connect-src 'self' https://*.supabase.co https://www.google-analytics.com https://region1.google-analytics.com",
       "media-src 'self' https://*.supabase.co",
       "font-src 'self'",
       "frame-src 'none'",
@@ -23,9 +23,63 @@ const securityHeaders = [
   },
 ];
 
+/**
+ * URLs do site WordPress antigo que continuam indexados no Google e hoje
+ * devolvem 404. Quando o domínio expirou e o site foi reconstruído em Next.js,
+ * a estrutura de URLs mudou por completo sem redirects — toda a autoridade
+ * acumulada nesses endereços evaporou.
+ *
+ * `permanent: true` emite 308 (equivalente permanente do 301, preservando o
+ * método do pedido). Acrescentar aqui os restantes à medida que aparecerem no
+ * relatório de cobertura do Search Console.
+ */
+const LEGACY_REDIRECTS = [
+  // Confirmado indexado e a devolver 404 em produção.
+  { from: "/agendamentos", to: "/" },
+  // Padrões prováveis do site antigo. Inofensivos se nunca existiram: só
+  // passam a responder quando alguém os pedir.
+  { from: "/contactos", to: "/" },
+  { from: "/contacto", to: "/" },
+  { from: "/equipa", to: "/" },
+  { from: "/sobre", to: "/" },
+  { from: "/sobre-nos", to: "/" },
+  { from: "/produtos", to: "/" },
+  { from: "/servicos", to: "/" },
+];
+
+/** Áreas privadas: nunca indexar, nunca cachear. */
+const privatePaths = ["/admin/:path*", "/login", "/cliente/:path*"];
+
 const nextConfig: NextConfig = {
   async headers() {
-    return [{ source: "/(.*)", headers: securityHeaders }];
+    return [
+      { source: "/(.*)", headers: securityHeaders },
+      // `X-Robots-Tag` complementa o noindex do metadata: cobre respostas que
+      // não passam pelo pipeline de metadata (redirects de auth, por exemplo).
+      ...privatePaths.map((source) => ({
+        source,
+        headers: [
+          { key: "X-Robots-Tag", value: "noindex, nofollow" },
+          { key: "Cache-Control", value: "private, no-store, max-age=0" },
+        ],
+      })),
+      {
+        // Assets versionados por query string (`?v=2`). Sem `immutable` porque
+        // os ficheiros em si podem ser substituídos.
+        source: "/:file(logo.png|favicon.ico|favicon-32x32.png|favicon-192x192.png)",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=0, must-revalidate" },
+          { key: "CDN-Cache-Control", value: "public, s-maxage=86400" },
+        ],
+      },
+    ];
+  },
+  async redirects() {
+    return LEGACY_REDIRECTS.map(({ from, to }) => ({
+      source: from,
+      destination: to,
+      permanent: true,
+    }));
   },
   // cacheComponents is opt-in PPR. Re-enable once Suspense boundaries are added
   // around all dynamic data fetches.

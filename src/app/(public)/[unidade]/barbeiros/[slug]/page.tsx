@@ -9,7 +9,12 @@ import {
   TikTokIcon,
 } from "@/components/public/social-icons";
 import { getBarberBySlug, getUnitBySlug } from "@/lib/data";
-import { buildBreadcrumbJsonLd, buildUnitMetadata, buildUnitPageTitle } from "@/lib/seo";
+import {
+  buildBreadcrumbJsonLd,
+  buildUnitMetadata,
+  buildUnitPageTitle,
+  notFoundMetadata,
+} from "@/lib/seo";
 import { BookingButton } from "@/components/public/booking-button";
 import { TrackPageView } from "@/components/public/track-page-view";
 import { getServerI18n } from "@/lib/i18n/server";
@@ -24,9 +29,9 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { unidade, slug } = await params;
   const unit = await getUnitBySlug(unidade);
-  if (!unit) return {};
+  if (!unit) return notFoundMetadata("Unidade não encontrada");
   const b = await getBarberBySlug(unit.id, slug);
-  if (!b) return {};
+  if (!b) return notFoundMetadata("Barbeiro não encontrado");
   return buildUnitMetadata(unit, {
     title: buildUnitPageTitle(b.name, unit),
     description:

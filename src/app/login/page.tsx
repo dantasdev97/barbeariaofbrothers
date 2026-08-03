@@ -7,6 +7,8 @@ import { LoginForm } from "./login-form";
 export const metadata: Metadata = {
   title: "Acesso administrativo",
   robots: { index: false, follow: false },
+  // Sem isto herdava o canonical do root layout e declarava-se como homepage.
+  alternates: { canonical: null },
 };
 
 export default function LoginPage() {

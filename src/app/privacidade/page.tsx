@@ -1,15 +1,18 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { buildPageMetadata, LEGAL_UPDATED_LABEL } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildPageMetadata({
+  path: "/privacidade",
+  index: true,
   title: "Política de Privacidade",
-  description: "Informação sobre como a Barbearia Of Brothers trata os teus dados pessoais e utiliza cookies, ao abrigo do RGPD.",
-  robots: { index: true, follow: false },
-};
+  description:
+    "Informação sobre como a Barbearia Of Brothers trata os teus dados pessoais e utiliza cookies, ao abrigo do RGPD.",
+});
 
 export default function PrivacidadePage() {
-  const updated = "14 de maio de 2026";
+  const updated = LEGAL_UPDATED_LABEL;
 
   return (
     <div className="min-h-screen bg-background">
@@ -53,10 +56,6 @@ export default function PrivacidadePage() {
             </p>
             <ul className="space-y-3 pl-0">
               {[
-                {
-                  t: "Dados de navegação anónimos",
-                  d: "O Vercel Analytics recolhe métricas anónimas de tráfego (páginas visitadas, tempo de sessão, país de origem). Não identifica utilizadores individualmente nem utiliza cookies persistentes.",
-                },
                 {
                   t: "Google Analytics 4 (com consentimento)",
                   d: "Caso aceite os cookies, o Google Analytics 4 recolhe dados sobre a tua navegação para análise de tráfego. Estes dados são anonimizados (IP mascarado). Podes retirar o consentimento a qualquer momento limpando os dados do browser.",
@@ -112,10 +111,10 @@ export default function PrivacidadePage() {
                 </thead>
                 <tbody className="divide-y divide-border text-foreground/80">
                   <tr>
-                    <td className="px-4 py-3 font-medium">Vercel Analytics</td>
+                    <td className="px-4 py-3 font-medium">Eventos próprios (Supabase)</td>
                     <td className="px-4 py-3">Análise anónima</td>
                     <td className="px-4 py-3 text-green-600 dark:text-green-400">Não necessário</td>
-                    <td className="px-4 py-3">Métricas de tráfego sem PII</td>
+                    <td className="px-4 py-3">Métricas de tráfego sem PII, sem cookies</td>
                   </tr>
                   <tr>
                     <td className="px-4 py-3 font-medium">Google Analytics 4</td>

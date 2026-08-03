@@ -4,7 +4,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, ShoppingBag } from "lucide-react";
 import { getProductBySlug, getProductsByUnit, getUnitBySlug } from "@/lib/data";
-import { buildBreadcrumbJsonLd, buildUnitMetadata, buildUnitPageTitle } from "@/lib/seo";
+import {
+  buildBreadcrumbJsonLd,
+  buildUnitMetadata,
+  buildProductJsonLd,
+  buildUnitPageTitle,
+  notFoundMetadata,
+} from "@/lib/seo";
 import { TrackPageView } from "@/components/public/track-page-view";
 import { ProductActions } from "@/components/public/product-actions";
 import { formatPrice, formatPriceOrAsk, absoluteUrl } from "@/lib/utils";
@@ -20,9 +26,9 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { unidade, slug } = await params;
   const unit = await getUnitBySlug(unidade);
-  if (!unit) return {};
+  if (!unit) return notFoundMetadata("Unidade não encontrada");
   const p = await getProductBySlug(unit.id, slug);
-  if (!p) return {};
+  if (!p) return notFoundMetadata("Produto não encontrado");
   return buildUnitMetadata(unit, {
     title: p.seo_title ?? buildUnitPageTitle(p.name, unit),
     description:
@@ -62,12 +68,14 @@ export default async function ProductDetail({
     { name: unit.name, path: `/${unit.slug}` },
     { name: p.name, path: `/${unit.slug}/produtos/${p.slug}` },
   ]);
+  // Um único <script> pode conter um array de nós JSON-LD.
+  const jsonLd = [breadcrumbJsonLd, buildProductJsonLd(unit, p)];
 
   return (
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <TrackPageView unitId={unit.id} type="product_view" refId={p.id} />
 
