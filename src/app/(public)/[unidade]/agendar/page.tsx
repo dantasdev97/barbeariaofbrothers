@@ -1,7 +1,10 @@
 import { redirect } from "next/navigation";
 import { getUnitBySlug } from "@/lib/data";
 
-export const metadata = { robots: { index: false, follow: false } };
+export const metadata = {
+  robots: { index: false, follow: false },
+  alternates: { canonical: null },
+};
 export const dynamic = "force-dynamic";
 
 export default async function AgendarRedirect({

@@ -2,7 +2,12 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Clock, MapPin, MessageCircle, Phone } from "lucide-react";
 import { getUnitBySlug } from "@/lib/data";
-import { buildBreadcrumbJsonLd, buildUnitMetadata, buildUnitPageTitle } from "@/lib/seo";
+import {
+  buildBreadcrumbJsonLd,
+  buildUnitMetadata,
+  buildUnitPageTitle,
+  notFoundMetadata,
+} from "@/lib/seo";
 import { TrackPageView } from "@/components/public/track-page-view";
 import { BookingButton } from "@/components/public/booking-button";
 import { formatPhonePT } from "@/lib/utils";
@@ -25,7 +30,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { unidade } = await params;
   const unit = await getUnitBySlug(unidade);
-  if (!unit) return {};
+  if (!unit) return notFoundMetadata("Unidade não encontrada");
   return buildUnitMetadata(unit, {
     title: buildUnitPageTitle("Contacto", unit),
     description: `Morada, horários e contactos de ${unit.name}, em Leiria.`,

@@ -3,7 +3,12 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getBarbersByUnit, getUnitBySlug } from "@/lib/data";
-import { buildBreadcrumbJsonLd, buildUnitMetadata, buildUnitPageTitle } from "@/lib/seo";
+import {
+  buildBreadcrumbJsonLd,
+  buildUnitMetadata,
+  buildUnitPageTitle,
+  notFoundMetadata,
+} from "@/lib/seo";
 import { BookingButton } from "@/components/public/booking-button";
 import { TrackPageView } from "@/components/public/track-page-view";
 import { getServerI18n } from "@/lib/i18n/server";
@@ -36,7 +41,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { unidade } = await params;
   const unit = await getUnitBySlug(unidade);
-  if (!unit) return {};
+  if (!unit) return notFoundMetadata("Unidade não encontrada");
   return buildUnitMetadata(unit, {
     title: buildUnitPageTitle("Barbeiros", unit),
     description: `Conheça a equipa de ${unit.name}, em Leiria. Profissionais certificados, prontos para o atender.`,

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import type { UnitRow } from "@/types/database.types";
+import type { ProductRow, UnitRow } from "@/types/database.types";
 import { absoluteUrl } from "@/lib/utils";
 import { LOCALES } from "@/lib/i18n/config";
 
@@ -10,6 +10,15 @@ type PageSeo = {
   ogImage?: string;
 };
 
+/**
+ * Data da última revisão dos textos legais. Fonte única para o `lastModified`
+ * do sitemap e para a data mostrada em `/privacidade` e `/termos`, para que a
+ * cópia visível e o sitemap não possam divergir.
+ */
+export const LEGAL_UPDATED = new Date("2026-05-14T00:00:00Z");
+
+export const LEGAL_UPDATED_LABEL = "14 de maio de 2026";
+
 /** Ordered by real Search Console ranking — "barbearia leiria" leads every page. */
 export const KEYWORDS = [
   "barbearia leiria",
@@ -19,6 +28,66 @@ export const KEYWORDS = [
   "degradê leiria",
   "barbearia of brothers",
 ];
+
+/**
+ * Builder central de metadata. Todas as páginas fora da árvore de unidades
+ * devem passar por aqui.
+ *
+ * `path` e `index` são obrigatórios de propósito: o root layout já não declara
+ * `alternates.canonical`, porque no App Router esse campo é herdado por todas as
+ * rotas que não o sobrescrevam — foi assim que páginas legais, admin, login e
+ * todos os 404 passaram a declarar a homepage como canónico. Tornar os dois
+ * campos obrigatórios faz com que esquecer-se deles seja um erro de compilação
+ * em vez de um bug silencioso em produção.
+ */
+export function buildPageMetadata({
+  path,
+  index,
+  title,
+  description,
+  ogImage,
+}: {
+  /** Caminho absoluto a partir da raiz, ex. `/privacidade`. Vira canonical. */
+  path: string;
+  /** Decisão explícita de indexação. Sem default — tem de ser escolhida. */
+  index: boolean;
+  title?: string;
+  description?: string;
+  ogImage?: string;
+}): Metadata {
+  const canonical = absoluteUrl(path);
+
+  return {
+    ...(title ? { title } : {}),
+    ...(description ? { description } : {}),
+    alternates: { canonical },
+    robots: index
+      ? { index: true, follow: true }
+      : { index: false, follow: false },
+    openGraph: {
+      ...(title ? { title } : {}),
+      ...(description ? { description } : {}),
+      url: canonical,
+      siteName: "Barbearia Of Brothers",
+      locale: "pt_PT",
+      type: "website",
+      ...(ogImage ? { images: [{ url: ogImage, width: 1200, height: 630 }] } : {}),
+    },
+  };
+}
+
+/**
+ * Metadata para respostas 404. Um 404 nunca deve declarar-se indexável nem
+ * apontar o canonical para outra página — em produção isto estava a fazer com
+ * que cada URL partido dissesse ao Google que era a homepage.
+ */
+export function notFoundMetadata(title = "Página não encontrada"): Metadata {
+  return {
+    title,
+    alternates: { canonical: null },
+    robots: { index: false, follow: false },
+  };
+}
 
 export function homeMetadata(): Metadata {
   const title = "Barbearia em Leiria | Of Brothers — Desde 2012";
@@ -116,12 +185,10 @@ export function buildLocalBusinessJsonLd(unit: UnitRow) {
           addressCountry: "PT",
         }
       : undefined,
-    aggregateRating: {
-      "@type": "AggregateRating",
-      ratingValue: "4.9",
-      bestRating: "5",
-      ratingCount: "120",
-    },
+    // Sem `aggregateRating`: estava fixo em 4.9/120 para todas as unidades, sem
+    // qualquer avaliação visível na página. Marcação de avaliações não
+    // verificáveis viola a política de dados estruturados do Google e arrisca
+    // ação manual. Só voltar quando houver avaliações reais renderizadas.
     sameAs: [
       unit.socials?.instagram,
       unit.socials?.facebook,
@@ -132,6 +199,48 @@ export function buildLocalBusinessJsonLd(unit: UnitRow) {
       "@type": "Offer",
       itemOffered: { "@type": "Service", name },
     })),
+  };
+}
+
+/**
+ * JSON-LD `Product` + `Offer` para as páginas de produto, que já mostram preço
+ * e disponibilidade mas não os expunham em marcação nenhuma.
+ *
+ * Sem `aggregateRating`/`review`: só devem entrar quando houver avaliações
+ * reais e visíveis na página.
+ */
+export function buildProductJsonLd(unit: UnitRow, product: ProductRow) {
+  const url = absoluteUrl(`/${unit.slug}/produtos/${product.slug}`);
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    "@id": `${url}#product`,
+    name: product.name,
+    description:
+      product.seo_description ??
+      product.description ??
+      `${product.name} — à venda na ${unit.name}, em Leiria.`,
+    image: product.image_url ?? undefined,
+    sku: product.slug,
+    // `price_cents: 0` é renderizado como "Sob consulta" na página. Emitir uma
+    // Offer nesse caso anunciaria €0,00 ao Google, por isso omite-se.
+    ...(product.price_cents > 0
+      ? {
+          offers: {
+            "@type": "Offer",
+            url,
+            priceCurrency: "EUR",
+            price: (product.price_cents / 100).toFixed(2),
+            itemCondition: "https://schema.org/NewCondition",
+            availability:
+              product.out_of_stock || product.stock <= 0
+                ? "https://schema.org/OutOfStock"
+                : "https://schema.org/InStock",
+            seller: { "@type": "Organization", name: unit.name },
+          },
+        }
+      : {}),
   };
 }
 

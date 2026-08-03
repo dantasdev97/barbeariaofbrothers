@@ -1,15 +1,18 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { buildPageMetadata, LEGAL_UPDATED_LABEL } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildPageMetadata({
+  path: "/privacidade",
+  index: true,
   title: "Política de Privacidade",
-  description: "Informação sobre como a Barbearia Of Brothers trata os teus dados pessoais e utiliza cookies, ao abrigo do RGPD.",
-  robots: { index: true, follow: false },
-};
+  description:
+    "Informação sobre como a Barbearia Of Brothers trata os teus dados pessoais e utiliza cookies, ao abrigo do RGPD.",
+});
 
 export default function PrivacidadePage() {
-  const updated = "14 de maio de 2026";
+  const updated = LEGAL_UPDATED_LABEL;
 
   return (
     <div className="min-h-screen bg-background">

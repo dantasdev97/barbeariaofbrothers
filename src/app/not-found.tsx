@@ -1,5 +1,9 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { notFoundMetadata } from "@/lib/seo";
+
+export const metadata: Metadata = notFoundMetadata();
 
 export default function NotFound() {
   return (
