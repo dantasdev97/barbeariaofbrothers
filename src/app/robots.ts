@@ -6,8 +6,11 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       {
         userAgent: "*",
-        allow: "/",
-        disallow: ["/admin", "/api", "/login"],
+        // `/api/og/` fica permitido: é o gerador das imagens OG e bloqueá-lo
+        // impede os crawlers de as obterem. O `allow` mais específico ganha ao
+        // `disallow` mais genérico.
+        allow: ["/", "/api/og/"],
+        disallow: ["/admin", "/api", "/login", "/cliente"],
       },
     ],
     sitemap: absoluteUrl("/sitemap.xml"),
