@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { Poppins, Space_Grotesk } from "next/font/google";
-import { Analytics } from "@vercel/analytics/next";
 import { Toaster } from "@/components/ui/sonner";
 import { CookieBanner } from "@/components/public/cookie-banner";
 import { NativeProvider } from "@/components/native/native-provider";
@@ -97,7 +96,6 @@ export default async function RootLayout({
           richColors
           closeButton
         />
-        <Analytics />
       </body>
     </html>
   );
