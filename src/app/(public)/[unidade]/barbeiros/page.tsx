@@ -162,7 +162,12 @@ export default async function BarbeirosPage({
                           {b.description}
                         </p>
                       )}
-                      <div className="mt-5 flex items-center justify-between gap-3">
+                      {/* `flex-wrap`: o BookingButton traz `shrink-0
+                          whitespace-nowrap` do buttonVariants, por isso não
+                          encolhe. A 360px a linha somava ~294px num corpo de
+                          280px e o `overflow-hidden` do cartão escondia o
+                          segundo ícone social em vez de partir a página. */}
+                      <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
                         <BookingButton
                           unit={unit}
                           barber={b}
@@ -175,7 +180,7 @@ export default async function BarbeirosPage({
                               target="_blank"
                               rel="noopener noreferrer"
                               aria-label="Instagram"
-                              className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-bg-surface text-muted-foreground transition hover:bg-brand hover:text-[#1a1410]"
+                              className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-bg-surface text-muted-foreground transition hover:bg-brand hover:text-[#1a1410]"
                             >
                               <InstagramIcon className="h-3.5 w-3.5" />
                             </a>
@@ -186,7 +191,7 @@ export default async function BarbeirosPage({
                               target="_blank"
                               rel="noopener noreferrer"
                               aria-label="Facebook"
-                              className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-bg-surface text-muted-foreground transition hover:bg-brand hover:text-[#1a1410]"
+                              className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-bg-surface text-muted-foreground transition hover:bg-brand hover:text-[#1a1410]"
                             >
                               <FacebookIcon className="h-3.5 w-3.5" />
                             </a>

@@ -154,7 +154,7 @@ export async function FooterBottomBar() {
 
   return (
     <div className="border-t border-white/8">
-      <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-4 py-6 text-[13px] text-white/40 sm:flex-row sm:px-6">
+      <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-4 py-6 text-[13px] text-white/60 sm:flex-row sm:px-6">
         <span>
           {t.footer.rights.replace("{year}", String(new Date().getFullYear()))}
         </span>

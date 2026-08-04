@@ -18,6 +18,8 @@ const args = process.argv.slice(2);
 const baseArg = args.find((a) => a.startsWith("--base="))?.slice("--base=".length);
 const requireCatalog = args.includes("--require-catalog");
 const PORT = 4321;
+/** Limite prático do que o Google mostra antes de truncar. */
+const TITLE_MAX = 60;
 
 const errors = [];
 const warnings = [];
@@ -160,7 +162,13 @@ async function checkIndexable(base, url, expectedOrigin) {
 
   const title = html.match(/<title>([^<]*)<\/title>/i)?.[1] ?? "";
   if (!title) err(where, "sem <title>");
-  else if (title.length > 65) warn(where, `title com ${title.length} caracteres (>65)`);
+  // Erro, não aviso: os títulos das páginas internas chegaram aos 79 caracteres
+  // em produção — o nome da marca aparecia duas vezes e o Google truncava-os.
+  else if (title.length > TITLE_MAX) {
+    err(where, `title com ${title.length} caracteres (max ${TITLE_MAX}) — truncado no Google: "${title}"`);
+  } else if (title.length < 30) {
+    warn(where, `title com só ${title.length} caracteres — cabe mais palavra-chave`);
+  }
 
   const desc = html
     .match(/<meta[^>]+name="description"[^>]*>/i)?.[0]

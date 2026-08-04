@@ -239,7 +239,12 @@ export default async function UnitHome({
                       <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">
                         {interpolate(t.team.specialistIn, { speciality: b.speciality ?? t.team.defaultSpeciality })}
                       </p>
-                      <div className="mt-5 flex items-center justify-between gap-3">
+                      {/* `flex-wrap`: o BookingButton traz `shrink-0
+                          whitespace-nowrap` do buttonVariants, por isso não
+                          encolhe. A 360px a linha somava ~294px num corpo de
+                          280px e o `overflow-hidden` do cartão escondia o
+                          segundo ícone social em vez de partir a página. */}
+                      <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
                         <BookingButton
                           unit={unit}
                           barber={b}

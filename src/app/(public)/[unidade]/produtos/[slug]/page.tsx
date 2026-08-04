@@ -156,7 +156,7 @@ export default async function ProductDetail({
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label={t.productDetail.shareWhatsapp}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border bg-bg-surface text-muted-foreground transition hover:border-[#25D366] hover:bg-[#25D366] hover:text-white active:scale-[0.96]"
+                className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-border bg-bg-surface text-muted-foreground transition hover:border-[#25D366] hover:bg-[#25D366] hover:text-white active:scale-[0.96]"
               >
                 <WhatsAppIcon className="h-4 w-4" />
               </a>
@@ -165,7 +165,7 @@ export default async function ProductDetail({
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label={t.productDetail.shareFacebook}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border bg-bg-surface text-muted-foreground transition hover:border-[#1877F2] hover:bg-[#1877F2] hover:text-white active:scale-[0.96]"
+                className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-border bg-bg-surface text-muted-foreground transition hover:border-[#1877F2] hover:bg-[#1877F2] hover:text-white active:scale-[0.96]"
               >
                 <FacebookIcon className="h-4 w-4" />
               </a>
@@ -174,7 +174,7 @@ export default async function ProductDetail({
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label={t.productDetail.sharePinterest}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border bg-bg-surface text-muted-foreground transition hover:border-[#E60023] hover:bg-[#E60023] hover:text-white active:scale-[0.96]"
+                className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-border bg-bg-surface text-muted-foreground transition hover:border-[#E60023] hover:bg-[#E60023] hover:text-white active:scale-[0.96]"
               >
                 <PinterestIcon className="h-4 w-4" />
               </a>

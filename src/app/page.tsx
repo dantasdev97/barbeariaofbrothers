@@ -3,10 +3,15 @@ import Link from "next/link";
 import {
   ArrowRight,
   Clock,
+  Eye,
+  Layers,
   MapPin,
   MessageCircle,
+  Palette,
   Phone,
   Scissors,
+  Sparkles,
+  Wind,
 } from "lucide-react";
 import { getAllUnits } from "@/lib/data";
 import { buildOrganizationJsonLd, homeMetadata } from "@/lib/seo";
@@ -27,6 +32,13 @@ const yearsOpen = new Date().getFullYear() - 2012;
 
 const DAY_KEYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
 
+/**
+ * Um ícone por serviço, alinhado por posição com `t.homeLanding.services` —
+ * mesmo padrão que `why-us.tsx` usa para as suas features. Antes era a mesma
+ * tesoura seis vezes, o que se lê como erro e não como sistema.
+ */
+const SERVICE_ICONS = [Scissors, Sparkles, Layers, Eye, Wind, Palette];
+
 export default async function HomePage() {
   const [units, { dict: t }] = await Promise.all([
     getAllUnits(),
@@ -34,6 +46,22 @@ export default async function HomePage() {
   ]);
 
   const jsonLd = buildOrganizationJsonLd(units);
+
+  // Redes agregadas das unidades, sem repetir a mesma conta duas vezes.
+  const socials = [
+    ...new Map(
+      units
+        .flatMap((u) => [
+          { href: u.socials?.instagram, label: "Instagram", Icon: InstagramIcon },
+          { href: u.socials?.facebook, label: "Facebook", Icon: FacebookIcon },
+          { href: u.socials?.tiktok, label: "TikTok", Icon: TikTokIcon },
+        ])
+        .filter((s): s is { href: string; label: string; Icon: typeof InstagramIcon } =>
+          Boolean(s.href),
+        )
+        .map((s) => [s.href, s] as const),
+    ).values(),
+  ];
 
   return (
     <>
@@ -113,12 +141,13 @@ export default async function HomePage() {
                   </p>
                 </div>
               ) : (
-                <div className="mt-5 grid gap-3">
-                  {units.map((unit) => (
+                <div className="stagger mt-5 grid gap-3">
+                  {units.map((unit, i) => (
                     <Link
                       key={unit.id}
                       href={`/${unit.slug}`}
-                      className="group rounded-2xl border border-border bg-bg-surface p-5 transition hover:-translate-y-0.5 hover:border-brand/40 hover:bg-card hover:shadow-premium sm:p-6"
+                      style={{ "--stagger-index": i } as React.CSSProperties}
+                      className="group rounded-2xl border border-border bg-bg-surface p-5 transition-[border-color,background-color,box-shadow,translate,scale] duration-200 ease-out-strong hover:-translate-y-0.5 hover:border-brand/40 hover:bg-card hover:shadow-premium active:scale-[0.99] sm:p-6"
                     >
                       <div className="flex items-start justify-between gap-4">
                         <div className="min-w-0">
@@ -164,18 +193,22 @@ export default async function HomePage() {
               </p>
             </div>
 
-            <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {t.homeLanding.services.map((name) => (
-                <li
-                  key={name}
-                  className="flex items-center gap-3 rounded-2xl border border-border bg-bg-surface px-5 py-4 transition hover:border-brand/30"
-                >
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand/10">
-                    <Scissors className="h-4 w-4 text-brand" />
-                  </span>
-                  <span className="font-heading text-lg font-medium">{name}</span>
-                </li>
-              ))}
+            <ul className="stagger grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {t.homeLanding.services.map((name, i) => {
+                const Icon = SERVICE_ICONS[i] ?? Scissors;
+                return (
+                  <li
+                    key={name}
+                    style={{ "--stagger-index": i } as React.CSSProperties}
+                    className="group/svc flex items-center gap-4 rounded-2xl border border-border bg-bg-surface px-5 py-4 transition-[border-color,box-shadow,translate] duration-200 ease-out-strong hover:-translate-y-0.5 hover:border-brand/40 hover:shadow-premium"
+                  >
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand/10 text-brand transition-colors duration-200 group-hover/svc:bg-brand group-hover/svc:text-primary-foreground">
+                      <Icon className="h-[18px] w-[18px]" />
+                    </span>
+                    <span className="font-heading text-lg font-medium">{name}</span>
+                  </li>
+                );
+              })}
             </ul>
           </div>
         </section>
@@ -198,10 +231,11 @@ export default async function HomePage() {
                 </p>
               </div>
 
-              <div className="grid gap-6 lg:grid-cols-2">
-                {units.map((unit) => (
+              <div className="stagger grid gap-6 lg:grid-cols-2">
+                {units.map((unit, i) => (
                   <div
                     key={unit.id}
+                    style={{ "--stagger-index": i } as React.CSSProperties}
                     className="rounded-2xl border border-border bg-background p-6 sm:p-8"
                   >
                     <h3 className="font-heading text-2xl font-semibold">
@@ -235,7 +269,7 @@ export default async function HomePage() {
                           <Phone className="h-4 w-4 shrink-0 text-brand" />
                           <a
                             href={`tel:${unit.phone}`}
-                            className="transition hover:text-brand"
+                            className="transition-colors duration-150 hover:text-brand"
                           >
                             {formatPhonePT(unit.phone)}
                           </a>
@@ -248,7 +282,7 @@ export default async function HomePage() {
                             href={`https://wa.me/${unit.whatsapp.replace(/\D/g, "")}`}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="transition hover:text-brand"
+                            className="transition-colors duration-150 hover:text-brand"
                           >
                             WhatsApp
                           </a>
@@ -331,20 +365,20 @@ export default async function HomePage() {
                     <div className="mt-7 flex flex-wrap gap-2">
                       <Link
                         href={`/${unit.slug}`}
-                        className="inline-flex items-center gap-2 rounded-full bg-brand px-5 py-2.5 text-sm font-medium text-primary-foreground transition hover:bg-brand-hover"
+                        className="inline-flex items-center gap-2 rounded-full bg-brand px-5 py-2.5 text-sm font-medium text-primary-foreground transition-[background-color,scale] duration-150 ease-out-strong hover:bg-brand-hover active:scale-[0.97]"
                       >
                         {t.homeLanding.viewUnit}
                         <ArrowRight className="h-4 w-4" />
                       </Link>
                       <Link
                         href={`/${unit.slug}/barbeiros`}
-                        className="inline-flex items-center rounded-full border border-border px-5 py-2.5 text-sm font-medium transition hover:bg-foreground hover:text-background"
+                        className="inline-flex items-center rounded-full border border-border px-5 py-2.5 text-sm font-medium transition-[background-color,border-color,color,scale] duration-150 ease-out-strong hover:bg-foreground hover:text-background active:scale-[0.97]"
                       >
                         {t.homeLanding.viewTeam}
                       </Link>
                       <Link
                         href={`/${unit.slug}/contato`}
-                        className="inline-flex items-center rounded-full border border-border px-5 py-2.5 text-sm font-medium transition hover:bg-foreground hover:text-background"
+                        className="inline-flex items-center rounded-full border border-border px-5 py-2.5 text-sm font-medium transition-[background-color,border-color,color,scale] duration-150 ease-out-strong hover:bg-foreground hover:text-background active:scale-[0.97]"
                       >
                         {t.homeLanding.viewContact}
                       </Link>
@@ -357,33 +391,107 @@ export default async function HomePage() {
         )}
       </main>
 
-      {/* A homepage não tinha footer nenhum — e por isso `/privacidade` e
-          `/termos` estavam sem ligações internas a partir do URL com mais
-          autoridade do domínio. */}
+      {/* Footer de marca: as páginas de unidade usam `<Footer unit={...} />`,
+          que é obrigatoriamente de uma só unidade. A homepage não tem unidade,
+          por isso lista as duas — e mantém a mesma linguagem visual. */}
       <footer className="bg-[#0b1115]">
-        <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-14 sm:px-6">
-          <Image
-            src="/logo.png"
-            alt="Barbearia Of Brothers"
-            width={56}
-            height={56}
-            className="h-14 w-auto brightness-0 invert"
-          />
-          <p className="max-w-md text-[13px] leading-relaxed text-white/60">
-            {t.footer.since}
-          </p>
-          <nav className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-white/70">
-            {units.map((unit) => (
-              <Link
-                key={unit.id}
-                href={`/${unit.slug}`}
-                className="transition hover:text-brand"
-              >
-                {unit.name}
-              </Link>
-            ))}
-          </nav>
+        <div className="mx-auto grid max-w-7xl gap-10 px-4 py-16 sm:px-6 md:grid-cols-4">
+          {/* Marca */}
+          <div>
+            <Image
+              src="/logo.png"
+              alt="Barbearia Of Brothers"
+              width={56}
+              height={56}
+              className="h-14 w-auto brightness-0 invert"
+            />
+            <p className="mt-4 text-[13px] text-white/60">{t.footer.since}</p>
+            <p className="mt-3 max-w-xs text-[13px] leading-relaxed text-white/60">
+              {t.homeLanding.intro}
+            </p>
+          </div>
+
+          {/* Unidades, com morada */}
+          <div className="md:col-span-2">
+            <h2 className="mb-3 font-heading text-[14px] font-semibold uppercase tracking-wider text-white">
+              {t.homeLanding.unitsEyebrow.replace(/^\d+\s*—\s*/, "")}
+            </h2>
+            <ul className="grid gap-4 sm:grid-cols-2">
+              {units.map((unit) => (
+                <li key={unit.id}>
+                  <Link
+                    href={`/${unit.slug}`}
+                    className="font-heading text-[15px] font-semibold text-white transition-colors duration-150 hover:text-brand"
+                  >
+                    {unit.name}
+                  </Link>
+                  {unit.address && (
+                    <p className="mt-1.5 flex items-start gap-2 text-[13px] leading-relaxed text-white/60">
+                      <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-brand" />
+                      {unit.address}
+                    </p>
+                  )}
+                  {unit.phone && (
+                    <a
+                      href={`tel:${unit.phone}`}
+                      className="mt-1.5 flex items-center gap-2 text-[13px] text-white/60 transition-colors duration-150 hover:text-brand"
+                    >
+                      <Phone className="h-3.5 w-3.5 text-brand" />
+                      {formatPhonePT(unit.phone)}
+                    </a>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Navegação */}
+          <div>
+            <h2 className="mb-3 font-heading text-[14px] font-semibold uppercase tracking-wider text-white">
+              {t.footer.navigate}
+            </h2>
+            <ul className="space-y-2 text-sm text-white/70">
+              {units.map((unit) => (
+                <li key={unit.id}>
+                  <Link
+                    href={`/${unit.slug}/barbeiros`}
+                    className="transition-colors duration-150 hover:text-brand"
+                  >
+                    {t.homeLanding.viewTeam} — {unit.name}
+                  </Link>
+                </li>
+              ))}
+              {units.map((unit) => (
+                <li key={`c-${unit.id}`}>
+                  <Link
+                    href={`/${unit.slug}/contato`}
+                    className="transition-colors duration-150 hover:text-brand"
+                  >
+                    {t.homeLanding.viewContact} — {unit.name}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+
+            {socials.length > 0 && (
+              <div className="mt-6 flex gap-2">
+                {socials.map(({ href, label, Icon }) => (
+                  <a
+                    key={href}
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={label}
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white/70 transition-[background-color,color,scale] duration-150 ease-out-strong hover:bg-brand hover:text-[#1a1410] active:scale-[0.97]"
+                  >
+                    <Icon className="h-4 w-4" />
+                  </a>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
+
         <FooterBottomBar />
       </footer>
     </>

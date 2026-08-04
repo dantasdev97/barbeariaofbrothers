@@ -91,7 +91,7 @@ export function notFoundMetadata(title = "Página não encontrada"): Metadata {
 }
 
 export function homeMetadata(): Metadata {
-  const title = "Barbearia em Leiria | Of Brothers — Desde 2012";
+  const title = "Barbearia em Leiria | Of Brothers — Cortes, Barba e Degradê";
   const description =
     "Barbearia em Leiria desde 2012. Corte, barba, degradê e navalha por uma equipa certificada, em duas unidades. Agende online.";
 
@@ -112,9 +112,33 @@ export function homeMetadata(): Metadata {
   };
 }
 
-/** Keeps the "Barbearia em Leiria" keyword on inner pages, not just the unit home. */
+/**
+ * Limite prático do que o Google mostra antes de truncar.
+ * Acima disto o título aparece cortado com reticências nos resultados.
+ */
+export const TITLE_MAX = 60;
+
+/**
+ * Título das páginas internas de unidade.
+ *
+ * Produzia `Barbeiros — Barbearia em Leiria (Barbearia Of Brothers)` e o
+ * template do root layout somava mais ` · Barbearia Of Brothers`: 79
+ * caracteres, truncados no Google, com a marca repetida duas vezes. Agora
+ * devolve um título absoluto (o template não lhe toca) e degrada por etapas
+ * até caber, em vez de rebentar com nomes de produto longos.
+ */
 export function buildUnitPageTitle(label: string, unit: UnitRow): string {
-  return `${label} — Barbearia em Leiria (${unit.name})`;
+  // O nome da unidade já contém a marca; só interessa o que a distingue.
+  const unitNumber = unit.name.match(/(\d+)\s*$/)?.[1];
+  const unitSuffix = unitNumber ? ` · Unidade ${unitNumber}` : "";
+
+  const candidates = [
+    `${label} — Barbearia em Leiria${unitSuffix}`,
+    `${label} — Barbearia em Leiria`,
+    `${label}${unitSuffix}`,
+    label,
+  ];
+  return candidates.find((c) => c.length <= TITLE_MAX) ?? label;
 }
 
 export function buildUnitMetadata(unit: UnitRow, page?: PageSeo): Metadata {
@@ -131,7 +155,9 @@ export function buildUnitMetadata(unit: UnitRow, page?: PageSeo): Metadata {
     absoluteUrl(`/api/og/${unit.slug}`);
 
   return {
-    title,
+    // Absoluto: o template do root (` · Barbearia Of Brothers`) somaria 24
+    // caracteres e voltaria a empurrar os títulos para lá dos 60.
+    title: { absolute: title },
     description,
     keywords: KEYWORDS,
     alternates: { canonical: absoluteUrl(path) },

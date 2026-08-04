@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect } from "react";
-import { Capacitor } from "@capacitor/core";
-import { createClient } from "@/lib/supabase/client";
 import { savePushToken } from "@/lib/native/push-actions";
 
 /**
@@ -14,16 +12,25 @@ import { savePushToken } from "@/lib/native/push-actions";
  * - Trata o botão "voltar" do Android
  * - Regista push notifications quando há sessão ativa e grava o token no perfil
  * - Marca <html class="capacitor-native"> para CSS de safe-area
+ *
+ * IMPORTANTE: `@capacitor/core` e o cliente Supabase são importados
+ * dinamicamente, dentro do efeito. Estavam como imports estáticos e, como este
+ * componente está montado no root layout, entravam no bundle de TODAS as
+ * páginas — 233 KB de SDK de autenticação descarregados, parseados e
+ * executados por cada visitante web que nunca os usa. Era a principal causa do
+ * INP degradado. Um import estático entra no bundle mesmo quando o código
+ * nunca corre.
  */
 export function NativeProvider() {
   useEffect(() => {
-    if (!Capacitor.isNativePlatform()) return;
-
-    document.documentElement.classList.add("capacitor-native");
-
     let cleanup: Array<() => void> = [];
+    let cancelled = false;
 
     (async () => {
+      const { Capacitor } = await import("@capacitor/core");
+      if (cancelled || !Capacitor.isNativePlatform()) return;
+
+      document.documentElement.classList.add("capacitor-native");
       // --- UI nativa ---
       try {
         const { SplashScreen } = await import("@capacitor/splash-screen");
@@ -63,10 +70,11 @@ export function NativeProvider() {
       }
 
       // --- Push notifications ---
-      cleanup = cleanup.concat(await registerPush());
+      cleanup = cleanup.concat(await registerPush(Capacitor.getPlatform()));
     })();
 
     return () => {
+      cancelled = true;
       cleanup.forEach((fn) => fn());
     };
   }, []);
@@ -75,10 +83,12 @@ export function NativeProvider() {
 }
 
 /** Regista push notifications se houver sessão; devolve cleanups dos listeners. */
-async function registerPush(): Promise<Array<() => void>> {
+async function registerPush(platform: string): Promise<Array<() => void>> {
   const cleanups: Array<() => void> = [];
   try {
-    // Só faz sentido com utilizador autenticado (admin/barbeiro).
+    // Só faz sentido com utilizador autenticado (admin/barbeiro). Import
+    // dinâmico: só a app nativa chega aqui, o web nunca carrega o SDK.
+    const { createClient } = await import("@/lib/supabase/client");
     const supabase = createClient();
     const {
       data: { session },
@@ -89,8 +99,6 @@ async function registerPush(): Promise<Array<() => void>> {
 
     const perm = await PushNotifications.requestPermissions();
     if (perm.receive !== "granted") return cleanups;
-
-    const platform = Capacitor.getPlatform();
 
     const reg = await PushNotifications.addListener("registration", (token) => {
       void savePushToken(token.value, platform);
