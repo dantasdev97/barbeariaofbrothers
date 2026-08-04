@@ -406,7 +406,7 @@ export default async function HomePage() {
               className="h-14 w-auto brightness-0 invert"
             />
             <p className="mt-4 text-[13px] text-white/60">{t.footer.since}</p>
-            <p className="mt-3 max-w-xs text-[13px] leading-relaxed text-white/40">
+            <p className="mt-3 max-w-xs text-[13px] leading-relaxed text-white/60">
               {t.homeLanding.intro}
             </p>
           </div>

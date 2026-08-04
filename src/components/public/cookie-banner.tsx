@@ -56,7 +56,7 @@ export function CookieBanner() {
           aria-label={t.cookieBanner.dialogLabel}
           className="fixed bottom-4 left-4 right-4 z-50 mx-auto max-w-2xl rounded-2xl border border-white/10 bg-[#0b1115]/95 p-5 shadow-[0_8px_40px_rgba(0,0,0,0.4)] backdrop-blur-sm sm:flex sm:items-center sm:gap-5"
         >
-          <p className="flex-1 text-sm leading-relaxed text-white/70">
+          <p className="flex-1 text-[15px] leading-relaxed text-white/70">
             {t.cookieBanner.message}{" "}
             <Link
               href="/privacidade"

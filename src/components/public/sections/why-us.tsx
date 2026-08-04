@@ -47,7 +47,7 @@ export async function WhyUs() {
                 <h3 className="font-heading text-lg font-semibold leading-snug">
                   {title}
                 </h3>
-                <p className="text-sm leading-relaxed text-muted-foreground">
+                <p className="text-[15px] leading-relaxed text-muted-foreground">
                   {desc}
                 </p>
               </div>
