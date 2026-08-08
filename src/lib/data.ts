@@ -31,6 +31,34 @@ export async function getAllUnits(): Promise<UnitRow[]> {
   return (data ?? []) as UnitRow[];
 }
 
+/**
+ * Unidades que participam no cartão fidelidade.
+ *
+ * Separada de `getAllUnits()` de propósito: essa é usada pelo site público
+ * (homepage, layout da unidade, cartão) e filtrar lá dentro tirava a unidade do
+ * site todo. Aqui só interessa quem está no programa de pontos.
+ */
+export async function getLoyaltyUnits(): Promise<UnitRow[]> {
+  const supabase = createPublicClient();
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("units")
+    .select("*")
+    .eq("active", true)
+    .eq("loyalty_active", true)
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    // Antes de a migração 0011 correr, a coluna `loyalty_active` não existe e
+    // esta consulta falha. Devolver [] deixava o programa sem barbearia
+    // nenhuma para escolher — pior do que oferecer todas. Cai para a lista
+    // completa até a migração ser aplicada.
+    console.error("[getLoyaltyUnits] a usar todas as unidades:", error.message);
+    return getAllUnits();
+  }
+  return (data ?? []) as UnitRow[];
+}
+
 export async function getUnitBySlug(slug: string): Promise<UnitRow | null> {
   const supabase = createPublicClient();
   if (!supabase) return null;

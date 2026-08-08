@@ -1,17 +1,29 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { assertAdmin } from "@/lib/admin-auth";
+import { requireRole } from "@/lib/admin-auth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Hours, SeoMeta, Socials } from "@/types/database.types";
 
-async function requireAdmin() {
-  try {
-    return await assertAdmin();
-  } catch {
-    throw new Error("Sem permissao.");
-  }
-}
+/**
+ * Guardas por role.
+ *
+ * Antes isto era um `assertAdmin()` que só confirmava que existia um perfil,
+ * sem olhar ao role. Como Server Actions são endpoints HTTP públicos e estas
+ * acções usam o service role (que ignora a RLS), qualquer utilizador
+ * autenticado — incluindo um barbeiro, que tem login para a operação — podia
+ * apagar uma unidade.
+ *
+ * O `try/catch` que existia à volta também era um problema: o `redirect()` do
+ * Next funciona lançando um NEXT_REDIRECT, e o catch cancelava o envio para
+ * /login ao convertê-lo num erro genérico.
+ */
+
+/** Estrutura do negócio: unidades e barbeiros. Alinha com a RLS `admin_all_units`. */
+const ownerOnly = () => requireRole(["super_admin"]);
+
+/** Catálogo: produtos, categorias e uploads. Um manager trata da sua loja. */
+const catalogStaff = () => requireRole(["super_admin", "manager"]);
 
 function bustUnitTags(slug?: string | null) {
   revalidatePath("/");
@@ -38,7 +50,7 @@ type UnitInput = {
 };
 
 export async function saveUnit(input: UnitInput) {
-  await requireAdmin();
+  await ownerOnly();
   const sb = createAdminClient();
   if (input.id) {
     const { error } = await sb.from("units").update(input).eq("id", input.id);
@@ -52,7 +64,7 @@ export async function saveUnit(input: UnitInput) {
 }
 
 export async function deleteUnit(id: string, slug: string) {
-  await requireAdmin();
+  await ownerOnly();
   const sb = createAdminClient();
   const { error } = await sb.from("units").delete().eq("id", id);
   if (error) throw new Error(error.message);
@@ -75,7 +87,7 @@ type BarberInput = {
 };
 
 export async function saveBarber(input: BarberInput) {
-  await requireAdmin();
+  await ownerOnly();
   const sb = createAdminClient();
   if (input.id) {
     const { error } = await sb.from("barbers").update(input).eq("id", input.id);
@@ -91,7 +103,7 @@ export async function saveBarber(input: BarberInput) {
 
 export async function deleteBarber(id: string, _unitId?: string) {
   void _unitId;
-  await requireAdmin();
+  await ownerOnly();
   const sb = createAdminClient();
   const { error } = await sb.from("barbers").delete().eq("id", id);
   if (error) throw new Error(error.message);
@@ -119,7 +131,7 @@ type ProductInput = {
 };
 
 export async function saveProduct(input: ProductInput) {
-  await requireAdmin();
+  await catalogStaff();
   const sb = createAdminClient();
   if (input.id) {
     const { error } = await sb.from("products").update(input).eq("id", input.id);
@@ -135,7 +147,7 @@ export async function saveProduct(input: ProductInput) {
 
 export async function deleteProduct(id: string, _unitId?: string) {
   void _unitId;
-  await requireAdmin();
+  await catalogStaff();
   const sb = createAdminClient();
   const { error } = await sb.from("products").delete().eq("id", id);
   if (error) throw new Error(error.message);
@@ -153,7 +165,7 @@ type CategoryInput = {
 };
 
 export async function saveCategory(input: CategoryInput) {
-  await requireAdmin();
+  await catalogStaff();
   const sb = createAdminClient();
   if (input.id) {
     const { error } = await sb
@@ -172,7 +184,7 @@ export async function saveCategory(input: CategoryInput) {
 
 export async function deleteCategory(id: string, _unitId?: string) {
   void _unitId;
-  await requireAdmin();
+  await catalogStaff();
   const sb = createAdminClient();
   const { error } = await sb.from("product_categories").delete().eq("id", id);
   if (error) throw new Error(error.message);
@@ -190,7 +202,7 @@ export async function getUploadSignedUrl(
   bucket: "units" | "barbers" | "products",
   path: string,
 ): Promise<{ signedUrl: string; publicUrl: string }> {
-  await requireAdmin();
+  await catalogStaff();
 
   const ext = path.substring(path.lastIndexOf(".")).toLowerCase();
   if (!ALLOWED_UPLOAD_EXTS.has(ext)) throw new Error("Tipo de ficheiro não permitido.");
@@ -214,7 +226,7 @@ export async function uploadImage(
   path: string,
   file: File,
 ): Promise<string> {
-  await requireAdmin();
+  await catalogStaff();
 
   const ext = path.substring(path.lastIndexOf(".")).toLowerCase();
   if (!ALLOWED_UPLOAD_EXTS.has(ext)) throw new Error("Tipo de ficheiro não permitido.");

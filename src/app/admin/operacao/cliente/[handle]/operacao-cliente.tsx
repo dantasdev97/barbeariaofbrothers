@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
-import { ArrowLeft, Check, Gift, Loader2, Scissors } from "lucide-react";
+import { ArrowLeft, Check, Gift, Loader2, Scissors, Settings2 } from "lucide-react";
 import { ConfirmDialog } from "@/components/admin/confirm-dialog";
 import { AnimatedNumber } from "@/components/admin/animated-number";
 import { staggerIndex } from "@/lib/motion";
@@ -17,11 +17,13 @@ import type {
 } from "@/types/database.types";
 
 type Mode = "earn" | "redeem";
+type UnitOption = { id: string; name: string };
 
 export function OperacaoCliente({
   client,
   unitId,
-  unitName,
+  units,
+  canConfigure,
   balance,
   transactions,
   services,
@@ -29,13 +31,15 @@ export function OperacaoCliente({
 }: {
   client: ClientRow;
   unitId: string;
-  unitName: string;
+  units: UnitOption[];
+  canConfigure: boolean;
   balance: number;
   transactions: LoyaltyTransactionRow[];
   services: LoyaltyServiceRow[];
   rewards: LoyaltyRewardRow[];
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [mode, setMode] = useState<Mode>("earn");
   const [pending, startTransition] = useTransition();
   /**
@@ -46,12 +50,28 @@ export function OperacaoCliente({
   const [busyId, setBusyId] = useState<string | null>(null);
   const [toRedeem, setToRedeem] = useState<LoyaltyRewardRow | null>(null);
 
+  const unitName = units.find((u) => u.id === unitId)?.name ?? "Of Brothers";
+
+  /** Troca a unidade de operação — o RSC recarrega saldo, serviços e resgates. */
+  function switchUnit(next: string) {
+    if (next === unitId) return;
+    startTransition(() => {
+      router.replace(`${pathname}?unidade=${next}`);
+    });
+  }
+
   function earn(serviceId: string, name: string, pts: number) {
     if (pending) return;
     setBusyId(serviceId);
     startTransition(async () => {
       try {
-        await loyaltyEarn(client.id, unitId, serviceId);
+        // A action devolve o erro em vez de o lançar: exceções de Server
+        // Actions são redigidas em produção e o motivo real ficava escondido.
+        const res = await loyaltyEarn(client.id, unitId, serviceId);
+        if (!res.ok) {
+          toast.error(res.error);
+          return;
+        }
         toast.success(`+${pts} pts · ${name}`);
         router.refresh();
       } catch (err) {
@@ -68,7 +88,11 @@ export function OperacaoCliente({
     setBusyId(reward.id);
     startTransition(async () => {
       try {
-        await loyaltyRedeem(client.id, unitId, reward.id);
+        const res = await loyaltyRedeem(client.id, unitId, reward.id);
+        if (!res.ok) {
+          toast.error(res.error);
+          return;
+        }
         toast.success(`Resgatado: ${reward.name}`);
         setToRedeem(null);
         router.refresh();
@@ -91,10 +115,33 @@ export function OperacaoCliente({
 
       {/* Cliente + saldo */}
       <div className="mb-5 rounded-2xl border border-brand/40 bg-gradient-to-br from-bg-surface to-background p-6">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-brand">
-          {unitName}
-        </p>
-        <h1 className="mt-1 font-heading text-[26px] font-semibold leading-tight tracking-tight">
+        {/* Com várias unidades, a unidade de operação passa a ser escolha
+         * explícita. Antes era imposta pelo perfil e, se essa unidade não
+         * tivesse serviços, a lista aparecia vazia sem explicação. */}
+        {units.length > 1 ? (
+          <label className="block">
+            <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-brand">
+              Unidade
+            </span>
+            <select
+              value={unitId}
+              onChange={(e) => switchUnit(e.target.value)}
+              disabled={pending}
+              className="mt-1 min-h-11 w-full rounded-lg border border-border bg-background px-3 text-sm font-medium disabled:opacity-60"
+            >
+              {units.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : (
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-brand">
+            {unitName}
+          </p>
+        )}
+        <h1 className="mt-3 font-heading text-[26px] font-semibold leading-tight tracking-tight">
           {client.name}
         </h1>
         <p className="mt-1 font-mono text-xs text-muted-foreground">{client.phone}</p>
@@ -139,7 +186,9 @@ export function OperacaoCliente({
           {services.length === 0 ? (
             <ActionEmpty
               icon={<Scissors className="h-5 w-5" />}
-              text="Sem serviços configurados para esta unidade."
+              text={`Sem serviços configurados para ${unitName}.`}
+              action={canConfigure ? "/admin/fidelidade/servicos" : null}
+              actionLabel="Configurar serviços"
             />
           ) : (
             services.map((s, i) => {
@@ -169,7 +218,9 @@ export function OperacaoCliente({
           {rewards.length === 0 ? (
             <ActionEmpty
               icon={<Gift className="h-5 w-5" />}
-              text="Sem recompensas configuradas para esta unidade."
+              text={`Sem recompensas configuradas para ${unitName}.`}
+              action={canConfigure ? "/admin/fidelidade/recompensas" : null}
+              actionLabel="Configurar recompensas"
             />
           ) : (
             rewards.map((r, i) => {
@@ -284,13 +335,34 @@ export function OperacaoCliente({
   );
 }
 
-function ActionEmpty({ icon, text }: { icon: React.ReactNode; text: string }) {
+function ActionEmpty({
+  icon,
+  text,
+  action,
+  actionLabel,
+}: {
+  icon: React.ReactNode;
+  text: string;
+  /** Caminho de configuração, ou null para quem não tem permissão. */
+  action?: string | null;
+  actionLabel?: string;
+}) {
   return (
     <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border bg-bg-surface px-6 py-10 text-center">
       <div className="flex h-11 w-11 items-center justify-center rounded-full bg-background text-muted-foreground">
         {icon}
       </div>
       <p className="text-sm text-muted-foreground">{text}</p>
+      {/* Antes era um beco sem saída: dizia o que faltava sem dizer onde
+       * resolver. */}
+      {action && (
+        <Link
+          href={action}
+          className="inline-flex min-h-11 items-center gap-2 rounded-[10px] border border-border px-4 text-[13px] font-medium transition-colors duration-150 hover-fine:hover:border-brand/60 hover-fine:hover:text-brand"
+        >
+          <Settings2 className="h-4 w-4" /> {actionLabel}
+        </Link>
+      )}
     </div>
   );
 }

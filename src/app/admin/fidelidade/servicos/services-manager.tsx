@@ -17,7 +17,7 @@ import { PageHeader } from "@/components/admin/page-header";
 import { staggerIndex } from "@/lib/motion";
 import { EmptyState } from "@/components/admin/empty-state";
 import { ConfirmDialog } from "@/components/admin/confirm-dialog";
-import { DeleteAction, RowActions } from "@/components/admin/row-actions";
+import { DeleteAction, EditAction, RowActions } from "@/components/admin/row-actions";
 import {
   deleteLoyaltyService,
   saveLoyaltyService,
@@ -175,6 +175,7 @@ export function ServicesManager({
                 </span>
               </div>
               <RowActions>
+                <EditAction onClick={() => openEdit(s)} label={s.name} />
                 <DeleteAction onClick={() => setToDelete(s)} label={s.name} />
               </RowActions>
             </div>

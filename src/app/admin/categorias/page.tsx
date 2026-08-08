@@ -1,11 +1,11 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import { requireAdminSession } from "@/lib/admin-auth";
+import { requireRole } from "@/lib/admin-auth";
 import { PageHeader } from "@/components/admin/page-header";
 import { CategoriesManager } from "./categories-manager";
 
 
 export default async function CategoriesPage() {
-  await requireAdminSession();
+  await requireRole(["super_admin", "manager"]);
   const sb = createAdminClient();
   const [{ data: categories }, { data: units }] = await Promise.all([
     sb.from("product_categories").select("*").order("display_order"),

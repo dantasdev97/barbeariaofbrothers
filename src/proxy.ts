@@ -4,6 +4,8 @@ import { LOCALE_COOKIE, isLocale, localeFromAcceptLanguage } from "@/lib/i18n/co
 
 const ADMIN_PREFIX = "/admin";
 const LOGIN_PATH = "/login";
+/** Para onde mandar quem está autenticado mas não é staff. */
+const CLIENT_HOME = "/minha-conta";
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -12,6 +14,9 @@ export async function proxy(request: NextRequest) {
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   let user: { id: string } | null = null;
+  // Içado para fora do bloco: o guarda do admin abaixo precisa dele para
+  // confirmar o perfil de staff, não só a existência de sessão.
+  let supabaseClient: ReturnType<typeof createServerClient> | null = null;
 
   if (supabaseUrl && supabaseKey) {
     const supabase = createServerClient(supabaseUrl, supabaseKey, {
@@ -34,16 +39,40 @@ export async function proxy(request: NextRequest) {
     // Refresh session cookie + read user
     const { data } = await supabase.auth.getUser();
     user = data.user ?? null;
+    supabaseClient = supabase;
   }
 
   const { pathname } = request.nextUrl;
 
-  // Admin guard — block /admin/* without session
-  if (pathname.startsWith(ADMIN_PREFIX) && !user) {
-    const redirect = request.nextUrl.clone();
-    redirect.pathname = LOGIN_PATH;
-    redirect.searchParams.set("next", pathname);
-    return NextResponse.redirect(redirect);
+  // Admin guard — /admin/* exige sessão E perfil de staff.
+  //
+  // Verificar só a sessão deixou de chegar a partir do momento em que os
+  // clientes passaram a ter conta: um cliente autenticado atravessava este
+  // guarda, chegava ao requireAdminSession(), não tinha linha em `profiles`
+  // e era atirado de volta para /login — logado, mas preso num beco.
+  // Aqui mandamo-lo para o cartão dele, que é onde ele queria estar.
+  if (pathname.startsWith(ADMIN_PREFIX)) {
+    if (!user) {
+      const redirect = request.nextUrl.clone();
+      redirect.pathname = LOGIN_PATH;
+      redirect.searchParams.set("next", pathname);
+      return NextResponse.redirect(redirect);
+    }
+
+    if (supabaseClient) {
+      const { data: profile } = await supabaseClient
+        .from("profiles")
+        .select("id")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (!profile) {
+        const redirect = request.nextUrl.clone();
+        redirect.pathname = CLIENT_HOME;
+        redirect.search = "";
+        return NextResponse.redirect(redirect);
+      }
+    }
   }
 
   // Note: Removed automatic /login → /admin redirect to prevent redirect loops

@@ -2,13 +2,13 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { CalendarCheck, Eye, Package, Scissors } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { requireAdminSession } from "@/lib/admin-auth";
+import { requireRole } from "@/lib/admin-auth";
 import { PageHeader } from "@/components/admin/page-header";
 import { MetricCard } from "@/components/admin/metric-card";
 import { staggerIndex } from "@/lib/motion";
 
 export default async function AdminDashboard() {
-  const { profile } = await requireAdminSession();
+  const { profile } = await requireRole(["super_admin", "manager"]);
   if (profile.role === "barbeiro") redirect("/admin/operacao");
   const sb = await createClient();
 

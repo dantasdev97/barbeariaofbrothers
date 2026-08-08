@@ -90,8 +90,12 @@ export function ClientDetail({
         title={client.name}
         description={
           <span className="font-mono">
-            {client.phone} · {client.email ?? "sem email"} · cadastrado em{" "}
+            {client.phone ?? "sem telefone"} · {client.email ?? "sem email"} ·
+            cadastrado em{" "}
             {unitName(client.unit_id)}
+            {/* O @ que o cliente indicou ao reclamar o bónus de Instagram, para
+             * se poder conferir se seguiu de facto. */}
+            {client.instagram_handle && <> · @{client.instagram_handle}</>}
           </span>
         }
         actions={

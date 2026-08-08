@@ -1,3 +1,4 @@
+import { requireRole } from "@/lib/admin-auth";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,7 +29,11 @@ import { staggerIndex } from "@/lib/motion";
 /** Série de exemplo para os sparklines desta página de referência. */
 const DEMO_SERIES = [4, 6, 5, 8, 7, 9, 12, 10, 8, 11, 14, 13, 9, 12, 15];
 
-export default function FrontendDesignPage() {
+export default async function FrontendDesignPage() {
+  // Esta página não tinha guarda nenhuma: dependia só da sessão exigida pelo
+  // layout, que não olha ao role.
+  await requireRole(["super_admin"]);
+
   return (
     <div className="space-y-14">
       <PageHeader

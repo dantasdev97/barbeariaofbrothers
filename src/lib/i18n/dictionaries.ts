@@ -12,6 +12,8 @@ export type Dictionary = {
     bookNow: string;
     cart: string;
     language: string;
+    /** Rótulo acessível do ícone que leva ao cartão fidelidade. */
+    loyalty: string;
   };
   hero: {
     leadingLine: string;
@@ -24,6 +26,10 @@ export type Dictionary = {
   };
   cta: {
     book: string;
+    /** Botão fixo, para quem já tem cartão: leva ao cartão. */
+    points: string;
+    /** Botão fixo, para quem ainda não tem: leva ao programa. */
+    getPoints: string;
   };
   footer: {
     since: string;
@@ -169,6 +175,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
       bookNow: "Agendar agora",
       cart: "Carrinho",
       language: "Idioma",
+      loyalty: "Cartão fidelidade",
     },
     hero: {
       leadingLine: "Barbearia em Leiria",
@@ -181,6 +188,8 @@ export const dictionaries: Record<Locale, Dictionary> = {
     },
     cta: {
       book: "Agendar corte",
+      points: "Os meus pontos",
+      getPoints: "Obter pontos",
     },
     footer: {
       since: "Barbearia Brothers · Desde 2012",
@@ -364,6 +373,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
       bookNow: "Book now",
       cart: "Cart",
       language: "Language",
+      loyalty: "Loyalty card",
     },
     hero: {
       leadingLine: "Barbershop in Leiria",
@@ -376,6 +386,8 @@ export const dictionaries: Record<Locale, Dictionary> = {
     },
     cta: {
       book: "Book a haircut",
+      points: "My points",
+      getPoints: "Get points",
     },
     footer: {
       since: "Barbearia Brothers · Since 2012",
@@ -556,6 +568,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
       bookNow: "Réserver",
       cart: "Panier",
       language: "Langue",
+      loyalty: "Carte de fidélité",
     },
     hero: {
       leadingLine: "Barbier à Leiria",
@@ -568,6 +581,8 @@ export const dictionaries: Record<Locale, Dictionary> = {
     },
     cta: {
       book: "Réserver une coupe",
+      points: "Mes points",
+      getPoints: "Obtenir des points",
     },
     footer: {
       since: "Barbearia Brothers · Depuis 2012",
@@ -748,6 +763,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
       bookNow: "Reservar ahora",
       cart: "Carrito",
       language: "Idioma",
+      loyalty: "Tarjeta de fidelidad",
     },
     hero: {
       leadingLine: "Barbería en Leiria",
@@ -760,6 +776,8 @@ export const dictionaries: Record<Locale, Dictionary> = {
     },
     cta: {
       book: "Reservar corte",
+      points: "Mis puntos",
+      getPoints: "Obtener puntos",
     },
     footer: {
       since: "Barbearia Brothers · Desde 2012",
@@ -940,6 +958,7 @@ export const dictionaries: Record<Locale, Dictionary> = {
       bookNow: "Jetzt buchen",
       cart: "Warenkorb",
       language: "Sprache",
+      loyalty: "Treuekarte",
     },
     hero: {
       leadingLine: "Barbershop in Leiria",
@@ -952,6 +971,8 @@ export const dictionaries: Record<Locale, Dictionary> = {
     },
     cta: {
       book: "Termin buchen",
+      points: "Meine Punkte",
+      getPoints: "Punkte sammeln",
     },
     footer: {
       since: "Barbearia Brothers · Seit 2012",

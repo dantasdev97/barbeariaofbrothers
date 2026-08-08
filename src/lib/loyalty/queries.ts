@@ -1,5 +1,6 @@
 import "server-only";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { extractHandle } from "@/lib/loyalty/handle";
 import type {
   ClientRow,
   LoyaltyRewardRow,
@@ -35,17 +36,22 @@ export async function getClientBalancesAllUnits(clientId: string) {
 
 /**
  * Lookup por handle: aceita public_slug (`augusto-dantas-J2VV`) ou qr_token
- * (`J2VVQ5PZY3QSXH7V-Z46T`). Diferenciamos pelo formato: slug tem letras
- * minúsculas; qr_token é só maiúsculas/dígitos.
+ * (`J2VVQ5PZY3QSXH7V-Z46T`).
+ *
+ * Antes adivinhávamos a coluna pelo formato (`/^[A-Z0-9-]+$/` → token), o que
+ * dava 404 num slug sem minúsculas — por exemplo de um cliente cujo nome só
+ * tem dígitos. Testamos as duas colunas numa só query.
  */
 export async function getClientByHandle(handle: string): Promise<ClientRow | null> {
+  const h = extractHandle(handle);
+  if (!h) return null;
   const sb = createAdminClient();
-  const isToken = /^[A-Z0-9-]+$/.test(handle);
-  const { data } = await sb
+  const { data, error } = await sb
     .from("clients")
     .select("*")
-    .eq(isToken ? "qr_token" : "public_slug", handle)
+    .or(`public_slug.eq.${h},qr_token.eq.${h}`)
     .maybeSingle();
+  if (error) console.error("[getClientByHandle]", error);
   return (data as ClientRow) ?? null;
 }
 

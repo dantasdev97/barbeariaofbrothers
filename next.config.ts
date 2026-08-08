@@ -4,7 +4,14 @@ const securityHeaders = [
   { key: "X-Frame-Options", value: "DENY" },
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+  // `camera=()` é uma allowlist **vazia**: nega a câmara a toda a gente,
+  // incluindo à própria origem. O Chromium aplica isto ao documento de topo, o
+  // que faz `getUserMedia({video})` rejeitar — e o scanner de QR em
+  // /admin/operacao/scan depende dele. `self` autoriza só esta origem.
+  {
+    key: "Permissions-Policy",
+    value: "camera=(self), microphone=(), geolocation=()",
+  },
   {
     key: "Content-Security-Policy",
     value: [
