@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { AlertCircle, ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { getAllUnits, getUnitBySlug } from "@/lib/data";
+import { getAllUnits, getLoyaltyUnits, getUnitBySlug } from "@/lib/data";
 import { ClientShell } from "@/components/cliente/client-shell";
 import { EmailAuthForm } from "@/components/cliente/email-auth-form";
 import { GoogleSignInButton } from "@/components/cliente/google-signin-button";
@@ -31,10 +31,20 @@ export default async function EntrarPage({
 }) {
   const { next, erro, unidade } = await searchParams;
 
-  // Quem chega aqui a partir de uma unidade traz o slug: sem ele, o destino
-  // por omissão é o `/minha-conta` sem contexto, e a pessoa acaba no ecrã a
-  // escolher a barbearia de onde veio.
-  const fallbackNext = unidade ? `/minha-conta?unidade=${unidade}` : "/minha-conta";
+  // Quem chega aqui a partir de uma unidade traz o slug. Quem chega sem ele
+  // — de um bookmark, do `/minha-conta` deslogado, do "voltar a entrar" do
+  // `/redefinir` — não trazia nada, e acabava no ecrã a escolher a barbearia
+  // depois de já ter criado conta. Quando só uma unidade participa no
+  // programa, essa pergunta não tem outra resposta possível: resolve-se aqui,
+  // como o `/programa` já fazia, e o slug segue no `next` e no cookie que o
+  // botão da Google grava antes de sair do site.
+  const loyaltyUnits = await getLoyaltyUnits();
+  const resolvedSlug =
+    unidade ?? (loyaltyUnits.length === 1 ? loyaltyUnits[0].slug : undefined);
+
+  const fallbackNext = resolvedSlug
+    ? `/minha-conta?unidade=${resolvedSlug}`
+    : "/minha-conta";
   const safeNext =
     next && next.startsWith("/") && !next.startsWith("//") ? next : fallbackNext;
 
@@ -90,7 +100,7 @@ export default async function EntrarPage({
           <div className="mt-8">
             {/* Google primeiro e em destaque: é o caminho sem confirmação de
              * email, já que a Google garante o endereço na hora. */}
-            <GoogleSignInButton next={safeNext} unitSlug={unidade} />
+            <GoogleSignInButton next={safeNext} unitSlug={resolvedSlug} />
 
             <div className="my-6 flex items-center gap-3">
               <span className="h-px flex-1 bg-border" />

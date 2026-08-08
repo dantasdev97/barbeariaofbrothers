@@ -23,15 +23,24 @@ export function StartCard({
   units,
   defaultName,
   autoError,
+  misconfigured,
 }: {
   units: UnitLite[];
   defaultName: string;
   /**
-   * Porque é que o cartão não nasceu sozinho. Este ecrã só devia aparecer a
-   * quem entrou sem trazer a barbearia; sempre que aparece a mais, é aqui
-   * que se vê a razão em vez de ficar só nos registos do servidor.
+   * Porque é que o cartão não nasceu sozinho, quando isso foi mesmo um
+   * defeito — a barbearia pedida não existir, a base recusar. Perguntar a
+   * barbearia a quem chegou sem contexto não conta: isso é o ecrã a fazer o
+   * seu trabalho, e enchê-lo de "motivo:" fazia o normal parecer avaria.
    */
   autoError?: string | null;
+  /**
+   * A lista de barbearias não é a do programa — é a lista toda, porque a
+   * consulta por `loyalty_active` falhou (migração em falta). Quem está a ver
+   * pode escolher uma barbearia que não participa, e quem gere o site tem de
+   * saber que isto está por configurar.
+   */
+  misconfigured?: boolean;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -67,7 +76,7 @@ export function StartCard({
           </p>
         </header>
 
-        {autoError && (
+        {(autoError || misconfigured) && (
           <div
             {...staggerIndex(1)}
             className="mt-6 rounded-xl border border-border bg-bg-surface p-4 text-left text-[12.5px] leading-relaxed text-muted-foreground"
@@ -76,9 +85,17 @@ export function StartCard({
               Devia ter chegado directamente ao seu cartão. Escolha a
               barbearia aqui em baixo — funciona à mesma.
             </p>
-            <p className="mt-2 font-mono text-[11.5px] opacity-70">
-              motivo: {autoError}
-            </p>
+            {misconfigured && (
+              <p className="mt-2 opacity-70">
+                A lista abaixo é de todas as barbearias, não só das que estão
+                no programa: falta aplicar a configuração da fidelidade.
+              </p>
+            )}
+            {autoError && (
+              <p className="mt-2 font-mono text-[11.5px] opacity-70">
+                motivo: {autoError}
+              </p>
+            )}
           </div>
         )}
 

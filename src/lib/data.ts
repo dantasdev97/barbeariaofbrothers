@@ -31,16 +31,27 @@ export async function getAllUnits(): Promise<UnitRow[]> {
   return (data ?? []) as UnitRow[];
 }
 
+/** Unidades do programa + se a lista é de confiança. Ver `getLoyaltyUnitsState`. */
+export type LoyaltyUnitsState = {
+  units: UnitRow[];
+  /**
+   * `false` quando a consulta por `loyalty_active` falhou e isto são **todas**
+   * as unidades, não as do programa. Quem usa a lista para decidir sozinho
+   * (criar cartão sem perguntar) tem de saber a diferença.
+   */
+  configured: boolean;
+};
+
 /**
- * Unidades que participam no cartão fidelidade.
+ * Unidades que participam no cartão fidelidade, com o estado da consulta.
  *
  * Separada de `getAllUnits()` de propósito: essa é usada pelo site público
  * (homepage, layout da unidade, cartão) e filtrar lá dentro tirava a unidade do
  * site todo. Aqui só interessa quem está no programa de pontos.
  */
-export async function getLoyaltyUnits(): Promise<UnitRow[]> {
+export async function getLoyaltyUnitsState(): Promise<LoyaltyUnitsState> {
   const supabase = createPublicClient();
-  if (!supabase) return [];
+  if (!supabase) return { units: [], configured: false };
   const { data, error } = await supabase
     .from("units")
     .select("*")
@@ -53,10 +64,20 @@ export async function getLoyaltyUnits(): Promise<UnitRow[]> {
     // esta consulta falha. Devolver [] deixava o programa sem barbearia
     // nenhuma para escolher — pior do que oferecer todas. Cai para a lista
     // completa até a migração ser aplicada.
+    //
+    // O fallback fica, mas deixa de ser calado: devolvido às escondidas,
+    // transformava uma migração em falta num ecrã de aspecto normal a pedir
+    // a barbearia — e foi exactamente assim que o problema passou duas vezes
+    // sem ninguém perceber que era configuração.
     console.error("[getLoyaltyUnits] a usar todas as unidades:", error.message);
-    return getAllUnits();
+    return { units: await getAllUnits(), configured: false };
   }
-  return (data ?? []) as UnitRow[];
+  return { units: (data ?? []) as UnitRow[], configured: true };
+}
+
+/** Só a lista, para quem não precisa de distinguir o fallback. */
+export async function getLoyaltyUnits(): Promise<UnitRow[]> {
+  return (await getLoyaltyUnitsState()).units;
 }
 
 export async function getUnitBySlug(slug: string): Promise<UnitRow | null> {

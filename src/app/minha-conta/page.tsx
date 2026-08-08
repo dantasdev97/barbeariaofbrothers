@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import QRCode from "qrcode";
 import { createClient } from "@/lib/supabase/server";
 import { cardUrl } from "@/lib/loyalty/qr";
-import { getAllUnits, getLoyaltyUnits, getUnitBySlug } from "@/lib/data";
+import { getAllUnits, getLoyaltyUnitsState, getUnitBySlug } from "@/lib/data";
 import { getMyAccount } from "@/lib/loyalty/client-actions";
 import { ClientShell } from "@/components/cliente/client-shell";
 import { MyCard } from "./my-card";
@@ -35,10 +35,11 @@ export default async function MinhaContaPage({
   let account = await getMyAccount();
   // Duas listas com papéis diferentes: `units` é o seletor do cabeçalho e tem
   // de mostrar o site todo; `loyaltyUnits` é onde se pode criar cartão.
-  const [units, loyaltyUnits] = await Promise.all([
+  const [units, loyalty] = await Promise.all([
     getAllUnits(),
-    getLoyaltyUnits(),
+    getLoyaltyUnitsState(),
   ]);
+  const loyaltyUnits = loyalty.units;
 
   // Autenticado mas ainda sem cartão. Quem veio de `/programa?unidade=X`
   // traz o slug: a barbearia já é conhecida e voltar a perguntá-la é um
@@ -52,6 +53,10 @@ export default async function MinhaContaPage({
   // `autoError` guarda porque é que falhou. Sem isto o ecrã caía calado no
   // selector de unidades e não havia como saber se o problema foi a unidade
   // não ter chegado ou a base ter recusado — que são causas opostas.
+  //
+  // Nem toda a ida ao selector é avaria: com duas barbearias no programa e
+  // sem contexto, perguntar é o comportamento certo. Só se anota o que é
+  // mesmo defeito, para o ecrã não gritar "erro" quando está a funcionar.
   let autoError: string | null = null;
 
   if (!account) {
@@ -65,9 +70,7 @@ export default async function MinhaContaPage({
         : null;
 
     if (!target) {
-      autoError = unidade
-        ? `a barbearia "${unidade}" não foi encontrada`
-        : "não recebi a barbearia de onde veio";
+      if (unidade) autoError = `a barbearia "${unidade}" não foi encontrada`;
     } else {
       const { error } = await sb.rpc("loyalty_create_card", {
         p_unit_id: target.id,
@@ -96,6 +99,7 @@ export default async function MinhaContaPage({
           ""
         }
         autoError={autoError}
+        misconfigured={!loyalty.configured}
       />
     );
     if (!fallbackUnit) return <main className="flex-1">{start}</main>;
