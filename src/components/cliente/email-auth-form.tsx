@@ -73,7 +73,16 @@ export function EmailAuthForm({ next }: { next: string }) {
             // `full_name` tem de ir aqui: é de `raw_user_meta_data` que a
             // função que cria o cartão tira o nome. Sem isto o cartão
             // nasceria com a parte do email antes do @.
-            options: { data: { full_name: name.trim() } },
+            //
+            // `emailRedirectTo` não faz diferença hoje — a confirmação de
+            // email está desligada e o `signUp` já devolve sessão. Faz no dia
+            // em que for ligada: sem ele o link do email vai para o Site URL,
+            // a raiz, que não troca o `?code=` por sessão. A pessoa clicava e
+            // continuava por autenticar, sem erro nenhum.
+            options: {
+              data: { full_name: name.trim() },
+              emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
+            },
           })
         : await supabase.auth.signInWithPassword({ email: email.trim(), password });
 

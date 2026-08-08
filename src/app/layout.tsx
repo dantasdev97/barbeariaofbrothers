@@ -38,13 +38,18 @@ export const metadata: Metadata = {
   // herdado por todas as rotas que não o sobrescrevam, e era isso que fazia as
   // páginas legais, o admin, o login e todos os 404 declararem-se como sendo a
   // homepage. Cada página define o seu via `buildPageMetadata`/`buildUnitMetadata`.
+  // Fonte única dos ícones. Havia também um `src/app/favicon.ico` — convenção
+  // de ficheiro do Next — que injetava um `<link rel="icon" sizes="16x16">`
+  // extra, com uma query diferente da destas. O browser via dois URLs para o
+  // mesmo ficheiro e ficava com a variante de 16px, borratada no separador.
+  // O `public/favicon.ico` (byte a byte igual) continua a servir /favicon.ico.
   icons: {
     icon: [
-      { rel: "icon", url: "/favicon.ico?v=3" },
-      { rel: "icon", url: "/favicon-32x32.png?v=3", sizes: "32x32", type: "image/png" },
-      { rel: "icon", url: "/favicon-192x192.png?v=3", sizes: "192x192", type: "image/png" },
+      { url: "/favicon.ico?v=4", sizes: "16x16 32x32 48x48", type: "image/x-icon" },
+      { url: "/favicon-32x32.png?v=4", sizes: "32x32", type: "image/png" },
+      { url: "/favicon-192x192.png?v=4", sizes: "192x192", type: "image/png" },
     ],
-    apple: "/favicon-192x192.png?v=3",
+    apple: "/favicon-192x192.png?v=4",
   },
   openGraph: {
     type: "website",

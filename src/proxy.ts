@@ -8,6 +8,27 @@ const LOGIN_PATH = "/login";
 const CLIENT_HOME = "/minha-conta";
 
 export async function proxy(request: NextRequest) {
+  // Código de OAuth que aterrou na homepage.
+  //
+  // Quando o `redirectTo` que pedimos não bate certo com a lista de Redirect
+  // URLs do projecto, o Supabase descarta-o em silêncio e devolve o `?code=`
+  // ao Site URL — a raiz. A raiz não troca o código por sessão (só o
+  // `/auth/callback` o faz), por isso a pessoa voltava da Google ao site sem
+  // sessão, sem cartão e sem erro nenhum à vista.
+  //
+  // Reencaminhar aqui salva o percurso: o código ainda não foi gasto, o
+  // `/auth/callback` troca-o e repõe a unidade a partir do cookie
+  // `ob_unidade`. Só a raiz, para não tocar em `/redefinir`, que trata do seu
+  // código no browser, nem no próprio `/auth/callback`.
+  if (
+    request.nextUrl.pathname === "/" &&
+    request.nextUrl.searchParams.has("code")
+  ) {
+    const target = request.nextUrl.clone();
+    target.pathname = "/auth/callback";
+    return NextResponse.redirect(target);
+  }
+
   let response = NextResponse.next({ request });
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
