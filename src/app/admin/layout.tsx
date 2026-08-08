@@ -10,6 +10,11 @@ import { MobileTabBar } from "@/components/admin/mobile-tab-bar";
  */
 export const metadata: Metadata = {
   title: { default: "Of Brothers · Admin", template: "%s · OB Admin" },
+  // O `Disallow: /admin` do robots.txt impede o crawl mas não impede que o URL
+  // seja indexado sem conteúdo. O noindex aqui cobre as 17 páginas do painel,
+  // que antes herdavam `index: true` do root layout.
+  robots: { index: false, follow: false },
+  alternates: { canonical: null },
   manifest: "/manifest-admin.webmanifest",
   appleWebApp: {
     capable: true,

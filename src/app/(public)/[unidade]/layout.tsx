@@ -2,7 +2,11 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getAllUnits, getUnitBySlug } from "@/lib/data";
 import { getCardState } from "@/lib/loyalty/session";
-import { buildLocalBusinessJsonLd, buildUnitMetadata } from "@/lib/seo";
+import {
+  buildLocalBusinessJsonLd,
+  buildUnitMetadata,
+  notFoundMetadata,
+} from "@/lib/seo";
 import { Header } from "@/components/public/header";
 import { Footer } from "@/components/public/footer";
 import { FloatingCTA } from "@/components/public/floating-cta";
@@ -14,7 +18,9 @@ export async function generateMetadata(
 ): Promise<Metadata> {
   const { unidade } = await params;
   const unit = await getUnitBySlug(unidade);
-  if (!unit) return { title: "Unidade não encontrada" };
+  // Qualquer caminho desconhecido cai neste segmento dinâmico. Sem noindex
+  // explícito o 404 herdava `index: true` + o canonical do root.
+  if (!unit) return notFoundMetadata("Unidade não encontrada");
   return buildUnitMetadata(unit);
 }
 

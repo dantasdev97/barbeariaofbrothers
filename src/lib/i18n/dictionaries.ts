@@ -53,8 +53,23 @@ export type Dictionary = {
   marquee: string[];
   stats: {
     years: string;
-    cutsMonth: string;
-    googleRating: string;
+  };
+  homeLanding: {
+    h1: string;
+    intro: string;
+    chooseUnit: string;
+    chooseUnitSubtitle: string;
+    servicesEyebrow: string;
+    servicesTitle: string;
+    servicesSubtitle: string;
+    services: string[];
+    unitsEyebrow: string;
+    unitsTitle: string;
+    unitsSubtitle: string;
+    viewUnit: string;
+    viewTeam: string;
+    viewContact: string;
+    hoursTitle: string;
   };
   whyUs: {
     eyebrow: string;
@@ -69,7 +84,6 @@ export type Dictionary = {
     subtitle: string;
     viewAll: string;
     specialistIn: string;
-    yearsBadge: string;
     defaultSpeciality: string;
   };
   shop: {
@@ -198,6 +212,33 @@ export const dictionaries: Record<Locale, Dictionary> = {
       noUnitsDesc:
         "Ainda não há unidades públicas disponíveis. Entre no painel administrativo para ativar ou criar uma unidade.",
     },
+    homeLanding: {
+      h1: "Barbearia em Leiria desde 2012",
+      intro:
+        "A Of Brothers é uma barbearia em Leiria com duas unidades. Corte, barba, degradê e acabamentos de precisão, por uma equipa certificada. Agende online em menos de um minuto.",
+      chooseUnit: "Escolha a sua unidade",
+      chooseUnitSubtitle:
+        "Somos duas casas em Leiria. Escolha a mais perto de si para agendar, conhecer a equipa e ver os produtos.",
+      servicesEyebrow: "01 — Serviços",
+      servicesTitle: "O que fazemos.",
+      servicesSubtitle:
+        "Do corte clássico ao degradê moderno, com o tempo que cada detalhe exige.",
+      services: [
+        "Corte de cabelo",
+        "Barba",
+        "Degradê",
+        "Sobrancelha",
+        "Navalha",
+        "Pigmentação",
+      ],
+      unitsEyebrow: "05 — Onde estamos",
+      unitsTitle: "As nossas unidades em Leiria.",
+      unitsSubtitle: "Moradas, horários e contactos das duas casas.",
+      viewUnit: "Ver unidade",
+      viewTeam: "Ver equipa",
+      viewContact: "Contactos",
+      hoursTitle: "Horário",
+    },
     marquee: [
       "CORTE CLÁSSICO",
       "BARBA TERAPÊUTICA",
@@ -208,8 +249,6 @@ export const dictionaries: Record<Locale, Dictionary> = {
     ],
     stats: {
       years: "anos abertos",
-      cutsMonth: "cortes / mês",
-      googleRating: "★ Google",
     },
     whyUs: {
       eyebrow: "02 — Porquê nós",
@@ -243,7 +282,6 @@ export const dictionaries: Record<Locale, Dictionary> = {
         "Escolhe um profissional e agenda diretamente. Cada barbeiro tem o seu estilo e a sua agenda.",
       viewAll: "Ver todos os barbeiros →",
       specialistIn: "Especialista em {speciality} com anos de experiência na unidade.",
-      yearsBadge: "{n} anos",
       defaultSpeciality: "corte e barba",
     },
     shop: {
@@ -372,6 +410,33 @@ export const dictionaries: Record<Locale, Dictionary> = {
       noUnitsDesc:
         "There are no public units available yet. Log in to the admin panel to activate or create a unit.",
     },
+    homeLanding: {
+      h1: "Barbershop in Leiria since 2012",
+      intro:
+        "Of Brothers is a barbershop in Leiria with two locations. Haircuts, beard work, fades and precision finishes by a certified team. Book online in under a minute.",
+      chooseUnit: "Choose your location",
+      chooseUnitSubtitle:
+        "We have two shops in Leiria. Pick the closest one to book, meet the team and browse products.",
+      servicesEyebrow: "01 — Services",
+      servicesTitle: "What we do.",
+      servicesSubtitle:
+        "From the classic cut to the modern fade, with the time each detail deserves.",
+      services: [
+        "Haircut",
+        "Beard",
+        "Fade",
+        "Eyebrow",
+        "Straight razor",
+        "Pigmentation",
+      ],
+      unitsEyebrow: "05 — Where we are",
+      unitsTitle: "Our locations in Leiria.",
+      unitsSubtitle: "Addresses, opening hours and contacts for both shops.",
+      viewUnit: "View location",
+      viewTeam: "View team",
+      viewContact: "Contact",
+      hoursTitle: "Opening hours",
+    },
     marquee: [
       "CLASSIC CUT",
       "THERAPEUTIC BEARD",
@@ -382,8 +447,6 @@ export const dictionaries: Record<Locale, Dictionary> = {
     ],
     stats: {
       years: "years open",
-      cutsMonth: "cuts / month",
-      googleRating: "★ Google",
     },
     whyUs: {
       eyebrow: "02 — Why us",
@@ -416,7 +479,6 @@ export const dictionaries: Record<Locale, Dictionary> = {
       subtitle: "Pick a professional and book directly. Every barber has their own style and schedule.",
       viewAll: "See all barbers →",
       specialistIn: "Specialist in {speciality} with years of experience at the unit.",
-      yearsBadge: "{n} years",
       defaultSpeciality: "haircuts and beards",
     },
     shop: {
@@ -543,6 +605,33 @@ export const dictionaries: Record<Locale, Dictionary> = {
       noUnitsDesc:
         "Aucune unité publique n'est disponible pour le moment. Connectez-vous au panneau d'administration pour activer ou créer une unité.",
     },
+    homeLanding: {
+      h1: "Barbier à Leiria depuis 2012",
+      intro:
+        "Of Brothers est un salon de barbier à Leiria avec deux adresses. Coupe, barbe, dégradé et finitions de précision par une équipe certifiée. Réservez en ligne en moins d'une minute.",
+      chooseUnit: "Choisissez votre salon",
+      chooseUnitSubtitle:
+        "Nous avons deux salons à Leiria. Choisissez le plus proche pour réserver, découvrir l'équipe et voir les produits.",
+      servicesEyebrow: "01 — Services",
+      servicesTitle: "Ce que nous faisons.",
+      servicesSubtitle:
+        "De la coupe classique au dégradé moderne, avec le temps que chaque détail mérite.",
+      services: [
+        "Coupe de cheveux",
+        "Barbe",
+        "Dégradé",
+        "Sourcils",
+        "Rasoir",
+        "Pigmentation",
+      ],
+      unitsEyebrow: "05 — Où nous trouver",
+      unitsTitle: "Nos salons à Leiria.",
+      unitsSubtitle: "Adresses, horaires et contacts des deux salons.",
+      viewUnit: "Voir le salon",
+      viewTeam: "Voir l'équipe",
+      viewContact: "Contact",
+      hoursTitle: "Horaires",
+    },
     marquee: [
       "COUPE CLASSIQUE",
       "BARBE THÉRAPEUTIQUE",
@@ -553,8 +642,6 @@ export const dictionaries: Record<Locale, Dictionary> = {
     ],
     stats: {
       years: "ans d'activité",
-      cutsMonth: "coupes / mois",
-      googleRating: "★ Google",
     },
     whyUs: {
       eyebrow: "02 — Pourquoi nous",
@@ -587,7 +674,6 @@ export const dictionaries: Record<Locale, Dictionary> = {
       subtitle: "Choisissez un professionnel et réservez directement. Chaque barbier a son propre style et son propre agenda.",
       viewAll: "Voir tous les barbiers →",
       specialistIn: "Spécialiste en {speciality} avec des années d'expérience dans l'unité.",
-      yearsBadge: "{n} ans",
       defaultSpeciality: "coupe et barbe",
     },
     shop: {
@@ -714,6 +800,33 @@ export const dictionaries: Record<Locale, Dictionary> = {
       noUnitsDesc:
         "Todavía no hay unidades públicas disponibles. Entra en el panel de administración para activar o crear una unidad.",
     },
+    homeLanding: {
+      h1: "Barbería en Leiria desde 2012",
+      intro:
+        "Of Brothers es una barbería en Leiria con dos locales. Corte, barba, degradado y acabados de precisión por un equipo certificado. Reserva online en menos de un minuto.",
+      chooseUnit: "Elige tu local",
+      chooseUnitSubtitle:
+        "Tenemos dos locales en Leiria. Elige el más cercano para reservar, conocer al equipo y ver los productos.",
+      servicesEyebrow: "01 — Servicios",
+      servicesTitle: "Lo que hacemos.",
+      servicesSubtitle:
+        "Del corte clásico al degradado moderno, con el tiempo que cada detalle merece.",
+      services: [
+        "Corte de pelo",
+        "Barba",
+        "Degradado",
+        "Cejas",
+        "Navaja",
+        "Pigmentación",
+      ],
+      unitsEyebrow: "05 — Dónde estamos",
+      unitsTitle: "Nuestros locales en Leiria.",
+      unitsSubtitle: "Direcciones, horarios y contactos de los dos locales.",
+      viewUnit: "Ver local",
+      viewTeam: "Ver equipo",
+      viewContact: "Contacto",
+      hoursTitle: "Horario",
+    },
     marquee: [
       "CORTE CLÁSICO",
       "BARBA TERAPÉUTICA",
@@ -724,8 +837,6 @@ export const dictionaries: Record<Locale, Dictionary> = {
     ],
     stats: {
       years: "años abiertos",
-      cutsMonth: "cortes / mes",
-      googleRating: "★ Google",
     },
     whyUs: {
       eyebrow: "02 — Por qué nosotros",
@@ -758,7 +869,6 @@ export const dictionaries: Record<Locale, Dictionary> = {
       subtitle: "Elige un profesional y reserva directamente. Cada barbero tiene su propio estilo y agenda.",
       viewAll: "Ver todos los barberos →",
       specialistIn: "Especialista en {speciality} con años de experiencia en la unidad.",
-      yearsBadge: "{n} años",
       defaultSpeciality: "corte y barba",
     },
     shop: {
@@ -885,6 +995,33 @@ export const dictionaries: Record<Locale, Dictionary> = {
       noUnitsDesc:
         "Es sind noch keine öffentlichen Filialen verfügbar. Melde dich im Admin-Bereich an, um eine Filiale zu aktivieren oder zu erstellen.",
     },
+    homeLanding: {
+      h1: "Barbershop in Leiria seit 2012",
+      intro:
+        "Of Brothers ist ein Barbershop in Leiria mit zwei Standorten. Haarschnitt, Bart, Fade und präzise Finishes von einem zertifizierten Team. Buchen Sie online in weniger als einer Minute.",
+      chooseUnit: "Wählen Sie Ihren Standort",
+      chooseUnitSubtitle:
+        "Wir haben zwei Standorte in Leiria. Wählen Sie den nächstgelegenen, um zu buchen, das Team kennenzulernen und Produkte zu sehen.",
+      servicesEyebrow: "01 — Leistungen",
+      servicesTitle: "Was wir machen.",
+      servicesSubtitle:
+        "Vom klassischen Schnitt bis zum modernen Fade — mit der Zeit, die jedes Detail verdient.",
+      services: [
+        "Haarschnitt",
+        "Bart",
+        "Fade",
+        "Augenbrauen",
+        "Rasiermesser",
+        "Pigmentierung",
+      ],
+      unitsEyebrow: "05 — Wo Sie uns finden",
+      unitsTitle: "Unsere Standorte in Leiria.",
+      unitsSubtitle: "Adressen, Öffnungszeiten und Kontakte beider Standorte.",
+      viewUnit: "Standort ansehen",
+      viewTeam: "Team ansehen",
+      viewContact: "Kontakt",
+      hoursTitle: "Öffnungszeiten",
+    },
     marquee: [
       "KLASSISCHER SCHNITT",
       "BART-PFLEGE",
@@ -895,8 +1032,6 @@ export const dictionaries: Record<Locale, Dictionary> = {
     ],
     stats: {
       years: "Jahre geöffnet",
-      cutsMonth: "Schnitte / Monat",
-      googleRating: "★ Google",
     },
     whyUs: {
       eyebrow: "02 — Warum wir",
@@ -929,7 +1064,6 @@ export const dictionaries: Record<Locale, Dictionary> = {
       subtitle: "Wähle einen Profi und buche direkt. Jeder Barbier hat seinen eigenen Stil und Terminplan.",
       viewAll: "Alle Barbiere ansehen →",
       specialistIn: "Spezialist für {speciality} mit langjähriger Erfahrung in der Filiale.",
-      yearsBadge: "{n} Jahre",
       defaultSpeciality: "Haarschnitt und Bart",
     },
     shop: {

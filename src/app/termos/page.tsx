@@ -1,15 +1,18 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { buildPageMetadata, LEGAL_UPDATED_LABEL } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildPageMetadata({
+  path: "/termos",
+  index: true,
   title: "Termos de Utilização",
-  description: "Termos e condições de utilização do site da Barbearia Of Brothers.",
-  robots: { index: true, follow: false },
-};
+  description:
+    "Termos e condições de utilização do site da Barbearia Of Brothers.",
+});
 
 export default function TermosPage() {
-  const updated = "14 de maio de 2026";
+  const updated = LEGAL_UPDATED_LABEL;
 
   return (
     <div className="min-h-screen bg-background">
