@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
 import { ArrowLeft, Check, Gift, Loader2, Scissors, Settings2 } from "lucide-react";
+import { ClientAvatar } from "@/components/admin/client-avatar";
 import { ConfirmDialog } from "@/components/admin/confirm-dialog";
 import { AnimatedNumber } from "@/components/admin/animated-number";
 import { staggerIndex } from "@/lib/motion";
@@ -141,10 +142,25 @@ export function OperacaoCliente({
             {unitName}
           </p>
         )}
-        <h1 className="mt-3 font-heading text-[26px] font-semibold leading-tight tracking-tight">
-          {client.name}
-        </h1>
-        <p className="mt-1 font-mono text-xs text-muted-foreground">{client.phone}</p>
+        {/* Foto ao lado do nome: é o que confirma, sem ler, que se está no
+         * cartão da pessoa que está à frente. O contacto recua para o email
+         * quando não há telefone — quem entra pela Google não deixa número, e
+         * a linha ficava em branco. */}
+        <div className="mt-3 flex items-center gap-3">
+          <ClientAvatar
+            name={client.name}
+            url={client.avatar_url ?? null}
+            size="lg"
+          />
+          <div className="min-w-0">
+            <h1 className="truncate font-heading text-[26px] font-semibold leading-tight tracking-tight">
+              {client.name}
+            </h1>
+            <p className="mt-0.5 truncate font-mono text-xs text-muted-foreground">
+              {client.phone ?? client.email ?? "sem contacto"}
+            </p>
+          </div>
+        </div>
         <div className="mt-5 flex items-baseline gap-2">
           {/* O saldo conta até ao novo valor depois de lançar um serviço.
            * É a confirmação visual do que acabou de acontecer — antes o

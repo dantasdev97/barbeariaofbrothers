@@ -21,11 +21,19 @@ export type TopPage = {
  */
 export function TopPages({
   rows,
-  days,
+  subtitle,
+  truncated = false,
   className,
 }: {
   rows: TopPage[];
-  days: number;
+  /** Período a que os números dizem respeito. */
+  subtitle: string;
+  /**
+   * A leitura que alimenta este ranking bateu no tecto: há mais eventos no
+   * intervalo do que os que foram contados. Dizê-lo é melhor do que
+   * apresentar um top que parece completo e não é.
+   */
+  truncated?: boolean;
   className?: string;
 }) {
   const max = rows[0]?.views ?? 1;
@@ -46,7 +54,8 @@ export function TopPages({
           Páginas mais vistas
         </h2>
         <p className="mt-0.5 text-[12.5px] text-muted-foreground">
-          Últimos {days} dias
+          {subtitle}
+          {truncated && " · amostra dos eventos mais recentes"}
         </p>
       </div>
 

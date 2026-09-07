@@ -170,9 +170,12 @@ function Row({ item, index }: { item: ActivityItem; index: number }) {
 
 export function ActivityFeed({
   items,
+  subtitle,
   className,
 }: {
   items: ActivityItem[];
+  /** Segue o filtro de datas — "· 7 dias", "· 9 ago – 7 set". */
+  subtitle: string;
   className?: string;
 }) {
   return (
@@ -191,7 +194,7 @@ export function ActivityFeed({
           Atividade recente
         </h2>
         <p className="mt-0.5 text-[12.5px] text-muted-foreground">
-          Páginas vistas, produtos e barbeiros · todas as unidades
+          {subtitle}
         </p>
       </div>
 
@@ -199,7 +202,7 @@ export function ActivityFeed({
         <div className="flex flex-col items-center gap-2 border-t border-border px-6 py-12 text-center">
           <Eye aria-hidden className="h-5 w-5 text-muted-foreground" />
           <p className="text-sm text-muted-foreground">
-            Sem visitas registadas ainda.
+            Sem visitas neste período.
           </p>
         </div>
       ) : (

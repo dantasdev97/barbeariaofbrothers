@@ -8,6 +8,7 @@ import { ChevronRight, Mail, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/admin/confirm-dialog";
 import { EmptyState } from "@/components/admin/empty-state";
+import { ClientAvatar } from "@/components/admin/client-avatar";
 import { DeleteAction } from "@/components/admin/row-actions";
 import { staggerIndex } from "@/lib/motion";
 import { shortUnitName } from "@/lib/event-labels";
@@ -89,47 +90,6 @@ function GoogleGlyph() {
       <path fill="#FBBC05" d="M5.84 14.11a6.6 6.6 0 0 1 0-4.22V7.05H2.18a11 11 0 0 0 0 9.9l3.66-2.84Z" />
       <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1a11 11 0 0 0-9.82 6.05l3.66 2.84c.87-2.6 3.3-4.51 6.16-4.51Z" />
     </svg>
-  );
-}
-
-/** Foto do cliente, com as iniciais como recurso quando não há. */
-function Avatar({
-  name,
-  url,
-  className,
-}: {
-  name: string;
-  url: string | null;
-  className?: string;
-}) {
-  const initials = name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((w) => w[0]?.toUpperCase() ?? "")
-    .join("");
-
-  if (url) {
-    return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src={url}
-        alt=""
-        className={cn("h-8 w-8 shrink-0 rounded-full object-cover", className)}
-        referrerPolicy="no-referrer"
-      />
-    );
-  }
-  return (
-    <div
-      aria-hidden
-      className={cn(
-        "flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand/10 text-[11px] font-semibold text-brand",
-        className,
-      )}
-    >
-      {initials || "?"}
-    </div>
   );
 }
 
@@ -230,7 +190,7 @@ export function ClientsTable({
               aria-label={`Abrir ficha de ${c.name}`}
               className="absolute inset-0 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
             />
-            <Avatar name={c.name} url={c.avatarUrl} className="h-9 w-9" />
+            <ClientAvatar name={c.name} url={c.avatarUrl} size="md" />
 
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5">
@@ -320,7 +280,7 @@ export function ClientsTable({
               >
                 <td className="px-5 py-2">
                   <div className="flex items-center gap-2.5">
-                    <Avatar name={c.name} url={c.avatarUrl} />
+                    <ClientAvatar name={c.name} url={c.avatarUrl} />
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5">
                         <Link

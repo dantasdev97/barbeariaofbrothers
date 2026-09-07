@@ -1,5 +1,6 @@
 import "server-only";
 import { randomBytes } from "node:crypto";
+import { siteUrl } from "@/lib/utils";
 
 const ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // base32 sem chars ambíguos
 
@@ -36,10 +37,16 @@ export function generatePublicSlug(name: string): string {
   return `${base}-${shortSuffix()}`;
 }
 
+/**
+ * Endereço público do cartão de um cliente — o que o QR code codifica.
+ *
+ * A origem vem do `siteUrl()` e não do `NEXT_PUBLIC_SITE_URL` em cru: o
+ * recurso era o domínio sem `www`, que na Vercel redirecciona para o `www` —
+ * um salto a mais em cada leitura de QR, e um endereço diferente do
+ * canónico do site. O `siteUrl()` também acerta nos deploys de pré-visualização,
+ * onde o QR passa a apontar para o próprio preview em vez de produção.
+ */
 export function cardUrl(handle: string, origin?: string): string {
-  const base =
-    origin ??
-    process.env.NEXT_PUBLIC_SITE_URL ??
-    "https://barbeariaofbrothers.pt";
+  const base = origin ?? siteUrl();
   return `${base.replace(/\/$/, "")}/cliente/${handle}`;
 }

@@ -12,6 +12,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { requireRole } from "@/lib/admin-auth";
 import { PageHeader } from "@/components/admin/page-header";
 import { MetricCard } from "@/components/admin/metric-card";
+import { ClientAvatar } from "@/components/admin/client-avatar";
 import { shortUnitName } from "@/lib/event-labels";
 import { staggerIndex } from "@/lib/motion";
 import { cn } from "@/lib/utils";
@@ -47,6 +48,8 @@ function startOfMonthISO() {
 function daysAgoISO(days: number) {
   return new Date(Date.now() - days * 86_400_000).toISOString();
 }
+
+type ClientLite = { id: string; name: string; avatar_url?: string | null };
 
 type TxLite = {
   id: string;
@@ -154,12 +157,12 @@ export default async function FidelidadePage() {
   const clientIds = [...new Set(recent.map((t) => t.client_id))];
   const [{ data: clients }, { data: units }] = await Promise.all([
     clientIds.length
-      ? sb.from("clients").select("id, name").in("id", clientIds)
-      : Promise.resolve({ data: [] as { id: string; name: string }[] }),
+      ? sb.from("clients").select("id, name, avatar_url").in("id", clientIds)
+      : Promise.resolve({ data: [] as ClientLite[] }),
     sb.from("units").select("id, name"),
   ]);
-  const clientNameById = new Map(
-    (clients ?? []).map((c) => [c.id as string, c.name as string]),
+  const clientById = new Map(
+    (clients ?? []).map((c) => [c.id as string, c as ClientLite]),
   );
   const unitNameById = new Map(
     (units ?? []).map((u) => [u.id as string, shortUnitName(u.name as string)]),
@@ -171,7 +174,8 @@ export default async function FidelidadePage() {
   const movements = recent.map((t) => ({
     id: t.id,
     clientId: t.client_id,
-    clientName: clientNameById.get(t.client_id) ?? "Cliente removido",
+    clientName: clientById.get(t.client_id)?.name ?? "Cliente removido",
+    avatarUrl: clientById.get(t.client_id)?.avatar_url ?? null,
     type: t.type,
     points: t.points,
     unitName: unitNameById.get(t.unit_id) ?? "—",
@@ -365,6 +369,7 @@ export default async function FidelidadePage() {
                     href={`/admin/clientes/${m.clientId}`}
                     className="flex items-center gap-3 border-t border-border px-4 py-2.5 transition-colors duration-150 hover-fine:hover:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring/60 active:bg-background sm:px-6"
                   >
+                    <ClientAvatar name={m.clientName} url={m.avatarUrl} />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
                         <span className="truncate text-[13.5px] font-medium leading-tight">

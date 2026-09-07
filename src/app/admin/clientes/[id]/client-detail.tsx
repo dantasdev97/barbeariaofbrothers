@@ -26,6 +26,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { ClientAvatar } from "@/components/admin/client-avatar";
 import { Field } from "@/components/admin/form-bits";
 import { loyaltyAdjust } from "@/lib/loyalty/actions";
 import { staggerIndex } from "@/lib/motion";
@@ -85,36 +86,6 @@ const TX_STYLE: Record<
 
 function txStyle(type: string) {
   return TX_STYLE[type] ?? TX_STYLE.adjust;
-}
-
-/** Foto do cliente, com as iniciais como recurso quando não há. */
-function Avatar({ name, url }: { name: string; url: string | null }) {
-  const initials = name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((w) => w[0]?.toUpperCase() ?? "")
-    .join("");
-
-  if (url) {
-    return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src={url}
-        alt=""
-        className="h-14 w-14 shrink-0 rounded-full object-cover"
-        referrerPolicy="no-referrer"
-      />
-    );
-  }
-  return (
-    <div
-      aria-hidden
-      className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-brand/10 font-heading text-lg font-semibold text-brand"
-    >
-      {initials || "?"}
-    </div>
-  );
 }
 
 /**
@@ -249,7 +220,7 @@ export function ClientDetail({
       <section className="rounded-2xl border border-border bg-bg-surface p-5">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 items-center gap-4">
-            <Avatar name={client.name} url={client.avatarUrl} />
+            <ClientAvatar name={client.name} url={client.avatarUrl} size="lg" />
             <h1 className="min-w-0 truncate font-heading text-[24px] font-semibold leading-tight tracking-tight sm:text-[28px]">
               {client.name}
             </h1>

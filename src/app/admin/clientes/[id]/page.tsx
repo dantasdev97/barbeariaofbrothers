@@ -67,7 +67,10 @@ export default async function ClienteDetailPage({
   // endereço em texto. Quem está ao balcão precisa é de apontar o telemóvel
   // do cliente ao ecrã — sem isto, tinha de abrir o cartão numa janela nova.
   const qrDataUrl = await QRCode.toDataURL(url, {
-    margin: 1,
+    // 2 módulos de margem + o preenchimento branco da caixa dão a zona de
+    // silêncio de 4 módulos que a norma pede — é o que garante a leitura
+    // quando o telemóvel apanha também o fundo do cartão à volta.
+    margin: 2,
     width: 512,
     errorCorrectionLevel: "M",
     color: { dark: "#111827", light: "#ffffff" },

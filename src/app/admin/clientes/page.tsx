@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { AlertTriangle, Plus, Search, X } from "lucide-react";
+import { AlertTriangle, Plus } from "lucide-react";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireRole } from "@/lib/admin-auth";
-import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/admin/page-header";
 import { Pagination } from "@/components/admin/pagination";
+import { slugify } from "@/lib/utils";
+import { ClientsFilters } from "./clients-filters";
 import { ClientsTable, type ClientRow } from "./clients-table";
 
 type SearchParams = { q?: string; unit?: string; page?: string };
@@ -56,8 +57,22 @@ export default async function ClientesPage({
     if (safeQ) {
       // Email entra na procura: quem se regista pela Google não deixa
       // telefone, e sem isto não havia como encontrar essas pessoas.
+      //
+      // E o `public_slug` entra como via sem acentos: o `ilike` do Postgres
+      // distingue "joao" de "João", e quem escreve depressa ao balcão não põe
+      // acentos. O slug é o nome já sem acentos e em minúsculas (é o que está
+      // no URL do cartão), por isso procurar lá resolve sem extensão nenhuma
+      // na base de dados.
+      const slugQ = slugify(safeQ);
       query = query.or(
-        `name.ilike.%${safeQ}%,phone.ilike.%${safeQ}%,email.ilike.%${safeQ}%`,
+        [
+          `name.ilike.%${safeQ}%`,
+          `phone.ilike.%${safeQ}%`,
+          `email.ilike.%${safeQ}%`,
+          // Só com termo: um slug vazio daria `ilike.%%`, que casa com tudo —
+          // procurar "@" devolvia a lista inteira.
+          ...(slugQ ? [`public_slug.ilike.%${slugQ}%`] : []),
+        ].join(","),
       );
     }
     if (unit) query = query.eq("unit_id", unit);
@@ -186,7 +201,6 @@ export default async function ClientesPage({
     };
   });
 
-  const filtered = !!safeQ || !!unit;
   const activeUnitName = unit ? unitNameById.get(unit) : undefined;
 
   return (
@@ -222,66 +236,11 @@ export default async function ClientesPage({
         </div>
       )}
 
-      {/* `role="search"` marca a região para quem navega por landmarks; os
-       * rótulos existem para leitores de ecrã mesmo sem estarem à vista (um
-       * `placeholder` não é rótulo — desaparece assim que se escreve). */}
-      <form
-        action="/admin/clientes"
-        method="get"
-        role="search"
-        aria-label="Procurar clientes"
-        className="mb-4 flex flex-wrap items-center gap-2"
-      >
-        <div className="relative min-w-[220px] flex-1">
-          <label htmlFor="clientes-q" className="sr-only">
-            Buscar por nome, telefone ou email
-          </label>
-          <Search
-            aria-hidden
-            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
-          />
-          {/* h-11 (44px) em todo o formulário: é o mínimo confortável para o
-           * polegar, e o Input traz h-8 por omissão. */}
-          <Input
-            id="clientes-q"
-            name="q"
-            type="search"
-            defaultValue={q ?? ""}
-            placeholder="Buscar por nome, telefone ou email…"
-            className="h-11 pl-9"
-          />
-        </div>
-        <label htmlFor="clientes-unit" className="sr-only">
-          Filtrar por unidade
-        </label>
-        <select
-          id="clientes-unit"
-          name="unit"
-          defaultValue={unit ?? ""}
-          className="h-11 rounded-md border border-border bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
-        >
-          <option value="">Todas as unidades</option>
-          {(units ?? []).map((u) => (
-            <option key={u.id} value={u.id}>
-              {u.name}
-            </option>
-          ))}
-        </select>
-        <button
-          type="submit"
-          className="inline-flex h-11 items-center rounded-md bg-brand px-5 text-sm font-medium text-[#0e0a07] transition-[opacity,transform] duration-150 ease-out-strong hover:opacity-90 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
-        >
-          Buscar
-        </button>
-        {filtered && (
-          <Link
-            href="/admin/clientes"
-            className="inline-flex h-11 items-center gap-1.5 rounded-md px-3 text-sm text-muted-foreground transition-colors duration-150 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
-          >
-            <X className="h-4 w-4" /> Limpar
-          </Link>
-        )}
-      </form>
+      <ClientsFilters
+        q={q ?? ""}
+        unit={unit ?? ""}
+        units={(units ?? []).map((u) => ({ id: u.id, name: u.name }))}
+      />
 
       <ClientsTable rows={rows} canDelete={canDelete} showUnit={!unit} />
 
