@@ -112,7 +112,12 @@ export function MetricCard({
         {icon && <div className={cn("rounded-lg p-1.5", t.icon)}>{icon}</div>}
       </div>
 
-      <div className="my-3 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+      <div
+        className={cn(
+          "mt-3 flex flex-wrap items-baseline gap-x-3 gap-y-1",
+          spark && "mb-3",
+        )}
+      >
         <div className="font-heading text-[32px] font-semibold leading-none tracking-tight tabular-nums">
           <AnimatedNumber value={value} />
         </div>
@@ -128,8 +133,12 @@ export function MetricCard({
         )}
       </div>
 
-      <div className="h-8">
-        {spark && (
+      {/* A faixa do gráfico só existe quando há gráfico. Reservar sempre 32px
+       * deixava os cartões sem série — "Clientes cadastrados", "Produtos" —
+       * com um vazio por baixo do número, que no telemóvel (uma coluna) era
+       * um terço da altura do cartão. */}
+      {spark && (
+        <div className="h-8">
           <svg
             viewBox="0 0 100 32"
             preserveAspectRatio="none"
@@ -153,8 +162,8 @@ export function MetricCard({
               vectorEffect="non-scaling-stroke"
             />
           </svg>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

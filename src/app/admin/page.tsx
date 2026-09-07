@@ -5,7 +5,37 @@ import { createClient } from "@/lib/supabase/server";
 import { requireRole } from "@/lib/admin-auth";
 import { PageHeader } from "@/components/admin/page-header";
 import { MetricCard } from "@/components/admin/metric-card";
+import { pageLabelFromPath, shortUnitName } from "@/lib/event-labels";
 import { staggerIndex } from "@/lib/motion";
+import { ActivityFeed, type ActivityItem } from "./activity-feed";
+import { TopPages, type TopPage } from "./top-pages";
+
+/**
+ * A barbearia é em Portugal e o servidor corre em UTC. Sem fuso explícito, a
+ * actividade das 00h30 aparecia com a hora de ontem e "hoje" começava à uma
+ * da manhã — o painel discordava do relógio de quem o estava a ler.
+ */
+const TZ = "Europe/Lisbon";
+const timeFmt = new Intl.DateTimeFormat("pt-PT", {
+  timeZone: TZ,
+  hour: "2-digit",
+  minute: "2-digit",
+});
+const shortDayFmt = new Intl.DateTimeFormat("pt-PT", {
+  timeZone: TZ,
+  day: "2-digit",
+  month: "short",
+});
+const fullFmt = new Intl.DateTimeFormat("pt-PT", {
+  timeZone: TZ,
+  dateStyle: "long",
+  timeStyle: "short",
+});
+/** "2026-09-07" no fuso de Lisboa — chave de agrupamento por dia. */
+const dayKeyFmt = new Intl.DateTimeFormat("en-CA", { timeZone: TZ });
+
+const TREND_DAYS = 30;
+const ACTIVITY_LIMIT = 14;
 
 export default async function AdminDashboard() {
   const { profile } = await requireRole(["super_admin", "manager"]);
@@ -13,6 +43,7 @@ export default async function AdminDashboard() {
   const sb = await createClient();
 
   const todayStr = new Date().toLocaleDateString("pt-PT", {
+    timeZone: TZ,
     day: "numeric",
     month: "long",
     year: "numeric",
@@ -24,10 +55,9 @@ export default async function AdminDashboard() {
     { count: bookingsTodayCount },
     { count: bookings30dCount },
     { count: pageViews30d },
-    { data: recentActivity },
-    { data: topBarberEvents },
-    { data: barbers },
+    { data: recentEvents },
     { data: trendEvents },
+    { data: units },
   ] = await Promise.all([
     sb.from("barbers").select("*", { count: "exact", head: true }),
     sb.from("products").select("*", { count: "exact", head: true }),
@@ -35,59 +65,152 @@ export default async function AdminDashboard() {
       .from("events")
       .select("id", { count: "exact", head: true })
       .eq("type", "booking_click")
-      .gte("created_at", startOfDayISO()),
+      .gte("created_at", startOfTodayISO()),
     sb
       .from("events")
       .select("id", { count: "exact", head: true })
       .eq("type", "booking_click")
-      .gte("created_at", daysAgoISO(30)),
+      .gte("created_at", daysAgoISO(TREND_DAYS)),
     sb
       .from("events")
       .select("id", { count: "exact", head: true })
       .eq("type", "page_view")
-      .gte("created_at", daysAgoISO(30)),
+      .gte("created_at", daysAgoISO(TREND_DAYS)),
+    // Agendamentos ficam de fora do registo: o clique no botão de marcação já
+    // tem cartão próprio em cima, e enchia a lista com a única linha que não
+    // diz nada sobre o que a pessoa esteve a ver.
     sb
       .from("events")
-      .select("*")
+      .select("id, type, ref_id, meta, unit_id, created_at")
+      .neq("type", "booking_click")
       .order("created_at", { ascending: false })
-      .limit(6),
+      .limit(ACTIVITY_LIMIT),
+    // Série para os sparklines e para o ranking de páginas. Um registo por
+    // evento — agregamos por dia no servidor porque a API REST do Supabase
+    // não faz group by.
     sb
       .from("events")
-      .select("ref_id")
-      .eq("type", "barber_view")
-      .gte("created_at", daysAgoISO(7))
-      .limit(500),
-    sb.from("barbers").select("id, name").eq("active", true).limit(20),
-    // Série para os sparklines. Um registo por evento — agregamos por dia
-    // no servidor porque a API REST do Supabase não faz group by.
-    sb
-      .from("events")
-      .select("type, created_at")
+      .select("type, meta, created_at")
       .in("type", ["booking_click", "page_view"])
-      .gte("created_at", daysAgoISO(30))
+      .gte("created_at", daysAgoISO(TREND_DAYS))
       .limit(5000),
+    sb.from("units").select("id, name, slug"),
   ]);
 
-  const bookingSeries = dailySeries(trendEvents, "booking_click", 30);
-  const pageViewSeries = dailySeries(trendEvents, "page_view", 30);
+  const bookingSeries = dailySeries(trendEvents, "booking_click", TREND_DAYS);
+  const pageViewSeries = dailySeries(trendEvents, "page_view", TREND_DAYS);
 
-  // Build top barbers ranking
-  const barberViewMap = new Map<string, number>();
-  for (const ev of topBarberEvents ?? []) {
-    if (!ev.ref_id) continue;
-    barberViewMap.set(ev.ref_id, (barberViewMap.get(ev.ref_id) ?? 0) + 1);
-  }
-  const barberById = new Map(
-    (barbers ?? []).map((b) => [b.id, b.name as string]),
+  const unitById = new Map(
+    (units ?? []).map((u) => [u.id, shortUnitName(u.name as string)]),
   );
-  const topBarbers = Array.from(barberViewMap.entries())
+  const unitSlugs = new Set((units ?? []).map((u) => u.slug as string));
+
+  // ── Páginas mais vistas ──
+  const pathCount = new Map<string, number>();
+  for (const ev of trendEvents ?? []) {
+    if (ev.type !== "page_view") continue;
+    const path = safePath(ev.meta);
+    if (!path) continue;
+    pathCount.set(path, (pathCount.get(path) ?? 0) + 1);
+  }
+  const topPages: TopPage[] = Array.from(pathCount.entries())
     .sort((a, b) => b[1] - a[1])
-    .slice(0, 5)
-    .map(([id, views]) => ({
-      name: barberById.get(id) ?? id.slice(0, 8),
+    .slice(0, 6)
+    .map(([path, views]) => ({
+      path,
+      label: pageLabelFromPath(path, unitSlugs),
       views,
     }));
-  const maxViews = topBarbers[0]?.views ?? 1;
+
+  // ── Actividade recente ──
+  // Os eventos guardam só um `ref_id`. Sem esta segunda ida à base, a tabela
+  // mostrava oito caracteres de um UUID onde devia estar o nome do produto.
+  const events = recentEvents ?? [];
+  const productIds = [
+    ...new Set(
+      events
+        .filter((e) => e.type === "product_view" || e.type === "add_to_cart")
+        .map((e) => e.ref_id)
+        .filter((id): id is string => !!id),
+    ),
+  ];
+  const barberIds = [
+    ...new Set(
+      events
+        .filter((e) => e.type === "barber_view")
+        .map((e) => e.ref_id)
+        .filter((id): id is string => !!id),
+    ),
+  ];
+
+  const [{ data: products }, { data: barbers }] = await Promise.all([
+    productIds.length
+      ? sb.from("products").select("id, name, image_url").in("id", productIds)
+      : Promise.resolve({ data: [] as ProductLite[] }),
+    barberIds.length
+      ? sb.from("barbers").select("id, name, photo_url").in("id", barberIds)
+      : Promise.resolve({ data: [] as BarberLite[] }),
+  ]);
+
+  const productById = new Map(
+    (products ?? []).map((p) => [p.id, p as ProductLite]),
+  );
+  const barberById = new Map(
+    (barbers ?? []).map((b) => [b.id, b as BarberLite]),
+  );
+
+  const now = new Date();
+  const todayKey = dayKeyFmt.format(now);
+  const yesterdayKey = dayKeyFmt.format(new Date(now.getTime() - 86_400_000));
+
+  const activity: ActivityItem[] = events.map((ev) => {
+    const created = new Date(ev.created_at as string);
+    const key = dayKeyFmt.format(created);
+    const path = safePath(ev.meta);
+    const type = ev.type as string;
+
+    let title = path ? pageLabelFromPath(path, unitSlugs) : "Visita";
+    let imageUrl: string | null = null;
+    let fallback: ActivityItem["fallback"] = "page";
+
+    if (type === "product_view" || type === "add_to_cart") {
+      const p = ev.ref_id ? productById.get(ev.ref_id) : undefined;
+      title = p?.name ?? "Produto";
+      imageUrl = p?.image_url ?? null;
+      fallback = type === "add_to_cart" ? "cart" : "product";
+    } else if (type === "barber_view") {
+      const b = ev.ref_id ? barberById.get(ev.ref_id) : undefined;
+      title = b?.name ?? "Barbeiro";
+      imageUrl = b?.photo_url ?? null;
+      fallback = "barber";
+    } else if (type === "whatsapp_checkout") {
+      title = "Pedido enviado por WhatsApp";
+      fallback = "chat";
+    } else if (type === "loyalty_click") {
+      title = "Programa de pontos";
+      fallback = "gift";
+    }
+
+    return {
+      id: String(ev.id),
+      type,
+      title,
+      path,
+      imageUrl,
+      fallback,
+      unitName: ev.unit_id
+        ? (unitById.get(ev.unit_id) ?? null)
+        : null,
+      time: timeFmt.format(created),
+      dayLabel:
+        key === todayKey
+          ? "hoje"
+          : key === yesterdayKey
+            ? "ontem"
+            : shortDayFmt.format(created),
+      fullDate: fullFmt.format(created),
+    };
+  });
 
   return (
     <div>
@@ -146,143 +269,45 @@ export default async function AdminDashboard() {
         </div>
       </div>
 
-      {/* ── Content row ── */}
-      <div className="grid gap-4 xl:grid-cols-[2fr_1fr]">
-        {/* Activity table */}
-        <div className="overflow-hidden rounded-2xl border border-border bg-bg-surface">
-          <div className="flex items-start justify-between border-b border-border px-6 py-[22px]">
-            <div>
-              <div className="font-heading text-base font-semibold tracking-tight">
-                Atividade recente
-              </div>
-              <div className="mt-0.5 text-[12.5px] text-muted-foreground">
-                Todas as unidades
-              </div>
-            </div>
-          </div>
-
-          {/* Table head */}
-          <div className="hidden gap-3 px-6 py-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground md:grid md:grid-cols-[1.6fr_1.2fr_0.6fr_1fr]">
-            <div>Tipo</div>
-            <div>Referência</div>
-            <div>Hora</div>
-            <div>Estado</div>
-          </div>
-
-          {(recentActivity ?? []).length === 0 ? (
-            <p className="px-6 py-10 text-sm text-muted-foreground">
-              Sem eventos recentes.
-            </p>
-          ) : (
-            <div className="stagger">
-              {(recentActivity ?? []).map((ev, i) => {
-                const d = new Date(ev.created_at as string);
-                const timeStr = d.toLocaleTimeString("pt-PT", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                });
-                const isBooking = ev.type === "booking_click";
-                return (
-                  <div
-                    key={ev.id}
-                    {...staggerIndex(i)}
-                    className="grid gap-2 border-t border-border px-4 py-4 text-sm transition-colors duration-150 hover-fine:hover:bg-background sm:px-6 md:grid-cols-[1.6fr_1.2fr_0.6fr_1fr] md:items-center md:gap-3 md:py-3"
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-background text-xs">
-                        {eventIcon(ev.type as string)}
-                      </div>
-                      <span className="text-[13px] font-medium">
-                        {eventLabel(ev.type as string)}
-                      </span>
-                    </div>
-                    <div className="truncate font-mono text-[12.5px] text-muted-foreground">
-                      {ev.ref_id ? ev.ref_id.slice(0, 8) + "…" : "—"}
-                    </div>
-                    <div className="font-mono text-[12.5px] text-muted-foreground tabular-nums">
-                      {timeStr}
-                    </div>
-                    <div>
-                      <span
-                        className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ${
-                          isBooking
-                            ? "bg-emerald-500/10 text-emerald-600"
-                            : "bg-brand/10 text-brand"
-                        }`}
-                      >
-                        {isBooking ? "● Agendamento" : "◌ Visita"}
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* Top barbers */}
-        <div className="overflow-hidden rounded-2xl border border-border bg-bg-surface">
-          <div className="border-b border-border px-6 py-[22px]">
-            <div className="font-heading text-base font-semibold tracking-tight">
-              Top barbeiros
-            </div>
-            <div className="mt-0.5 text-[12.5px] text-muted-foreground">
-              Esta semana · visualizações
-            </div>
-          </div>
-          <div className="px-5 py-4">
-            {topBarbers.length === 0 ? (
-              <p className="py-8 text-center text-sm text-muted-foreground">
-                Sem dados esta semana.
-              </p>
-            ) : (
-              <div className="stagger">
-                {topBarbers.map((b, i) => (
-                  <div
-                    key={b.name}
-                    {...staggerIndex(i)}
-                    className={`flex gap-3.5 py-3.5 ${
-                      i < topBarbers.length - 1 ? "border-b border-border" : ""
-                    }`}
-                  >
-                    <div
-                      className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg font-heading text-[13px] font-bold ${
-                        i === 0
-                          ? "bg-brand text-[#0e0a07]"
-                          : "bg-background text-muted-foreground"
-                      }`}
-                    >
-                      {i + 1}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="text-[13.5px] font-medium">{b.name}</div>
-                      <div className="mb-2 mt-0.5 text-[11.5px] text-muted-foreground">
-                        {b.views} visualizações
-                      </div>
-                      <div className="h-1 overflow-hidden rounded-full bg-background">
-                        <div
-                          className="h-full rounded-full bg-brand transition-[width] duration-500 ease-out-strong"
-                          style={{
-                            width: `${Math.round((b.views / maxViews) * 100)}%`,
-                          }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
+      <div className="grid gap-4 xl:grid-cols-[1.7fr_1fr]">
+        <ActivityFeed items={activity} />
+        <TopPages rows={topPages} days={TREND_DAYS} />
       </div>
     </div>
   );
+}
+
+type ProductLite = { id: string; name: string; image_url: string | null };
+type BarberLite = { id: string; name: string; photo_url: string | null };
+
+/** Caracteres de controlo, que não existem num caminho verdadeiro. */
+const CONTROL_CHARS = /[\u0000-\u001F\u007F]/;
+
+/**
+ * Caminho de página guardado no evento, se for utilizável como link.
+ *
+ * `meta` vem de `POST /api/analytics`, que é público e não autenticado:
+ * qualquer pessoa pode escrever lá o que quiser. Como o painel transforma
+ * este valor num `href`, só passam caminhos internos — "/algo". Um
+ * `javascript:` ou um `//exemplo.com` (que o browser lê como outro domínio)
+ * ficam de fora.
+ */
+function safePath(meta: unknown): string | null {
+  if (!meta || typeof meta !== "object") return null;
+  const value = (meta as { path?: unknown }).path;
+  if (typeof value !== "string") return null;
+  if (!value.startsWith("/") || value.startsWith("//")) return null;
+  if (CONTROL_CHARS.test(value)) return null;
+  return value.slice(0, 180);
 }
 
 /**
  * Agrega eventos de um tipo em contagens diárias, do dia mais antigo ao mais
  * recente. Devolve sempre `days` pontos — dias sem eventos entram a zero,
  * senão o sparkline comprimia os intervalos e distorcia a leitura.
+ *
+ * Os dias são dias de Lisboa, não do relógio UTC do servidor: um evento das
+ * 00h30 de hoje pertence a hoje, não a ontem.
  */
 function dailySeries(
   events: Array<{ type: string | null; created_at: string }> | null,
@@ -292,54 +317,47 @@ function dailySeries(
   const buckets = new Array<number>(days).fill(0);
   if (!events) return buckets;
 
-  const startOfToday = new Date();
-  startOfToday.setHours(0, 0, 0, 0);
-  const dayMs = 86_400_000;
+  // Índice "2026-09-07" → posição no array. Construído a partir da data de
+  // hoje em Lisboa e recuando dias inteiros em UTC, que não escorrega na
+  // mudança da hora.
+  const [y, m, d] = dayKeyFmt.format(new Date()).split("-").map(Number);
+  const base = Date.UTC(y, m - 1, d);
+  const index = new Map<string, number>();
+  for (let i = 0; i < days; i++) {
+    const key = new Date(base - (days - 1 - i) * 86_400_000)
+      .toISOString()
+      .slice(0, 10);
+    index.set(key, i);
+  }
 
   for (const ev of events) {
     if (ev.type !== type) continue;
-    // Normalizar ao início do dia do evento antes de comparar: sem isto, um
-    // evento de hoje dá uma diferença negativa e cai fora do array.
-    const evDay = new Date(ev.created_at);
-    evDay.setHours(0, 0, 0, 0);
-    // 0 = hoje, 1 = ontem, … Índice no array conta ao contrário (antigo → novo).
-    const daysAgo = Math.round((startOfToday.getTime() - evDay.getTime()) / dayMs);
-    const index = days - 1 - daysAgo;
-    if (index >= 0 && index < days) buckets[index] += 1;
+    const i = index.get(dayKeyFmt.format(new Date(ev.created_at)));
+    if (i !== undefined) buckets[i] += 1;
   }
   return buckets;
 }
 
-function eventLabel(type: string) {
-  const map: Record<string, string> = {
-    booking_click: "Agendamento",
-    page_view: "Visita",
-    product_view: "Produto visto",
-    barber_view: "Barbeiro visto",
-    whatsapp_checkout: "WhatsApp checkout",
-  };
-  return map[type] ?? type;
-}
-
-function eventIcon(type: string) {
-  const map: Record<string, string> = {
-    booking_click: "📅",
-    page_view: "👁",
-    product_view: "🛍",
-    barber_view: "✂",
-    whatsapp_checkout: "💬",
-  };
-  return map[type] ?? "•";
-}
-
-function startOfDayISO() {
-  const d = new Date();
-  d.setHours(0, 0, 0, 0);
-  return d.toISOString();
+/** Instante em que começou o dia de hoje em Lisboa, em ISO/UTC. */
+function startOfTodayISO(): string {
+  const key = dayKeyFmt.format(new Date());
+  const utcMidnight = new Date(`${key}T00:00:00Z`).getTime();
+  // De quanto é que Lisboa está à frente de UTC nesse instante (0h ou 1h).
+  const asLocal = new Intl.DateTimeFormat("sv-SE", {
+    timeZone: TZ,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  }).format(new Date(utcMidnight));
+  const offset =
+    new Date(`${asLocal.replace(" ", "T")}Z`).getTime() - utcMidnight;
+  return new Date(utcMidnight - offset).toISOString();
 }
 
 function daysAgoISO(days: number) {
-  const d = new Date();
-  d.setDate(d.getDate() - days);
-  return d.toISOString();
+  return new Date(Date.now() - days * 86_400_000).toISOString();
 }

@@ -1,12 +1,14 @@
 import Link from "next/link";
-import { AlertTriangle, Plus, Search } from "lucide-react";
+import { redirect } from "next/navigation";
+import { AlertTriangle, Plus, Search, X } from "lucide-react";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireRole } from "@/lib/admin-auth";
 import { Input } from "@/components/ui/input";
 import { PageHeader } from "@/components/admin/page-header";
+import { Pagination } from "@/components/admin/pagination";
 import { ClientsTable, type ClientRow } from "./clients-table";
 
-type SearchParams = { q?: string; unit?: string };
+type SearchParams = { q?: string; unit?: string; page?: string };
 
 export const dynamic = "force-dynamic";
 
@@ -16,6 +18,15 @@ const BASE_COLS =
 /** Origem da conta e foto — colunas da 0012. */
 const IDENTITY_COLS = `${BASE_COLS}, auth_provider, avatar_url`;
 
+/**
+ * Clientes por página.
+ *
+ * A lista pedia 200 de uma vez e desenhava-os todos: no telemóvel eram uns
+ * 38 mil pixels de scroll e 200 avatares a carregar. 20 chega para um ecrã
+ * de desktop sem paginar à toa.
+ */
+const PAGE_SIZE = 20;
+
 export default async function ClientesPage({
   searchParams,
 }: {
@@ -23,8 +34,10 @@ export default async function ClientesPage({
 }) {
   const { profile } = await requireRole(["super_admin", "manager"]);
   const canDelete = profile.role === "super_admin";
-  const { q, unit } = await searchParams;
+  const { q, unit, page: pageParam } = await searchParams;
   const sb = createAdminClient();
+
+  const page = Math.max(1, Number.parseInt(pageParam ?? "1", 10) || 1);
 
   // O termo entra numa string de filtro do PostgREST, onde a vírgula separa
   // condições e os parêntesis agrupam: sem limpar, escrever uma vírgula na
@@ -33,10 +46,13 @@ export default async function ClientesPage({
 
   const clientsQuery = (cols: string) => {
     let query = sb
+      // `count: "exact"` num pedido paginado devolve o total real numa só
+      // ida ao servidor — é o que permite dizer "21–40 de 62" e saber
+      // quantas páginas existem.
       .from("clients")
-      .select(cols)
+      .select(cols, { count: "exact" })
       .order("created_at", { ascending: false })
-      .limit(200);
+      .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
     if (safeQ) {
       // Email entra na procura: quem se regista pela Google não deixa
       // telefone, e sem isto não havia como encontrar essas pessoas.
@@ -64,6 +80,7 @@ export default async function ClientesPage({
   // `.select()` com uma string variável impede o Supabase de inferir a forma
   // das linhas; o tipo real é declarado abaixo, em `ClientRecord`.
   let clients = clientsRes.data as unknown[] | null;
+  let total = clientsRes.count ?? 0;
   let migrationPending = false;
   if (clientsRes.error) {
     console.error("[admin/clientes] identidade", clientsRes.error);
@@ -73,6 +90,7 @@ export default async function ClientesPage({
       throw new Error(fallback.error.message);
     }
     clients = fallback.data as unknown[];
+    total = fallback.count ?? 0;
     migrationPending = true;
   }
 
@@ -84,6 +102,17 @@ export default async function ClientesPage({
     const fallback = await sb.from("units").select("id, name, slug").order("name");
     units = fallback.data;
     migrationPending = true;
+  }
+
+  const pageCount = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  // Página pedida à mão além do fim: mostrar "nenhum cliente encontrado" com
+  // 62 clientes na base seria mentira. Vai para a última página real.
+  if (page > pageCount && total > 0) {
+    const qs = new URLSearchParams();
+    if (q) qs.set("q", q);
+    if (unit) qs.set("unit", unit);
+    if (pageCount > 1) qs.set("page", String(pageCount));
+    redirect(`/admin/clientes${qs.toString() ? `?${qs}` : ""}`);
   }
 
   const unitNameById = new Map((units ?? []).map((u) => [u.id, u.name as string]));
@@ -125,6 +154,7 @@ export default async function ClientesPage({
 
   const rows: ClientRow[] = list.map((c) => {
     const last = lastVisitMap.get(c.id);
+    const lastDate = last ? new Date(last) : null;
     return {
       id: c.id,
       name: c.name,
@@ -140,31 +170,43 @@ export default async function ClientesPage({
       showOrigin: !migrationPending,
       unitName: unitNameById.get(c.unit_id) ?? "—",
       points: balances.get(c.id) ?? 0,
-      lastVisit: last
-        ? new Date(last).toLocaleDateString("pt-PT", {
-            day: "2-digit",
-            month: "short",
+      // Formatado no servidor de propósito: formatar no cliente com o fuso
+      // do browser dava uma data diferente da do servidor e a hidratação
+      // acusava.
+      lastVisit: lastDate
+        ? lastDate.toLocaleDateString("pt-PT", { day: "2-digit", month: "short" })
+        : null,
+      lastVisitFull: lastDate
+        ? lastDate.toLocaleDateString("pt-PT", {
+            day: "numeric",
+            month: "long",
+            year: "numeric",
           })
         : null,
     };
   });
 
+  const filtered = !!safeQ || !!unit;
+  const activeUnitName = unit ? unitNameById.get(unit) : undefined;
+
   return (
     <div>
       <PageHeader
         title="Clientes"
-        description={`${list.length} cliente${
-          list.length !== 1 ? "s" : ""
-        } · cartão fidelidade digital`}
-        actions={
+        description={
           <>
-            <Link
-              href="/admin/clientes/novo"
-              className="inline-flex items-center gap-2 rounded-[10px] bg-brand px-4 py-2.5 text-[13px] font-medium text-[#0e0a07] transition-[opacity,transform] duration-150 ease-out-strong hover:opacity-90 active:scale-[0.97]"
-            >
-              <Plus className="h-4 w-4" /> Novo cliente
-            </Link>
+            {total} cliente{total !== 1 ? "s" : ""}
+            {activeUnitName ? ` em ${activeUnitName}` : ""} · cartão fidelidade
+            digital
           </>
+        }
+        actions={
+          <Link
+            href="/admin/clientes/novo"
+            className="inline-flex items-center gap-2 rounded-[10px] bg-brand px-4 py-2.5 text-[13px] font-medium text-[#0e0a07] transition-[opacity,transform] duration-150 ease-out-strong hover:opacity-90 active:scale-[0.97]"
+          >
+            <Plus className="h-4 w-4" /> Novo cliente
+          </Link>
         }
       />
 
@@ -180,26 +222,43 @@ export default async function ClientesPage({
         </div>
       )}
 
+      {/* `role="search"` marca a região para quem navega por landmarks; os
+       * rótulos existem para leitores de ecrã mesmo sem estarem à vista (um
+       * `placeholder` não é rótulo — desaparece assim que se escreve). */}
       <form
         action="/admin/clientes"
         method="get"
-        className="mb-5 flex flex-wrap items-center gap-2"
+        role="search"
+        aria-label="Procurar clientes"
+        className="mb-4 flex flex-wrap items-center gap-2"
       >
-        <div className="relative flex-1 min-w-[220px]">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <div className="relative min-w-[220px] flex-1">
+          <label htmlFor="clientes-q" className="sr-only">
+            Buscar por nome, telefone ou email
+          </label>
+          <Search
+            aria-hidden
+            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+          />
           {/* h-11 (44px) em todo o formulário: é o mínimo confortável para o
            * polegar, e o Input traz h-8 por omissão. */}
           <Input
+            id="clientes-q"
             name="q"
+            type="search"
             defaultValue={q ?? ""}
             placeholder="Buscar por nome, telefone ou email…"
             className="h-11 pl-9"
           />
         </div>
+        <label htmlFor="clientes-unit" className="sr-only">
+          Filtrar por unidade
+        </label>
         <select
+          id="clientes-unit"
           name="unit"
           defaultValue={unit ?? ""}
-          className="h-11 rounded-md border border-border bg-background px-3 text-sm"
+          className="h-11 rounded-md border border-border bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
         >
           <option value="">Todas as unidades</option>
           {(units ?? []).map((u) => (
@@ -210,13 +269,31 @@ export default async function ClientesPage({
         </select>
         <button
           type="submit"
-          className="inline-flex h-11 items-center rounded-md bg-brand px-5 text-sm font-medium text-[#0e0a07] transition-[opacity,transform] duration-150 ease-out-strong hover:opacity-90 active:scale-[0.97]"
+          className="inline-flex h-11 items-center rounded-md bg-brand px-5 text-sm font-medium text-[#0e0a07] transition-[opacity,transform] duration-150 ease-out-strong hover:opacity-90 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
         >
           Buscar
         </button>
+        {filtered && (
+          <Link
+            href="/admin/clientes"
+            className="inline-flex h-11 items-center gap-1.5 rounded-md px-3 text-sm text-muted-foreground transition-colors duration-150 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+          >
+            <X className="h-4 w-4" /> Limpar
+          </Link>
+        )}
       </form>
 
-      <ClientsTable rows={rows} canDelete={canDelete} />
+      <ClientsTable rows={rows} canDelete={canDelete} showUnit={!unit} />
+
+      <Pagination
+        page={page}
+        pageCount={pageCount}
+        total={total}
+        pageSize={PAGE_SIZE}
+        basePath="/admin/clientes"
+        params={{ q: safeQ || undefined, unit }}
+        noun={["cliente", "clientes"]}
+      />
     </div>
   );
 }
