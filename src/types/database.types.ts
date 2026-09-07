@@ -301,6 +301,11 @@ export interface Database {
         Args: { p_code: string };
         Returns: LoyaltyCouponRow;
       };
+      /** Telefone do próprio cliente (0014). `null` limpa o número. */
+      loyalty_set_phone: {
+        Args: { p_phone: string | null };
+        Returns: ClientRow;
+      };
       loyalty_set_display_name: {
         Args: { p_name: string };
         Returns: ClientRow;

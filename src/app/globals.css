@@ -251,6 +251,28 @@
   50%      { opacity: 0.45; }
 }
 
+/* Barra de progresso a encher, do zero até ao valor real.
+ *
+ * `scaleX` e não `width`: a largura passa por layout e paint a cada frame,
+ * a escala corre no compositor. A barra nasce já com a largura final e é a
+ * escala que anima — daí o `transform-origin: left`. */
+@keyframes progress-grow {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
+/* Brilho a atravessar o cartão, uma vez, quando um resgate é confirmado.
+ *
+ * É a única animação decorativa destas páginas, e vive no único momento que
+ * o cliente vê raramente e com expectativa. Em tudo o que se vê todos os
+ * dias — abrir o cartão, ver o saldo — não há nada disto. */
+@keyframes card-shine {
+  from { transform: translateX(-120%) skewX(-14deg); opacity: 0; }
+  15%  { opacity: 1; }
+  85%  { opacity: 1; }
+  to   { transform: translateX(240%) skewX(-14deg); opacity: 0; }
+}
+
 /* Confirmação. Começa em 0.92 e não em 0 — nada no mundo real aparece do nada. */
 @keyframes pop-in {
   from { opacity: 0; transform: scale(0.92); }
@@ -289,6 +311,14 @@
   }
   .page-enter {
     animation: enter-up 240ms var(--ease-out-strong) both;
+  }
+  /* Usar no preenchimento da barra, com a largura final já aplicada. */
+  .progress-grow {
+    transform-origin: left;
+    animation: progress-grow 620ms var(--ease-out-strong) both;
+  }
+  .card-shine {
+    animation: card-shine 780ms var(--ease-out-strong) both;
   }
 }
 
