@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendCouponEmail } from "@/lib/email/coupon";
 import { normalizeInstagramHandle } from "@/lib/loyalty/instagram";
+import { normalizePhonePT, PHONE_HINT } from "@/lib/loyalty/phone";
 import type {
   ClientRow,
   LoyaltyBonusKind,
@@ -37,6 +38,16 @@ function toMessage(error: unknown, fallback: string): string {
   if (raw.includes("bónus já atribuído")) return "Este bónus já foi atribuído.";
   if (raw.includes("conta sem cartão")) {
     return "A sua conta ainda não está ligada a um cartão.";
+  }
+  if (raw.includes("telefone já associado")) {
+    return "Este número já está associado a outro cartão.";
+  }
+  if (raw.includes("telefone inválido")) return PHONE_HINT;
+  // A RPC do telefone chega na migração 0014. Enquanto ela não correr no
+  // Supabase, o PostgREST responde "Could not find the function" — que não é
+  // frase para mostrar a um cliente. O resto da página continua a funcionar.
+  if (raw.includes("Could not find the function")) {
+    return "Esta opção ainda não está disponível. Tente mais tarde.";
   }
   return raw;
 }
@@ -131,6 +142,37 @@ export async function setMyDisplayName(
   return { ok: true, data: data as ClientRow };
 }
 
+/**
+ * O cliente acrescenta ou corrige o seu telefone.
+ *
+ * Opcional: quem entra pela Google só deixa email, e o cartão funciona sem
+ * número nenhum. Serve para a barbearia poder avisar de uma marcação — não
+ * é uma condição para ter pontos.
+ *
+ * Uma string vazia limpa o número, para quem o quiser retirar. Normalizamos
+ * aqui e a função valida outra vez do outro lado.
+ */
+export async function setMyPhone(
+  raw: string,
+): Promise<ActionResult<ClientRow>> {
+  const trimmed = raw.trim();
+  const phone = trimmed ? normalizePhonePT(trimmed) : null;
+  if (trimmed && !phone) return { ok: false, error: PHONE_HINT };
+
+  const sb = await createClient();
+  const { data, error } = await sb.rpc("loyalty_set_phone", { p_phone: phone });
+
+  if (error) {
+    return {
+      ok: false,
+      error: toMessage(error, "Não foi possível guardar o telefone."),
+    };
+  }
+
+  revalidatePath("/minha-conta");
+  return { ok: true, data: data as ClientRow };
+}
+
 /** Bónus de registo e de Instagram — uma vez por cliente, garantido no índice. */
 export async function grantBonus(
   kind: "signup" | "instagram",
@@ -197,12 +239,16 @@ export async function getMyAccount(): Promise<ClientAccount | null> {
 
   const [balances, txs, coupons, rewards, services, unit, bonusRows] = await Promise.all([
     sb.from("client_unit_balances").select("unit_id, balance").eq("client_id", c.id),
+    // 200 e não 20: o histórico agrupa por mês e mostra 10 de cada vez, e as
+    // estatísticas do cartão (visitas, pontos ganhos) somam esta mesma lista
+    // em vez de fazer uma segunda ida à base. São linhas pequenas; um cliente
+    // com 200 movimentos é um cliente de muitos anos.
     sb
       .from("loyalty_transactions")
       .select("*")
       .eq("client_id", c.id)
       .order("created_at", { ascending: false })
-      .limit(20),
+      .limit(200),
     sb
       .from("loyalty_coupons")
       .select("*")

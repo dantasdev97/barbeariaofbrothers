@@ -5,6 +5,8 @@ import { createClient } from "@/lib/supabase/server";
 import { cardUrl } from "@/lib/loyalty/qr";
 import { getAllUnits, getLoyaltyUnitsState, getUnitBySlug } from "@/lib/data";
 import { getMyAccount } from "@/lib/loyalty/client-actions";
+import { buildHistory, buildStats } from "@/lib/loyalty/history";
+import { TZ } from "@/lib/date-range";
 import { ClientShell } from "@/components/cliente/client-shell";
 import { MyCard } from "./my-card";
 import { StartCard } from "./start-card";
@@ -125,7 +127,38 @@ export default async function MinhaContaPage({
     },
   );
 
-  const card = <MyCard account={account} qrDataUrl={qrDataUrl} />;
+  // Nomes dos serviços e recompensas de **todas** as unidades: quem usa as
+  // duas casas tem movimentos das duas, e sem isto o histórico dessas linhas
+  // dizia só "Serviço". A RLS destas tabelas devolve as linhas activas a
+  // qualquer pessoa, por isso não é preciso service role.
+  const [{ data: allServices }, { data: allRewards }] = await Promise.all([
+    sb.from("loyalty_services").select("id, name"),
+    sb.from("loyalty_rewards").select("id, name"),
+  ]);
+
+  const history = buildHistory(account.transactions, {
+    services: new Map((allServices ?? []).map((x) => [x.id, x.name as string])),
+    rewards: new Map((allRewards ?? []).map((x) => [x.id, x.name as string])),
+    units: new Map(units.map((u) => [u.id, u.name])),
+  });
+
+  const memberSince = account.client.created_at
+    ? new Intl.DateTimeFormat("pt-PT", {
+        timeZone: TZ,
+        month: "long",
+        year: "numeric",
+      }).format(new Date(account.client.created_at))
+    : null;
+
+  const card = (
+    <MyCard
+      account={account}
+      qrDataUrl={qrDataUrl}
+      history={history}
+      stats={buildStats(history)}
+      memberSince={memberSince}
+    />
+  );
   if (!shellUnit) return <main className="flex-1">{card}</main>;
 
   return (

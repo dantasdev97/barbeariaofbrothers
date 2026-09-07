@@ -3,12 +3,16 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Gift, Camera, Loader2, MapPin, Sparkles, Ticket } from "lucide-react";
-import { AnimatedNumber } from "@/components/admin/animated-number";
+import { Gift, Camera, Loader2, Ticket } from "lucide-react";
 import { ConfirmDialog } from "@/components/admin/confirm-dialog";
+import { AccountSettings } from "@/components/cliente/account-settings";
+import { CardStats } from "@/components/cliente/card-stats";
 import { CouponCode } from "@/components/cliente/coupon-code";
 import { EarnList } from "@/components/cliente/earn-list";
+import { LoyaltyCard, type NextReward } from "@/components/cliente/loyalty-card";
+import { LoyaltyHistory } from "@/components/cliente/loyalty-history";
 import { formatRewardValue, rewardKindIcon } from "@/lib/loyalty/rewards";
+import type { CardStats as CardStatsData, HistoryEntry } from "@/lib/loyalty/history";
 import { staggerIndex } from "@/lib/motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,10 +30,18 @@ import type { LoyaltyCouponRow, LoyaltyRewardRow } from "@/types/database.types"
 export function MyCard({
   account,
   qrDataUrl,
+  history,
+  stats,
+  memberSince,
 }: {
   account: ClientAccount;
   /** Gerado no servidor — é o que o barbeiro lê para abrir este cliente. */
   qrDataUrl?: string;
+  /** Movimentos já traduzidos e datados no fuso de Lisboa. */
+  history: HistoryEntry[];
+  stats: CardStatsData;
+  /** "agosto de 2026" */
+  memberSince: string | null;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -37,12 +49,15 @@ export function MyCard({
   const [toRedeem, setToRedeem] = useState<LoyaltyRewardRow | null>(null);
   /** O cupom acabado de emitir, mostrado em destaque antes de ir para a lista. */
   const [fresh, setFresh] = useState<LoyaltyCouponRow | null>(null);
+  /** Conta os resgates desta sessão: faz o brilho passar no cartão, uma vez. */
+  const [celebrations, setCelebrations] = useState(0);
   /** @ de Instagram escrito pelo cliente, exigido antes de dar o bónus. */
   const [igHandle, setIgHandle] = useState("");
   /**
    * Como quer ser tratado. Perguntado uma vez, logo depois do cartão nascer:
    * o nome vem do Google ou da parte do email antes do @, e nenhum dos dois é
-   * necessariamente como a pessoa se apresenta.
+   * necessariamente como a pessoa se apresenta. Depois disso, muda-se em
+   * "A minha conta" — antes o popup era a única oportunidade da vida.
    *
    * Só `false` explícito pergunta: se a coluna ainda não existe na base vem
    * `undefined`, e aí perguntar levaria a um popup que reaparece sempre e cuja
@@ -51,7 +66,7 @@ export function MyCard({
   const [askName, setAskName] = useState(account.client.name_confirmed === false);
   const [displayName, setDisplayName] = useState(account.client.name);
 
-  const { client, unit, balance, rewards, services, coupons, transactions, claimedBonuses, bonuses } =
+  const { client, unit, balance, rewards, services, coupons, claimedBonuses, bonuses } =
     account;
 
   // Todos os cupões, por usar primeiro. Antes só se mostravam os activos:
@@ -64,10 +79,16 @@ export function MyCard({
   const sortedCoupons = [...coupons].sort(
     (a, b) => Number(isUsable(b)) - Number(isUsable(a)),
   );
-  const nextReward = rewards.find((r) => r.points_cost > balance);
-  const nextPct = nextReward
-    ? Math.min(100, Math.round((balance / nextReward.points_cost) * 100))
-    : 100;
+
+  const upcoming = rewards.find((r) => r.points_cost > balance);
+  const nextReward: NextReward | null = upcoming
+    ? {
+        name: upcoming.name,
+        cost: upcoming.points_cost,
+        missing: upcoming.points_cost - balance,
+        pct: Math.min(100, Math.round((balance / upcoming.points_cost) * 100)),
+      }
+    : null;
 
   function confirmRedeem() {
     if (!toRedeem) return;
@@ -82,6 +103,7 @@ export function MyCard({
       }
       setToRedeem(null);
       setFresh(result.data);
+      setCelebrations((n) => n + 1);
       toast.success("Resgatado! Guarde o código.");
       router.refresh();
     });
@@ -124,75 +146,18 @@ export function MyCard({
   }
 
   return (
-    <div className="mx-auto max-w-xl px-5 py-8">
-      {/* Cartão */}
-      <section className="rounded-3xl bg-foreground p-1 shadow-[0_30px_80px_-30px_rgba(0,0,0,0.35)]">
-        <div className="rounded-[22px] bg-gradient-to-br from-foreground via-foreground to-[#1a1410] p-7 text-background">
-          <p className="inline-flex items-center gap-1.5 rounded-full bg-brand/15 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-brand">
-            <Sparkles className="h-3 w-3" />
-            Cartão Fidelidade
-          </p>
-          {/* Segue o que está a ser escrito no popup: o cartão muda enquanto a
-           * pessoa escreve, para ela ver o resultado antes de confirmar. */}
-          <h1 className="mt-3 font-heading text-[26px] font-semibold leading-tight tracking-tight">
-            {displayName.trim() || client.name}
-          </h1>
-          {unit && (
-            <p className="mt-1 flex items-center gap-1.5 text-[12px] text-background/70">
-              <MapPin className="h-3.5 w-3.5" />
-              {unit.name}
-            </p>
-          )}
+    <div className="page-enter mx-auto max-w-xl px-5 py-8">
+      <LoyaltyCard
+        name={displayName.trim() || client.name}
+        unitName={unit?.name ?? null}
+        balance={balance}
+        qrDataUrl={qrDataUrl ?? null}
+        nextReward={nextReward}
+        bookingUrl={unit?.buk_url ?? null}
+        celebrateKey={celebrations}
+      />
 
-          <div className="mt-6 flex items-end gap-2">
-            <p className="font-heading text-[60px] font-bold leading-none tracking-tight tabular-nums text-brand">
-              <AnimatedNumber value={balance} />
-            </p>
-            <p className="mb-2.5 text-sm uppercase tracking-[0.18em] text-background/60">
-              pts
-            </p>
-          </div>
-
-          {/* QR de identificação. Fica à vista, sem esconder atrás de um
-           * toque: é a razão de abrir esta página no balcão. */}
-          {qrDataUrl && (
-            <div className="mt-6 flex flex-col items-center">
-              <div className="rounded-2xl bg-white p-3">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={qrDataUrl}
-                  alt="Código do seu cartão"
-                  width={160}
-                  height={160}
-                  className="h-40 w-40 [image-rendering:pixelated]"
-                />
-              </div>
-              <p className="mt-2.5 text-[12px] text-background/60">
-                Mostre este código ao barbeiro
-              </p>
-            </div>
-          )}
-
-          {nextReward && (
-            <div className="mt-6 rounded-2xl bg-background/10 p-4">
-              <div className="flex items-center justify-between text-[12px]">
-                <span className="text-background/80">
-                  Falta para <strong className="text-background">{nextReward.name}</strong>
-                </span>
-                <span className="font-mono tabular-nums text-brand">
-                  {nextReward.points_cost - balance} pts
-                </span>
-              </div>
-              <div className="mt-2 h-2 overflow-hidden rounded-full bg-background/15">
-                <div
-                  className="h-full rounded-full bg-brand transition-[width] duration-500 ease-out-strong"
-                  style={{ width: `${nextPct}%` }}
-                />
-              </div>
-            </div>
-          )}
-        </div>
-      </section>
+      <CardStats stats={stats} memberSince={memberSince} className="mt-5" />
 
       {/* Cupom acabado de emitir — o momento de recompensa do fluxo.
        * É a única tela que o cliente vê raramente e com expectativa, por
@@ -251,15 +216,15 @@ export function MyCard({
                       {usable
                         ? "Por usar"
                         : expired
-                        ? "Expirado"
-                        : `Usado${
-                            c.used_at
-                              ? ` em ${new Date(c.used_at).toLocaleDateString("pt-PT", {
-                                  day: "2-digit",
-                                  month: "short",
-                                })}`
-                              : ""
-                          }`}
+                          ? "Expirado"
+                          : `Usado${
+                              c.used_at
+                                ? ` em ${new Date(c.used_at).toLocaleDateString("pt-PT", {
+                                    day: "2-digit",
+                                    month: "short",
+                                  })}`
+                                : ""
+                            }`}
                     </span>
                   </div>
 
@@ -432,53 +397,22 @@ export function MyCard({
 
       {/* Histórico */}
       <section className="mt-10">
-        <h2 className="font-heading text-[20px] font-semibold tracking-tight">
+        <h2 className="mb-4 font-heading text-[20px] font-semibold tracking-tight">
           Histórico
         </h2>
-        {transactions.length === 0 ? (
-          <p className="mt-4 rounded-2xl border border-dashed border-border bg-bg-surface p-8 text-center text-sm text-muted-foreground">
-            Ainda sem movimentos.
-          </p>
-        ) : (
-          <div className="stagger mt-4 overflow-hidden rounded-2xl border border-border bg-bg-surface">
-            {transactions.map((t, i) => (
-              <div
-                key={t.id}
-                {...staggerIndex(i)}
-                className="flex items-center justify-between gap-3 border-b border-border px-5 py-3.5 text-sm last:border-b-0"
-              >
-                <div className="min-w-0">
-                  <p className="truncate font-medium">
-                    {t.note ??
-                      (t.type === "earn"
-                        ? "Serviço"
-                        : t.type === "redeem"
-                        ? "Resgate"
-                        : t.type === "bonus"
-                        ? "Bónus"
-                        : "Ajuste")}
-                  </p>
-                  <p className="mt-0.5 text-[11.5px] text-muted-foreground">
-                    {new Date(t.created_at).toLocaleDateString("pt-PT", {
-                      day: "2-digit",
-                      month: "short",
-                      year: "numeric",
-                    })}
-                  </p>
-                </div>
-                <span
-                  className={`shrink-0 font-mono text-[13px] font-bold tabular-nums ${
-                    t.points > 0 ? "text-emerald-600" : "text-muted-foreground"
-                  }`}
-                >
-                  {t.points > 0 ? "+" : ""}
-                  {t.points}
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
+        <LoyaltyHistory
+          entries={history}
+          emptyText="Ainda sem movimentos. O primeiro corte trata disso."
+        />
       </section>
+
+      <AccountSettings
+        className="mt-10"
+        name={client.name}
+        phone={client.phone}
+        email={client.email}
+        onNameChange={setDisplayName}
+      />
 
       <ConfirmDialog
         open={!!toRedeem}
@@ -513,7 +447,7 @@ export function MyCard({
           </DialogHeader>
           <p className="text-[13.5px] leading-relaxed text-muted-foreground">
             É o nome que aparece no seu cartão e que o barbeiro vê ao lançar os
-            pontos.
+            pontos. Pode mudá-lo depois em &ldquo;A minha conta&rdquo;.
           </p>
           <Input
             value={displayName}
