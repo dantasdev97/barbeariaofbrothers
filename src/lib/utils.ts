@@ -87,6 +87,18 @@ export function siteUrl() {
   return normalizeOrigin(process.env.NEXT_PUBLIC_SITE_URL) ?? CANONICAL_ORIGIN;
 }
 
+/**
+ * Origem canónica, ignorando deploys de pré-visualização.
+ *
+ * Para endereços que são **permanentes** — o cartão de fidelidade e o QR que
+ * o codifica. O `siteUrl()` devolve o URL do preview quando está num, o que
+ * faz sentido para canonicals de SEO mas não aqui: um QR impresso ou enviado
+ * a partir de um preview apontaria para um deploy que desaparece.
+ */
+export function canonicalSiteUrl() {
+  return normalizeOrigin(process.env.NEXT_PUBLIC_SITE_URL) ?? CANONICAL_ORIGIN;
+}
+
 export function absoluteUrl(path: string) {
   return `${siteUrl()}${path.startsWith("/") ? path : `/${path}`}`;
 }

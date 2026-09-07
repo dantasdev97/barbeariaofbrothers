@@ -4,16 +4,14 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Mail, Users } from "lucide-react";
+import { ChevronRight, Mail, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/admin/confirm-dialog";
 import { EmptyState } from "@/components/admin/empty-state";
-import {
-  DeleteAction,
-  EditAction,
-  RowActions,
-} from "@/components/admin/row-actions";
+import { ClientAvatar } from "@/components/admin/client-avatar";
+import { DeleteAction } from "@/components/admin/row-actions";
 import { staggerIndex } from "@/lib/motion";
+import { shortUnitName } from "@/lib/event-labels";
 import { cn } from "@/lib/utils";
 import { deleteClient } from "@/lib/loyalty/actions";
 
@@ -36,7 +34,10 @@ export type ClientRow = {
   showOrigin: boolean;
   unitName: string;
   points: number;
+  /** Data curta ("05 set"), já formatada no servidor. */
   lastVisit: string | null;
+  /** Data por extenso, para o `title` — o formato curto é ambíguo. */
+  lastVisitFull: string | null;
 };
 
 /**
@@ -51,24 +52,31 @@ function contactOf(c: ClientRow): string {
 }
 
 /**
- * De onde veio a conta. Antes dizia só "Conta própria" para toda a gente —
- * não distinguia quem entrou pela Google de quem preencheu o formulário, que
- * é a diferença que interessa ao balcão (um tem foto e email verificado, o
- * outro pode ter escrito o que quis).
+ * De onde veio a conta, em 16px.
+ *
+ * Era um crachá com a palavra "GOOGLE" ao lado do nome. Numa lista onde o
+ * nome já compete com pontos e acções, isso roubava metade da linha — no
+ * telemóvel truncava nomes ("Cristopher Pes…") para mostrar uma informação
+ * secundária por extenso. O glifo diz o mesmo e o `title` + texto para
+ * leitores de ecrã mantêm-no legível para quem precisa.
  */
-function OriginBadge({ provider }: { provider: string | null }) {
+function OriginGlyph({ provider }: { provider: string | null }) {
   const isGoogle = provider === "google";
+  const label = isGoogle ? "Conta Google" : "Registo por formulário";
   return (
     <span
+      title={label}
       className={cn(
-        "inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em]",
-        isGoogle
-          ? "bg-blue-500/12 text-blue-600 dark:text-blue-400"
-          : "bg-brand/15 text-brand",
+        "inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full",
+        isGoogle ? "bg-blue-500/12" : "bg-brand/15",
       )}
     >
-      {isGoogle ? <GoogleGlyph /> : <Mail className="h-2.5 w-2.5" />}
-      {isGoogle ? "Google" : "Formulário"}
+      {isGoogle ? (
+        <GoogleGlyph />
+      ) : (
+        <Mail className="h-2.5 w-2.5 text-brand" />
+      )}
+      <span className="sr-only">{label}</span>
     </span>
   );
 }
@@ -85,39 +93,43 @@ function GoogleGlyph() {
   );
 }
 
-/** Foto do cliente, com as iniciais como recurso quando não há. */
-function Avatar({ name, url }: { name: string; url: string | null }) {
-  const initials = name
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((w) => w[0]?.toUpperCase() ?? "")
-    .join("");
-
-  if (url) {
-    return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src={url}
-        alt=""
-        className="h-9 w-9 shrink-0 rounded-full object-cover"
-        referrerPolicy="no-referrer"
-      />
-    );
-  }
+/**
+ * Saldo do cliente.
+ *
+ * Zero fica cinzento e não laranja: numa lista inteira de crachás cor de
+ * marca, os que interessam — quem tem pontos para gastar — deixavam de
+ * saltar à vista. E "pts" é lido letra a letra pelos leitores de ecrã, por
+ * isso a palavra vai por extenso só para eles.
+ */
+function PointsPill({ points }: { points: number }) {
   return (
-    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand/10 text-[12px] font-semibold text-brand">
-      {initials || "?"}
-    </div>
+    <span
+      className={cn(
+        "shrink-0 rounded-full px-2 py-0.5 font-mono text-[12px] font-bold tabular-nums",
+        points > 0
+          ? "bg-brand/15 text-brand"
+          : "bg-muted text-muted-foreground",
+      )}
+    >
+      {points}
+      <span aria-hidden> pts</span>
+      <span className="sr-only"> pontos</span>
+    </span>
   );
 }
 
 export function ClientsTable({
   rows,
   canDelete,
+  showUnit = true,
 }: {
   rows: ClientRow[];
   canDelete: boolean;
+  /**
+   * Mostrar a unidade de cada cliente. Falso quando a lista já está filtrada
+   * por unidade — repetir o mesmo nome em todas as linhas só ocupa espaço.
+   */
+  showUnit?: boolean;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -142,7 +154,7 @@ export function ClientsTable({
       <EmptyState
         icon={<Users className="h-6 w-6" />}
         title="Nenhum cliente encontrado"
-        description="Cadastre o primeiro cliente para começar a atribuir pontos no cartão fidelidade."
+        description="Ajuste a busca ou cadastre o primeiro cliente para começar a atribuir pontos no cartão fidelidade."
         action={
           <Button
             asChild
@@ -157,79 +169,106 @@ export function ClientsTable({
 
   return (
     <>
-      {/* Mobile: um cartão por cliente.
-       * Antes era o mesmo `grid grid-cols-2` do desktop, que no telemóvel
-       * empilhava nome/telefone/unidade/pontos/visita sem rótulo nenhum —
-       * ficava impossível saber que número era qual. */}
-      <div className="stagger space-y-3 md:hidden">
+      {/* ── Mobile: uma linha por cliente ──
+       * Antes era um cartão com avatar, crachá por extenso, contacto, uma
+       * `<dl>` com unidade e última visita e ainda uma barra de acções com
+       * separador — ~190px por cliente, três clientes por ecrã. A informação
+       * é a mesma; o que mudou foi deixar de a dispor em blocos empilhados.
+       *
+       * O link cobre a linha inteira (`absolute inset-0`) em vez de embrulhar
+       * o conteúdo: assim o alvo de toque é a linha toda e o botão de
+       * eliminar continua a ser um botão a sério, não um clique aninhado. */}
+      <ul className="stagger space-y-2 md:hidden">
         {rows.map((c, i) => (
-          <article
+          <li
             key={c.id}
             {...staggerIndex(i)}
-            className="rounded-xl border border-border bg-bg-surface p-4"
+            className="relative flex items-center gap-3 rounded-xl border border-border bg-bg-surface px-3 py-2.5 transition-colors duration-150 has-[a:active]:bg-background"
           >
-            <div className="flex items-start justify-between gap-3">
-              {/* Só o bloco de identificação é link. Antes a linha inteira
-               * era um `<Link className="contents">` com as acções lá
-               * dentro — aninhamento frágil e alvo de toque imprevisível. */}
-              <Link
-                href={`/admin/clientes/${c.id}`}
-                className="flex min-w-0 flex-1 items-center gap-3 rounded-md transition-opacity duration-150 ease-out-strong active:opacity-70"
-              >
-                <Avatar name={c.name} url={c.avatarUrl} />
-                <span className="min-w-0 flex-1">
-                  <span className="flex items-center gap-2">
-                    <h2 className="truncate font-heading text-lg font-semibold">
-                      {c.name}
-                    </h2>
-                    {c.selfRegistered && c.showOrigin && (
-                      <OriginBadge provider={c.authProvider} />
-                    )}
-                  </span>
-                  <span className="mt-0.5 block truncate font-mono text-xs text-muted-foreground">
-                    {contactOf(c)}
-                  </span>
-                </span>
-              </Link>
-              <span className="shrink-0 rounded-full bg-brand/15 px-2.5 py-1 font-mono text-[12px] font-bold tabular-nums text-brand">
-                {c.points} pts
-              </span>
-            </div>
+            <Link
+              href={`/admin/clientes/${c.id}`}
+              aria-label={`Abrir ficha de ${c.name}`}
+              className="absolute inset-0 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
+            />
+            <ClientAvatar name={c.name} url={c.avatarUrl} size="md" />
 
-            <dl className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-[12.5px]">
-              <div className="flex gap-1.5">
-                <dt className="text-muted-foreground">Unidade</dt>
-                <dd className="font-medium">{c.unitName}</dd>
-              </div>
-              <div className="flex gap-1.5">
-                <dt className="text-muted-foreground">Última visita</dt>
-                <dd className="font-mono">{c.lastVisit ?? "—"}</dd>
-              </div>
-            </dl>
-
-            <div className="mt-3 flex justify-end border-t border-border pt-3">
-              <RowActions>
-                <EditAction href={`/admin/clientes/${c.id}`} label={c.name} />
-                {canDelete && (
-                  <DeleteAction onClick={() => setToDelete(c)} label={c.name} />
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5">
+                <h2 className="truncate text-[14.5px] font-semibold leading-tight">
+                  {c.name}
+                </h2>
+                {c.selfRegistered && c.showOrigin && (
+                  <OriginGlyph provider={c.authProvider} />
                 )}
-              </RowActions>
+              </div>
+              <p className="mt-0.5 truncate text-[12px] leading-tight text-muted-foreground">
+                <span className="font-mono">{contactOf(c)}</span>
+                {showUnit && <> · {shortUnitName(c.unitName)}</>}
+              </p>
             </div>
-          </article>
-        ))}
-      </div>
 
-      {/* Desktop: tabela */}
+            {/* Pontos e última visita à direita, em coluna. Estavam na linha
+             * do contacto, onde o `truncate` os comia primeiro — a data,
+             * que é o que diz se um cliente anda desaparecido, nunca chegava
+             * a aparecer num email comprido. */}
+            <div className="shrink-0 text-right">
+              <PointsPill points={c.points} />
+              <div
+                className="mt-1 text-[11px] leading-none text-muted-foreground"
+                title={
+                  c.lastVisitFull
+                    ? `Última visita: ${c.lastVisitFull}`
+                    : "Sem visitas registadas"
+                }
+              >
+                {c.lastVisit ?? "—"}
+              </div>
+            </div>
+
+            {canDelete ? (
+              <span className="relative z-10">
+                <DeleteAction onClick={() => setToDelete(c)} label={c.name} />
+              </span>
+            ) : (
+              <ChevronRight
+                aria-hidden
+                className="h-4 w-4 shrink-0 text-muted-foreground"
+              />
+            )}
+          </li>
+        ))}
+      </ul>
+
+      {/* ── Desktop: tabela ──
+       * "Contacto" deixou de ser coluna e passou a segunda linha do nome: a
+       * tabela tinha seis colunas para cinco dados e a de acções repetia o
+       * link que o nome já é. */}
       <div className="hidden overflow-hidden rounded-2xl border border-border bg-bg-surface md:block">
         <table className="w-full text-sm">
+          <caption className="sr-only">
+            Clientes do cartão fidelidade, do mais recente para o mais antigo.
+          </caption>
           <thead className="border-b border-border text-[11px] uppercase tracking-[0.12em] text-muted-foreground">
             <tr>
-              <th className="px-6 py-3 text-left font-semibold">Nome</th>
-              <th className="px-6 py-3 text-left font-semibold">Contacto</th>
-              <th className="px-6 py-3 text-left font-semibold">Unidade</th>
-              <th className="px-6 py-3 text-left font-semibold">Pontos</th>
-              <th className="px-6 py-3 text-left font-semibold">Última visita</th>
-              <th className="px-6 py-3" />
+              <th scope="col" className="px-5 py-2.5 text-left font-semibold">
+                Cliente
+              </th>
+              {showUnit && (
+                <th scope="col" className="px-5 py-2.5 text-left font-semibold">
+                  Unidade
+                </th>
+              )}
+              <th scope="col" className="px-5 py-2.5 text-right font-semibold">
+                Pontos
+              </th>
+              <th scope="col" className="px-5 py-2.5 text-left font-semibold">
+                Última visita
+              </th>
+              {canDelete && (
+                <th scope="col" className="px-5 py-2.5">
+                  <span className="sr-only">Acções</span>
+                </th>
+              )}
             </tr>
           </thead>
           <tbody className="stagger divide-y divide-border">
@@ -239,42 +278,51 @@ export function ClientsTable({
                 {...staggerIndex(i)}
                 className="transition-colors duration-150 hover-fine:hover:bg-background"
               >
-                <td className="px-6 py-3">
-                  <div className="flex items-center gap-3">
-                    <Avatar name={c.name} url={c.avatarUrl} />
-                    <div className="flex min-w-0 items-center gap-2">
-                      <Link
-                        href={`/admin/clientes/${c.id}`}
-                        className="truncate font-medium transition-colors duration-150 hover:text-brand"
-                      >
-                        {c.name}
-                      </Link>
-                      {c.selfRegistered && c.showOrigin && (
-                      <OriginBadge provider={c.authProvider} />
-                    )}
+                <td className="px-5 py-2">
+                  <div className="flex items-center gap-2.5">
+                    <ClientAvatar name={c.name} url={c.avatarUrl} />
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <Link
+                          href={`/admin/clientes/${c.id}`}
+                          className="truncate rounded-sm font-medium transition-colors duration-150 hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
+                        >
+                          {c.name}
+                        </Link>
+                        {c.selfRegistered && c.showOrigin && (
+                          <OriginGlyph provider={c.authProvider} />
+                        )}
+                      </div>
+                      <div className="max-w-[280px] truncate font-mono text-[11.5px] leading-tight text-muted-foreground">
+                        {contactOf(c)}
+                      </div>
                     </div>
                   </div>
                 </td>
-                <td className="max-w-[220px] truncate px-6 py-3 font-mono text-[12.5px] text-muted-foreground">
-                  {contactOf(c)}
+                {showUnit && (
+                  <td className="px-5 py-2 text-[12.5px] text-muted-foreground">
+                    {c.unitName}
+                  </td>
+                )}
+                <td className="px-5 py-2 text-right">
+                  <PointsPill points={c.points} />
                 </td>
-                <td className="px-6 py-3 text-[13px] text-muted-foreground">
-                  {c.unitName}
-                </td>
-                <td className="px-6 py-3 font-mono text-[13px] font-semibold tabular-nums text-brand">
-                  {c.points} pts
-                </td>
-                <td className="px-6 py-3 font-mono text-[12.5px] text-muted-foreground">
+                <td
+                  className="px-5 py-2 font-mono text-[12.5px] text-muted-foreground"
+                  title={c.lastVisitFull ?? undefined}
+                >
                   {c.lastVisit ?? "—"}
                 </td>
-                <td className="px-6 py-3">
-                  <RowActions>
-                    <EditAction href={`/admin/clientes/${c.id}`} label={c.name} />
-                    {canDelete && (
-                      <DeleteAction onClick={() => setToDelete(c)} label={c.name} />
-                    )}
-                  </RowActions>
-                </td>
+                {canDelete && (
+                  <td className="px-5 py-2">
+                    <div className="flex justify-end">
+                      <DeleteAction
+                        onClick={() => setToDelete(c)}
+                        label={c.name}
+                      />
+                    </div>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>
