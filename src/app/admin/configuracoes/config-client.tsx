@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ImageUpload } from "@/components/admin/image-upload";
 import { GooglePreview } from "@/components/admin/google-preview";
 import { saveUnit, uploadImage } from "@/lib/admin-actions";
+import { CANONICAL_ORIGIN } from "@/lib/utils";
 
 type UnitState = {
   logoUrl: string | null;
@@ -168,8 +169,11 @@ export function ConfigClient({ units }: { units: UnitRow[] }) {
     });
   }
 
-  const siteUrl =
-    process.env.NEXT_PUBLIC_SITE_URL ?? "https://barbeariaofbrothers.vercel.app";
+  // Só para a pré-visualização do Google mais abaixo — nunca é gravado nem
+  // enviado a ninguém. O recuo era um endereço `.vercel.app`, o tipo de link
+  // frágil que a Vercel apaga passado uns dias; o domínio canónico é
+  // permanente e é o mesmo que o QR code e os emails já usam.
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? CANONICAL_ORIGIN;
 
   return (
     <div>
